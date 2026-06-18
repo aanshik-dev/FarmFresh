@@ -30,7 +30,7 @@ const Navbar = () => {
     >
       <div className={`w-full`}>
         <div
-          className={`flex px-24 gap-8 w-full h-16 relative z-40 border-b ${
+          className={`flex px-24 gap-8 w-full h-17 relative z-40 border-b ${
             isScrolled
               ? " bg-emerald-950/72 shadow-green-950/60 text-white shadow-lg backdrop-blur-md border-b border-emerald-900"
               : "border-[#ffffff00]"
