@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
+import FarmerGroupCard from "../components/FarmerGroupCard";
+import { farmerGroups } from "../utils/InterfaceData";
+
+<div className="flex flex-wrap gap-8 justify-center py-10">
+  {farmerGroups.map((group) => (
+    <FarmerGroupCard key={group.id} group={group} />
+  ))}
+</div>;
 
 // Replace these URLs with your actual transparent PNG cutouts
 const carouselImages = [
@@ -48,7 +56,7 @@ const Home = () => {
 
   return (
     <div className="w-screen overflow-x-hidden bg-slate-950">
-      <section className="w-full flex items-stretch justify-center bg-linear-to-br from-emerald-950 via-slate-950 to-emerald-900 text-white py-24 px-36">
+      <header className="w-full flex items-stretch justify-center bg-linear-to-br from-emerald-950 via-slate-950 to-emerald-900 text-white py-24 px-36">
         <motion.div
           className="flex-4 space-y-6 pt-10"
           variants={containerVariants}
@@ -164,7 +172,17 @@ const Home = () => {
             </motion.div>
           </AnimatePresence>
         </div>
-      </section>
+      </header>
+
+      <main className="w-full py-20">
+        <section className="w-full">
+          <div className="flex flex-wrap gap-8 justify-center py-10">
+            {farmerGroups.map((group) => (
+              <FarmerGroupCard key={group.id} group={group} />
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
