@@ -64,7 +64,7 @@ const Home = () => {
           </motion.div>
 
           <motion.h1
-            className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.1] text-slate-100"
+            className="font-display font-bold text-4xl sm:text-5xl lg:text-[56px] tracking-tight leading-[1.1] text-slate-100"
             id="hero-headline"
             variants={itemVariants}
           >
