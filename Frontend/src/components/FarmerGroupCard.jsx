@@ -7,7 +7,7 @@ const FarmerGroupCard = ({ group }) => {
   return (
     <div
       className={`
-        w-full max-w-sm rounded-2xl shadow-xl overflow-hidden transition-all duration-300 
+        w-full xl:w-[28%] md:w-[45%] rounded-2xl shadow-xl overflow-hidden transition-all duration-300 
         hover:-translate-y-1 hover:shadow-2xl
         ${
           isDark
@@ -22,7 +22,7 @@ const FarmerGroupCard = ({ group }) => {
           p-4 flex items-center gap-4
           ${
             isDark
-              ? "bg-gradient-to-r from-emerald-900/60 via-emerald-800/40 to-amber-800/30"
+              ? "bg-gradient-to-r from-emerald-900/60 via-emerald-800/40 to-[#00746193]"
               : "bg-gradient-to-r from-emerald-50 via-emerald-100/50 to-amber-50"
           }
         `}
