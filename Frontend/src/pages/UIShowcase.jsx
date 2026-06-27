@@ -65,13 +65,7 @@ const UIShowcase = () => {
           <p
             className={`text-sm sm:text-base ${isDark ? "text-slate-400" : "text-slate-500"}`}
           >
-            Every reusable building block in FarmFresh, themed for both light
-            and dark mode —{" "}
-            <code
-              className={`px-1.5 py-0.5 rounded ${isDark ? "bg-slate-800 text-emerald-400" : "bg-emerald-50 text-emerald-700"}`}
-            >
-              /components/ui/
-            </code>
+            Every reusable building block in FarmFresh
           </p>
         </div>
 
@@ -310,15 +304,7 @@ const UIShowcase = () => {
           </div>
         </Section>
 
-        <div
-          className={`flex items-center gap-3 text-xs justify-center pt-2 ${isDark ? "text-slate-600" : "text-slate-400"}`}
-        >
-          <Icon icon="ph:plant-fill" className="w-3.5 h-3.5" />
-          <span>
-            FarmFresh component library — built for the Mandakini Organic
-            Collective
-          </span>
-        </div>
+    
       </div>
     </div>
   );

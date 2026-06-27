@@ -172,23 +172,12 @@ const Home = () => {
                 : "bg-gradient-to-br from-emerald-50 via-white to-amber-50 border-emerald-200"
             }`}
           >
-            <span
-              className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest ${isDark ? "text-emerald-400" : "text-emerald-600"}`}
-            >
-              <Icon icon="ph:cube-fill" className="w-3.5 h-3.5" />
-              Design System
-            </span>
             <h2
               className={`font-display text-2xl sm:text-3xl font-bold ${isDark ? "text-white" : "text-slate-800"}`}
             >
-              Browse the FarmFresh Component Library
+              View the component library
             </h2>
-            <p
-              className={`text-sm sm:text-base max-w-xl ${isDark ? "text-slate-300" : "text-slate-600"}`}
-            >
-              Buttons, inputs, modals, toasts and loaders — every building block
-              used across the platform, documented in one place.
-            </p>
+
             <button
               onClick={() => navigate("/ui")}
               className="mt-2 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
