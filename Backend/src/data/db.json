@@ -1,0 +1,148 @@
+{
+  "users": [
+    {
+      "id": "u1782652852018",
+      "username": "admin",
+      "email": "admin@ff.com",
+      "password": "$2b$10$Prf8OIXk0hU5swDZ1Jd//.gW37RMaUdZQJ0zOL8M8crHln73Pk8W.",
+      "role": "ADMIN",
+      "createdAt": "2026-06-28T13:20:52.018Z"
+    },
+    {
+      "id": "u1782652770788",
+      "username": "collective",
+      "email": "collect@ff.com",
+      "password": "$2b$10$0EgoVfcENEE0qrGz5MW./Ou27jYcu5cEF4Xg961Wfnha82CJ2vIS6",
+      "role": "COLLECTIVE",
+      "createdAt": "2026-06-28T13:19:30.788Z"
+    },
+    {
+      "id": "u1782652655035",
+      "username": "farm",
+      "email": "farm@ff.com",
+      "password": "$2b$10$pa.YRvIFV/ar9gQzrDTLuOgFTqaPGAxqo6kvgtadxbhR0SAXTdr5K",
+      "role": "FARMER_GROUP",
+      "createdAt": "2026-06-28T13:17:35.035Z"
+    }
+  ],
+  "farmerGroups": [
+    {
+      "id": "fg1782652852018",
+      "groupName": "Himalayan Harvest Collective",
+      "address": "Triyuginarayan • 2,200m",
+      "distance": "8.4 km",
+      "leadFarmer": "Arjun Singh",
+      "yield": "450 kg",
+      "phone": "+91 94120 78234",
+      "email": "arjun@himalayanharvest.in",
+      "zone": "Zone C",
+      "status": "Ready",
+      "crops": ["Rajma", "Red Rice", "Amaranth"],
+      "lastUpdated": "2026-06-28T06:00:00.000Z",
+      "profile": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
+      "banner": "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200"
+    },
+    {
+      "id": "fg1782652852019",
+      "groupName": "Valley Fresh Growers",
+      "address": "Mandal • 1,950m",
+      "distance": "5.2 km",
+      "leadFarmer": "Neha Rawat",
+      "yield": "390 kg",
+      "phone": "+91 98765 43210",
+      "email": "neha@valleyfresh.in",
+      "zone": "Zone B",
+      "status": "Ready",
+      "crops": ["Potato", "Buckwheat", "Peas"],
+      "lastUpdated": "2026-06-28T04:00:00.000Z",
+      "profile": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400",
+      "banner": "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=1200"
+    },
+    {
+      "id": "fg1782652852020",
+      "groupName": "Mountain Crest Farmers",
+      "address": "Kedarnath Route • 2,500m",
+      "distance": "14 km",
+      "leadFarmer": "Vikram Rana",
+      "yield": "620 kg",
+      "phone": "+91 91234 56789",
+      "email": "vikram@mountaincrest.in",
+      "zone": "Zone D",
+      "status": "Monitoring",
+      "crops": ["Rajma", "Barley", "Amaranth"],
+      "lastUpdated": "2026-06-27T10:00:00.000Z",
+      "profile": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400",
+      "banner": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200"
+    },
+    {
+      "id": "fg1782652852021",
+      "groupName": "Green Valley Farms",
+      "address": "Guptkashi • 1,450m",
+      "distance": "3.1 km",
+      "leadFarmer": "Kavita Negi",
+      "yield": "510 kg",
+      "phone": "+91 99887 66554",
+      "email": "kavita@greenvalley.in",
+      "zone": "Zone A",
+      "status": "Ready",
+      "crops": ["Spinach", "Cabbage", "Potato"],
+      "lastUpdated": "2026-06-28T02:00:00.000Z",
+      "profile": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400",
+      "banner": "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=1200"
+    },
+    {
+      "id": "fg1782652852022",
+      "groupName": "Peak Agro Collective",
+      "address": "Sonprayag • 2,050m",
+      "distance": "11.3 km",
+      "leadFarmer": "Rohit Bisht",
+      "yield": "580 kg",
+      "phone": "+91 97654 32109",
+      "email": "rohit@peakagro.in",
+      "zone": "Zone C",
+      "status": "Monitoring",
+      "crops": ["Rajma", "Turmeric", "Millets"],
+      "lastUpdated": "2026-06-27T08:00:00.000Z",
+      "profile": "https://images.unsplash.com/photo-1504593811423-6dd665756598?w=400",
+      "banner": "https://images.unsplash.com/photo-1463123081488-789f998ac9c4?w=1200"
+    }
+  ],
+  "collections": [
+    {
+      "id": "col1782652853001",
+      "farmerGroupId": "fg1782652852018",
+      "farmerGroupName": "Himalayan Harvest Collective",
+      "zone": "Zone C",
+      "crops": ["Rajma", "Red Rice"],
+      "quantityKg": 430,
+      "scheduledDate": "2026-06-30",
+      "status": "Scheduled",
+      "coordinatorNote": "Route via Triyuginarayan road - check for landslide clearance",
+      "createdAt": "2026-06-28T07:00:00.000Z"
+    },
+    {
+      "id": "col1782652853002",
+      "farmerGroupId": "fg1782652852021",
+      "farmerGroupName": "Green Valley Farms",
+      "zone": "Zone A",
+      "crops": ["Spinach", "Cabbage"],
+      "quantityKg": 490,
+      "scheduledDate": "2026-06-29",
+      "status": "Scheduled",
+      "coordinatorNote": "",
+      "createdAt": "2026-06-28T05:00:00.000Z"
+    },
+    {
+      "id": "col1782652853003",
+      "farmerGroupId": "fg1782652852019",
+      "farmerGroupName": "Valley Fresh Growers",
+      "zone": "Zone B",
+      "crops": ["Potato", "Buckwheat"],
+      "quantityKg": 370,
+      "scheduledDate": "2026-06-25",
+      "status": "Completed",
+      "coordinatorNote": "Completed successfully",
+      "createdAt": "2026-06-20T08:00:00.000Z"
+    }
+  ]
+}
