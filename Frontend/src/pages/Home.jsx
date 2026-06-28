@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import FarmerGroupCard from "../components/FarmerGroupCard";
+import CollectionListView from "../components/CollectionList";
 import { farmerGroups as fallbackGroups } from "../utils/InterfaceData";
 import { useTheme } from "../context/ThemeContext";
 import { HeroActions } from "../components/ui";
@@ -25,7 +26,9 @@ const carouselImages = [
 const Home = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [groups, setGroups] = useState([]);
+  const [collection, setCollection] = useState([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  const [loadingCollection, setLoadingCollection] = useState(true);
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
@@ -48,6 +51,20 @@ const Home = () => {
       }
     };
     fetchGroups();
+  }, []);
+
+  useEffect(() => {
+    const fetchCollection = async () => {
+      try {
+        const data = await api.get("/collections");
+        setCollection(data);
+      } catch (err) {
+        setCollection([]);
+      } finally {
+        setLoadingCollection(false);
+      }
+    };
+    fetchCollection();
   }, []);
 
   const containerVariants = {
@@ -187,6 +204,19 @@ const Home = () => {
                 <FarmerGroupCard key={group.id} group={group} isDark={isDark} />
               ))}
             </div>
+          )}
+        </section>
+
+        <section className="w-full py-10 px-10">
+          {loadingCollection ? (
+            <div className="flex justify-center py-20">
+              <Icon
+                icon="ph:spinner-gap"
+                className="w-8 h-8 animate-spin text-emerald-500"
+              />
+            </div>
+          ) : (
+            <CollectionListView collections={collection} isDark={isDark} />
           )}
         </section>
 
