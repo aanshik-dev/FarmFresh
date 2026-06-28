@@ -4,29 +4,40 @@ import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 import { Button, Input, useToast } from "../components/ui";
+import api from "../utils/api";
+
+const roleOptions = [
+  { value: "FARMER_GROUP", label: "Farmer Group Lead" },
+  { value: "COLLECTIVE", label: "Zone Coordinator (Collective)" },
+];
 
 const Signup = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [role, setRole] = useState("FARMER_GROUP");
   const [loading, setLoading] = useState(false);
 
   const confirmError = confirm && confirm !== password ? "Passwords do not match" : "";
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (confirmError) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await api.post("/auth/register", { username, email, password, role });
       toast.success("Your coordinator account is ready.", { title: "Account created" });
-      navigate("/");
-    }, 900);
+      navigate("/login");
+    } catch (err) {
+      toast.error(err.message || "Registration failed", { title: "Error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,10 +66,10 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <Input
-            label="Full Name"
-            placeholder="e.g. Debendra Semwal"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            label="Username"
+            placeholder="e.g. debendra_semwal"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             icon="ph:user-fill"
             required
           />
@@ -71,6 +82,28 @@ const Signup = () => {
             icon="ph:envelope-fill"
             required
           />
+
+          <div className="space-y-1.5">
+            <label className={`block text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+              Role
+            </label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors ${
+                isDark
+                  ? "bg-slate-800 border-slate-700 text-white"
+                  : "bg-white border-slate-200 text-slate-900"
+              }`}
+            >
+              {roleOptions.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <Input
             label="Password"
             type="password"

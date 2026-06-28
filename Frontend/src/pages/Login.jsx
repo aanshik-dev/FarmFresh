@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 import { Button, Input, useToast } from "../components/ui";
+import api from "../utils/api";
 
 const Login = () => {
   const { isDark } = useTheme();
@@ -14,14 +15,20 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const data = await api.post("/auth/login", { email, password });
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
       toast.success("Welcome back to the collective.", { title: "Logged in" });
       navigate("/");
-    }, 900);
+    } catch (err) {
+      toast.error(err.message || "Login failed", { title: "Error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
