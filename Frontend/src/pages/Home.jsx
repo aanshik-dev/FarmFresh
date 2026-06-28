@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import FarmerGroupCard from "../components/FarmerGroupCard";
-import { farmerGroups } from "../utils/InterfaceData";
+import { farmerGroups as fallbackGroups } from "../utils/InterfaceData";
 import { useTheme } from "../context/ThemeContext";
 import { HeroActions } from "../components/ui";
+import api from "../utils/api";
 
 const carouselImages = [
   "/assets/hero/Farmer_Women_1.png",
@@ -23,6 +24,8 @@ const carouselImages = [
 
 const Home = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [groups, setGroups] = useState([]);
+  const [loadingGroups, setLoadingGroups] = useState(true);
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
@@ -31,6 +34,20 @@ const Home = () => {
       setCurrentImageIndex((prev) => (prev + 1) % carouselImages.length);
     }, 3000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const data = await api.get("/groups");
+        setGroups(data);
+      } catch (err) {
+        setGroups(fallbackGroups);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+    fetchGroups();
   }, []);
 
   const containerVariants = {
@@ -157,11 +174,20 @@ const Home = () => {
         className={`w-full py-20 transition-colors duration-300 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}
       >
         <section className="w-full py-10 px-10">
-          <div className="flex flex-wrap gap-8 md:gap-x-[5%] md:gap-y-12 justify-center">
-            {farmerGroups.map((group) => (
-              <FarmerGroupCard key={group.id} group={group} isDark={isDark} />
-            ))}
-          </div>
+          {loadingGroups ? (
+            <div className="flex justify-center py-20">
+              <Icon
+                icon="ph:spinner-gap"
+                className="w-8 h-8 animate-spin text-emerald-500"
+              />
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-8 md:gap-x-[5%] md:gap-y-12 justify-center">
+              {groups.map((group) => (
+                <FarmerGroupCard key={group.id} group={group} isDark={isDark} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="w-full px-8 md:px-16 pt-10 pb-4">
