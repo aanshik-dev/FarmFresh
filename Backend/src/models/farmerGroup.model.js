@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
 
-const collectiveSchema = new mongoose.Schema({
+const farmerGroupSchema = new mongoose.Schema({
   _id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
     unique: true
   },
-  cid: {
+  fid: {
     type: String,
     required: true,
     unique: true
@@ -23,29 +23,43 @@ const collectiveSchema = new mongoose.Schema({
     trim: true,
     maxlength: 1000,
   },
+  farmerCount: {
+    type: Number,
+    default: 1,
+  },
+  leadfarmer: {
+    type: String,
+    required: true,
+    trim: true,
+    lowercase: true,
+  },
+  profile: {
+    type: String,
+    default: ""
+  },
   email: {
     type: String,
     required: true,
     trim: true,
     lowercase: true,
-    unique: true
+    unique: true,
   },
   phone: {
     type: String,
-    required: true,
     trim: true,
-    unique: true
-  },
-  profile: {
-    type: String,
-    default: "",
+    required: true,
+    unique: true,
   },
   address: {
     area: {
       type: String,
       trim: true
     },
-    city: {
+    village: {
+      type: String,
+      trim: true
+    },
+    district: {
       type: String,
       trim: true
     },
@@ -53,38 +67,26 @@ const collectiveSchema = new mongoose.Schema({
       type: String,
       trim: true
     },
-    pincode: {
+    pinCode: {
       type: String,
       trim: true
     }
   },
   coord: {
     lat: {
-      type: Number,
+      type: String,
       trim: true
     },
     long: {
-      type: Number,
+      type: String,
       trim: true
     }
-  },
-  ratingAvg: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 5,
-  },
+  }
+}, { timestamps: true });
 
-  workers: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
-}, { timestamps: true })
+farmerGroupSchema.index({ fid: 1 }, { unique: true });
+farmerGroupSchema.index({ email: 1 }, { unique: true });
+farmerGroupSchema.index({ phone: 1 }, { unique: true });
 
-collectiveSchema.index({ email: 1 }, { unique: true });
-collectiveSchema.index({ phone: 1 }, { unique: true });
-
-const Collective = mongoose.model("Collective", collectiveSchema);
-
-export default Collective;
+const FarmerGroup = mongoose.model("FarmerGroup", farmerGroupSchema);
+export default FarmerGroup;

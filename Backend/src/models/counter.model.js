@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const counterScheme = new mongoose.Schema({
+const counterSchema = new mongoose.Schema({
   _id: {
     type: String,
     required: true
@@ -11,5 +11,5 @@ const counterScheme = new mongoose.Schema({
   }
 });
 
-const Counter = mongoose.model("Counter", counterScheme);
+const Counter = mongoose.model("Counter", counterSchema);
 export default Counter;
