@@ -20,7 +20,6 @@ import Register from "./pages/Register";
 
 // Farmer pages
 import FarmerDashboard from "./pages/farmer/FarmerDashboard";
-import FarmerProfileSetup from "./pages/farmer/FarmerProfileSetup";
 import FarmerProfile from "./pages/farmer/FarmerProfile";
 import CropManagement from "./pages/farmer/CropManagement";
 import CollectiveBrowse from "./pages/farmer/CollectiveBrowse";
@@ -30,7 +29,6 @@ import FarmerSettings from "./pages/farmer/FarmerSettings";
 
 // Collective pages
 import CollectiveDashboard from "./pages/collective/CollectiveDashboard";
-import CollectiveProfileSetup from "./pages/collective/CollectiveProfileSetup";
 import CollectiveProfile from "./pages/collective/CollectiveProfile";
 import FarmerGroupManagement from "./pages/collective/FarmerGroupManagement";
 import CropInventory from "./pages/collective/CropInventory";
@@ -60,15 +58,10 @@ import SettingsPage from "./pages/common/SettingsPage";
 
 /** Redirect logged-in users away from auth pages */
 const GuestRoute = ({ children }) => {
-  const { isAuthenticated, role, user } = useAuth();
+  const { isAuthenticated, role } = useAuth();
   if (!isAuthenticated) return children;
-  // Redirect to appropriate dashboard
-  if (role === "FARMER_GROUP") {
-    return <Navigate to={user?.isProfileComplete ? "/dashboard/farmer/overview" : "/dashboard/farmer/profile-setup"} replace />;
-  }
-  if (role === "COLLECTIVE") {
-    return <Navigate to={user?.isProfileComplete ? "/dashboard/collective/overview" : "/dashboard/collective/profile-setup"} replace />;
-  }
+  if (role === "FARMER_GROUP") return <Navigate to="/dashboard/farmer/overview" replace />;
+  if (role === "COLLECTIVE") return <Navigate to="/dashboard/collective/overview" replace />;
   if (role === "ADMIN") return <Navigate to="/dashboard/admin/overview" replace />;
   return children;
 };
@@ -130,10 +123,6 @@ function App() {
                   element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><FarmerDashboard /></ProtectedRoute>}
                 />
                 <Route
-                  path="farmer/profile-setup"
-                  element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><FarmerProfileSetup /></ProtectedRoute>}
-                />
-                <Route
                   path="farmer/profile"
                   element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><FarmerProfile /></ProtectedRoute>}
                 />
@@ -162,10 +151,6 @@ function App() {
                 <Route
                   path="collective/overview"
                   element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><CollectiveDashboard /></ProtectedRoute>}
-                />
-                <Route
-                  path="collective/profile-setup"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><CollectiveProfileSetup /></ProtectedRoute>}
                 />
                 <Route
                   path="collective/profile"
@@ -249,9 +234,9 @@ function App() {
 }
 
 const DashboardRedirect = () => {
-  const { role, user } = useAuth();
-  if (role === "FARMER_GROUP") return <Navigate to={user?.isProfileComplete ? "/dashboard/farmer/overview" : "/dashboard/farmer/profile-setup"} replace />;
-  if (role === "COLLECTIVE") return <Navigate to={user?.isProfileComplete ? "/dashboard/collective/overview" : "/dashboard/collective/profile-setup"} replace />;
+  const { role } = useAuth();
+  if (role === "FARMER_GROUP") return <Navigate to="/dashboard/farmer/overview" replace />;
+  if (role === "COLLECTIVE") return <Navigate to="/dashboard/collective/overview" replace />;
   if (role === "ADMIN") return <Navigate to="/dashboard/admin/overview" replace />;
   return <Navigate to="/login" replace />;
 };

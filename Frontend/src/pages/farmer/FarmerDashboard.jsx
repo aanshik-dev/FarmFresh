@@ -50,23 +50,7 @@ const FarmerDashboard = () => {
 
   return (
     <div className={`min-h-screen p-5 sm:p-7 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
-      {/* Profile incomplete banner */}
-      {!user?.isProfileComplete && (
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`mb-5 rounded-2xl border p-4 flex items-start gap-3 ${isDark ? "bg-amber-500/10 border-amber-500/25" : "bg-amber-50 border-amber-200"}`}
-        >
-          <Icon icon="ph:warning-fill" className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
-          <div className="flex-1">
-            <p className={`font-semibold text-sm ${isDark ? "text-amber-300" : "text-amber-800"}`}>Complete your profile to unlock all features</p>
-            <p className={`text-xs mt-0.5 ${isDark ? "text-amber-400/70" : "text-amber-600"}`}>Add your description, crops, and location to start joining collectives.</p>
-          </div>
-          <button onClick={() => navigate("/dashboard/farmer/profile-setup")} className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-white hover:bg-amber-400 cursor-pointer transition-colors">
-            Complete →
-          </button>
-        </motion.div>
-      )}
+
 
       {/* Welcome */}
       <div className="mb-6">
