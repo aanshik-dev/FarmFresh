@@ -501,7 +501,6 @@ export const faqs = [
 export const supportChannels = [
   { icon: "ph:phone-fill",            label: "Coordinator Hotline", value: "+91 1372 264211",                    note: "Mon–Sat, 7 AM – 7 PM IST" },
   { icon: "ph:envelope-fill",         label: "Email Support",       value: "coordination@mandakini-organic.org", note: "Response within 24 hours" },
-  { icon: "ph:chat-circle-dots-fill", label: "Field Radio Relay",   value: "Channel 4, Zones A–D",              note: "For active collection-day issues" },
 ];
 
 // Farmer crop management mock data
