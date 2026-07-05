@@ -1,750 +1,614 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html
+  lang="en"
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Verify Your Email - FarmFresh</title>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>Verify Your Email — FarmFresh</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Quantico:wght@400;700&family=League+Spartan:wght@400;600;700;800;900&display=swap"
-    rel="stylesheet" />
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <!-- Forces light rendering so Gmail / Apple Mail / Outlook dark mode cannot invert the palette -->
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
 
-    body {
-      background-color: #ecfdf5;
-      font-family: "Inter", sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    .email-wrapper {
-      width: 100%;
-      background-color: #ecfdf5;
-      padding: 40px 16px;
-    }
-
-    .email-card {
-      max-width: 580px;
-      margin: 0 auto;
-      background: #ffffff;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1px solid #d1fae5;
-      box-shadow:
-        0 2px 4px rgba(16, 185, 129, 0.06),
-        0 12px 32px rgba(16, 185, 129, 0.08),
-        0 32px 64px rgba(0, 0, 0, 0.06);
-    }
-
-    /* ─────────────────────────────
-         HEADER
-      ───────────────────────────── */
-    .header {
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(135deg, #059669 0%, #10b981 45%, #34d399 100%);
-      padding: 0;
-    }
-
-    /* Decorative circles */
-    .header-circle-tl {
-      position: absolute;
-      top: -48px;
-      left: -48px;
-      width: 180px;
-      height: 180px;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    .header-circle-tr {
-      position: absolute;
-      top: -24px;
-      right: -32px;
-      width: 140px;
-      height: 140px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    .header-circle-br {
-      position: absolute;
-      bottom: -56px;
-      right: 60px;
-      width: 200px;
-      height: 200px;
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    .header-circle-bl {
-      position: absolute;
-      bottom: -30px;
-      left: 30%;
-      width: 100px;
-      height: 100px;
-      background: rgba(245, 158, 11, 0.15);
-      border-radius: 50%;
-      pointer-events: none;
-    }
-
-    /* Subtle grid pattern overlay */
-    .header-grid {
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
-      background-size: 28px 28px;
-      pointer-events: none;
-    }
-
-    .header-inner {
-      position: relative;
-      z-index: 2;
-      padding: 40px 40px 36px;
-      text-align: center;
-    }
-
-    /* Logo */
-    .logo-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 11px;
-      margin-bottom: 26px;
-    }
-
-    .logo-icon-wrap {
-      width: 42px;
-      height: 42px;
-      background: rgba(255, 255, 255, 0.22);
-      border: 1.5px solid rgba(255, 255, 255, 0.4);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(4px);
-      flex-shrink: 0;
-    }
-
-    .logo-text {
-      font-family: "Quantico", sans-serif;
-      font-size: 22px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-
-    /* Hero content */
-    .header-icon-ring {
-      width: 72px;
-      height: 72px;
-      background: rgba(255, 255, 255, 0.18);
-      border: 2px solid rgba(255, 255, 255, 0.35);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 18px;
-    }
-
-    .header-title {
-      font-family: "Quantico", sans-serif;
-      font-size: 28px;
-      font-weight: 900;
-      color: #ffffff;
-      letter-spacing: -0.01em;
-      line-height: 1.2;
-      margin-bottom: 10px;
-    }
-
-    .header-sub {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.82);
-      line-height: 1.6;
-      max-width: 360px;
-      margin: 0 auto 24px;
-    }
-
-    .header-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      background: rgba(255, 255, 255, 0.18);
-      border: 1.5px solid rgba(255, 255, 255, 0.35);
-      border-radius: 999px;
-      padding: 6px 16px;
-      font-size: 11px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      backdrop-filter: blur(4px);
-    }
-
-    .badge-dot {
-      width: 7px;
-      height: 7px;
-      background: #fbbf24;
-      border-radius: 50%;
-      box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
-      animation: badge-pulse 2s infinite;
-      flex-shrink: 0;
-    }
-
-    @keyframes badge-pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-        transform: scale(1);
+    <style>
+      body,
+      table,
+      td {
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
       }
-
-      50% {
-        opacity: 0.5;
-        transform: scale(0.7);
+      table,
+      td {
+        mso-table-lspace: 0pt;
+        mso-table-rspace: 0pt;
       }
-    }
-
-    /* Wave divider at bottom of header */
-    .header-wave {
-      display: block;
-      width: 100%;
-      line-height: 0;
-      margin-top: -1px;
-    }
-
-    /* ─────── BODY ───────── */
-    .body {
-      background: #ffffff;
-      padding: 36px 40px 32px;
-    }
-
-    .greeting {
-      font-family: "Quantico", sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      color: #064e3b;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .greeting-icon {
-      width: 26px;
-      height: 26px;
-      background: #d1fae5;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .body-text {
-      font-size: 14px;
-      color: #6b7280;
-      line-height: 1.8;
-      margin-bottom: 28px;
-    }
-
-    /* ─────── OTP SECTION ───────── */
-    .otp-section {
-      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-      border: 1.5px solid #a7f3d0;
-      border-radius: 16px;
-      padding: 28px 24px;
-      text-align: center;
-      margin-bottom: 24px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .otp-section::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #10b981, #f59e0b, #10b981);
-      border-radius: 3px 3px 0 0;
-    }
-
-    .otp-label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #059669;
-      letter-spacing: 0.13em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .otp-digits {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
-    }
-
-    .otp-digit {
-      width: 54px;
-      height: 64px;
-      background: #ffffff;
-      border: 1.5px solid #6ee7b7;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Quantico", monospace;
-      font-size: 28px;
-      font-weight: 700;
-      color: #065f46;
-      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
-    }
-
-    .otp-expiry {
-      font-size: 12.5px;
-      color: #9ca3af;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-    }
-
-    .otp-expiry strong {
-      color: #d97706;
-      font-weight: 600;
-    }
-
-    /* ─────── STEPS ─────── */
-    .steps-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 24px;
-    }
-
-    .step-card {
-      flex: 1;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 14px 12px;
-      text-align: center;
-    }
-
-    .step-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 8px;
-    }
-
-    .step-icon.green {
-      background: #d1fae5;
-    }
-
-    .step-icon.amber {
-      background: #fef3c7;
-    }
-
-    .step-icon.blue {
-      background: #dbeafe;
-    }
-
-    .step-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #374151;
-      line-height: 1.4;
-    }
-
-    .step-sub {
-      font-size: 10.5px;
-      color: #9ca3af;
-      margin-top: 2px;
-      line-height: 1.4;
-    }
-
-    /* ─────── SECURITY NOTICE ──────── */
-    .security-notice {
-      display: flex;
-      gap: 13px;
-      align-items: flex-start;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      border-radius: 12px;
-      padding: 15px 16px;
-      margin-bottom: 28px;
-    }
-
-    .security-icon-wrap {
-      width: 34px;
-      height: 34px;
-      background: #fef3c7;
-      border: 1px solid #fde68a;
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .security-title {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: #92400e;
-      margin-bottom: 3px;
-    }
-
-    .security-body {
-      font-size: 12px;
-      color: #a16207;
-      line-height: 1.65;
-    }
-
-    /* ─────── DIVIDER ───────── */
-    .divider {
-      border: none;
-      border-top: 1px solid #f3f4f6;
-      margin: 0 0 22px;
-    }
-
-    /* ─────── FOOTER NOTE ───────── */
-    .footer-note {
-      font-size: 12px;
-      color: #9ca3af;
-      line-height: 1.75;
-      text-align: center;
-    }
-
-    .footer-note strong {
-      color: #6b7280;
-    }
-
-    .footer-note a {
-      color: #10b981;
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    /* ─────── BOTTOM STRIP ──────── */
-    .bottom-strip {
-      background: #000000;
-      padding: 16px 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .powered-label {
-      font-size: 10px;
-      color: #4b5563;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .bottom-brand {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .bottom-logo-mark {
-      width: 26px;
-      height: 26px;
-      background: #ffffff;
-      border-radius: 7px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .bottom-logo-mark span {
-      font-family: "League Spartan", sans-serif;
-      font-size: 15px;
-      font-weight: 900;
-      color: #000000;
-      line-height: 1;
-      display: block;
-      margin-top: 1px;
-    }
-
-    .bottom-brand-name {
-      font-family: "Quantico", sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-    }
-
-    .bottom-brand-name span {
-      color: #6b7280;
-    }
-
-    /* ──────── RESPONSIVE ─────── */
-    @media (max-width: 580px) {
-      .email-wrapper {
-        padding: 20px 10px;
+      img {
+        -ms-interpolation-mode: bicubic;
+        border: 0;
+        outline: none;
+        text-decoration: none;
+        display: block;
       }
-
-      .email-card {
-        border-radius: 16px;
-      }
-
-      .header-inner {
-        padding: 32px 22px 28px;
-      }
-
-      .header-title {
-        font-size: 23px;
-      }
-
-      .header-sub {
-        font-size: 13px;
-      }
-
-      .body {
-        padding: 26px 22px 24px;
-      }
-
-      .otp-digit {
-        width: 46px;
-        height: 56px;
-        font-size: 24px;
-      }
-
-      .otp-digits {
-        gap: 8px;
-      }
-
-      .steps-row {
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .step-card {
-        display: flex;
-        align-items: center;
-        text-align: left;
-        gap: 12px;
-        padding: 12px 14px;
-      }
-
-      .step-icon {
+      body {
         margin: 0;
-        flex-shrink: 0;
+        padding: 0;
+        width: 100% !important;
+        background-color: #ecfdf5;
       }
 
-      .bottom-strip {
-        padding: 14px 22px;
-        flex-direction: column;
-        text-align: center;
-        gap: 10px;
+      /* Force light colors even if a client tries to auto-dark-mode individual nodes */
+      .force-bg-green {
+        background-color: #059669 !important;
+      }
+      .force-bg-white {
+        background-color: #ffffff !important;
+      }
+      .force-bg-otp {
+        background-color: #ecfdf5 !important;
+      }
+      .force-bg-amber {
+        background-color: #fffbeb !important;
+      }
+      .force-bg-black {
+        background-color: #000000 !important;
+      }
+      .force-text-dark {
+        color: #064e3b !important;
+      }
+      .force-text-grey {
+        color: #6b7280 !important;
+      }
+      .force-text-white {
+        color: #ffffff !important;
       }
 
-      .bottom-brand {
-        justify-content: center;
+      @media (max-width: 600px) {
+        .full-width-mobile {
+          width: 100% !important;
+        }
+        .stack-column {
+          display: block !important;
+          width: 100% !important;
+        }
+        .otp-digit-cell {
+          width: 15% !important;
+          font-size: 22px !important;
+        }
+        .header-pad {
+          padding: 28px 20px 24px !important;
+        }
+        .body-pad {
+          padding: 24px 20px !important;
+        }
       }
-    }
+    </style>
+  </head>
 
-    @media (max-width: 400px) {
-      .header-inner {
-        padding: 26px 16px 24px;
-      }
-
-      .body {
-        padding: 22px 16px 20px;
-      }
-
-      .otp-digit {
-        width: 40px;
-        height: 50px;
-        font-size: 21px;
-      }
-
-      .otp-digits {
-        gap: 6px;
-      }
-
-      .header-icon-ring {
-        width: 60px;
-        height: 60px;
-      }
-
-      .header-title {
-        font-size: 20px;
-      }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="email-wrapper">
-    <div class="email-card">
-
-      <!-- ── Header ── -->
-      <div class="header">
-        <div class="header-circle-tl"></div>
-        <div class="header-circle-tr"></div>
-        <div class="header-circle-br"></div>
-        <div class="header-grid"></div>
-
-        <div class="header-inner">
-          <!-- Logo -->
-          <div class="logo-row">
-            <div class="logo-icon-wrap">
-              <svg xmlns="http://www.w3.org/2000/svg" width="50" height="25" viewBox="0 0 256 256">
-                <path d="M0 0h256v256H0z" fill="none" />
-                <path fill="#fff"
-                  d="M205.41 159.07a60.9 60.9 0 0 1-31.83 8.86a71.7 71.7 0 0 1-27.36-5.66A55.55 55.55 0 0 0 136 194.51V224a8 8 0 0 1-8.53 8a8.18 8.18 0 0 1-7.47-8.25v-12.44l-38.62-38.62A52.5 52.5 0 0 1 63.44 176a45.8 45.8 0 0 1-23.92-6.67C17.73 156.09 6 125.62 8.27 87.79a8 8 0 0 1 7.52-7.52c37.83-2.23 68.3 9.46 81.5 31.25a46 46 0 0 1 6.45 28.48a4 4 0 0 1-6.89 2.43l-19.2-20.1a8 8 0 0 0-11.31 11.31l53.88 55.25c.06-.78.13-1.56.21-2.33a68.56 68.56 0 0 1 18.64-39.46l50.59-53.46a8 8 0 0 0-11.31-11.32l-49 51.82a4 4 0 0 1-6.78-1.74c-4.74-17.48-2.65-34.88 6.4-49.82c17.86-29.48 59.42-45.26 111.18-42.22a8 8 0 0 1 7.52 7.52c3 51.77-12.78 93.33-42.26 111.19" />
-              </svg>
-
-            </div>
-            <div class="logo-text">FarmFresh</div>
-          </div>
-
-          <!-- Hero icon -->
-          <div class="header-icon-ring">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="11" width="18" height="11" rx="2" stroke="white" stroke-width="1.8" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white" stroke-width="1.8" stroke-linecap="round" />
-              <circle cx="12" cy="16" r="1.5" fill="white" />
-              <path d="M12 16v2" stroke="white" stroke-width="1.6" stroke-linecap="round" />
-            </svg>
-          </div>
-
-          <h1 class="header-title">Verify Your Email Address</h1>
-          <p class="header-sub">
-            One quick step to activate your FarmFresh account and get started
-            with the collective.
-          </p>
-
-          <div class="header-badge">
-            <span class="badge-dot"></span>
-            Action Required
-          </div>
-        </div>
-
-        <!-- Wave -->
-        <svg class="header-wave" viewBox="0 0 580 40" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-          <path d="M0 40 L0 20 Q145 0 290 20 Q435 40 580 15 L580 40 Z" fill="#ffffff" />
-        </svg>
-      </div>
-
-      <!-- ── Body ── -->
-      <div class="body">
-
-        <p class="greeting">
-          <span class="greeting-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#059669" stroke-width="2"
-                stroke-linecap="round" />
-              <circle cx="12" cy="7" r="4" stroke="#059669" stroke-width="2" />
-            </svg>
-          </span>
-          Hello, {{name}}
-        </p>
-
-        <p class="body-text">
-          Thanks for signing up with FarmFresh. To complete your registration
-          and access your account, enter the verification code below. This
-          code is valid for a limited time only.
-        </p>
-
-        <!-- OTP Box -->
-        <div class="otp-section">
-          <p class="otp-label">
-            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
-              <path d="M0 0h24v24H0z" fill="none" />
-              <path fill="currentColor"
-                d="M6 22q-.825 0-1.412-.587T4 20V10q0-.825.588-1.412T6 8h1V6q0-2.075 1.463-3.537T12 1t3.538 1.463T17 6v2h1q.825 0 1.413.588T20 10v10q0 .825-.587 1.413T18 22zm7.413-5.587Q14 15.825 14 15t-.587-1.412T12 13t-1.412.588T10 15t.588 1.413T12 17t1.413-.587M9 8h6V6q0-1.25-.875-2.125T12 3t-2.125.875T9 6z" />
-            </svg>
-
-            Your one-time verification code
-          </p>
-          <div class="otp-digits">
-            <!-- Replace each with individual digits of {{otp}} -->
-            <!-- In nodemailer: otp.toString().split("").forEach(d => inject .otp-digit) -->
-            {{otp}}
-          </div>
-          <p class="otp-expiry">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="9" stroke="#d97706" stroke-width="1.8" />
-              <path d="M12 7v5l3 3" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" />
-            </svg>
-            Expires in <strong>{{otpExpiry}} minutes</strong>
-          </p>
-        </div>
-
-        <!-- Security notice -->
-        <div class="security-notice">
-          <div class="security-icon-wrap">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2Z" fill="#fde68a"
-                stroke="#d97706" stroke-width="1.6" stroke-linejoin="round" />
-              <path d="M12 8v4" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" />
-              <circle cx="12" cy="15.5" r="0.8" fill="#d97706" />
-            </svg>
-          </div>
-          <div>
-            <p class="security-title">Keep this code private</p>
-            <p class="security-body">
-              FarmFresh will never ask for this code over a call or message.
-              If you did not request this, simply ignore this email.
-            </p>
-          </div>
-        </div>
-
-        <hr class="divider" />
-
-        <p class="footer-note">
-          This email was sent to <strong>{{email}}</strong> because someone
-          created a FarmFresh account using this address.<br /><br />
-          Need help?&nbsp;
-          <a href="mailto:{{supportEmail}}">{{supportEmail}}</a>
-        </p>
-
-      </div>
-
-      <!-- ── Black Bottom Strip ── -->
-      <div class="bottom-strip">
-        <p class="powered-label">Powered by</p>
-        <div class="bottom-brand">
-          <div class="bottom-logo-mark">
-            <span>A</span>
-          </div>
-          <span class="bottom-brand-name">Aanshik<span>-dev</span></span>
-        </div>
-      </div>
-
+  <body style="margin: 0; padding: 0; background-color: #ecfdf5">
+    <!-- preview text, hidden -->
+    <div
+      style="
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        mso-hide: all;
+      "
+    >
+      Your FarmFresh verification code is {{otp}} - it expires soon.
     </div>
-  </div>
-</body>
 
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="background-color: #ecfdf5"
+    >
+      <tr>
+        <td align="center" style="padding: 40px 16px">
+          <table
+            role="presentation"
+            width="580"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            class="full-width-mobile"
+            style="
+              max-width: 580px;
+              width: 100%;
+              background-color: #ffffff;
+              border-radius: 20px;
+              overflow: hidden;
+              border: 1px solid #d1fae5;
+            "
+          >
+            <!-- HEADER -->
+            <tr>
+              <td
+                class="force-bg-green header-pad"
+                style="
+                  background-color: #059669;
+                  padding: 40px 40px 36px;
+                  text-align: center;
+                "
+                bgcolor="#059669"
+              >
+                <!-- logo -->
+                <table
+                  role="presentation"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="margin: 0 auto 26px"
+                >
+                  <tr>
+                    <td style="padding-right: 10px" valign="middle">
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                        border="0"
+                        width="42"
+                        height="42"
+                        style="
+                          background-color: rgba(255, 255, 255, 0.22);
+                          border-radius: 12px;
+                        "
+                      >
+                        <tr>
+                          <td
+                            align="center"
+                            valign="middle"
+                            width="42"
+                            height="42"
+                          >
+                            <img
+                              src="https://res.cloudinary.com/aanshikbase/image/upload/FarmFresh/Email/647539be-3537-4878-920e-2655d175eb4d.png"
+                              width="24"
+                              height="24"
+                              alt=""
+                              style="display: inline-block"
+                            />
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td valign="middle">
+                      <span
+                        style="
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 22px;
+                          font-weight: 700;
+                          color: #ffffff;
+                          letter-spacing: 2px;
+                          text-transform: uppercase;
+                        "
+                        >FarmFresh</span
+                      >
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- hero icon -->
+                <table
+                  role="presentation"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  width="72"
+                  height="72"
+                  style="
+                    margin: 0 auto 18px;
+                    background-color: rgba(255, 255, 255, 0.18);
+                    border-radius: 50%;
+                  "
+                >
+                  <tr>
+                    <td align="center" valign="middle" width="72" height="72">
+                      <img
+                        src="https://res.cloudinary.com/aanshikbase/image/upload/FarmFresh/Email/37cf1a26-38dc-407b-b8d2-46914025cbba.png"
+                        width="36"
+                        height="36"
+                        alt=""
+                      />
+                    </td>
+                  </tr>
+                </table>
+
+                <h1
+                  style="
+                    margin: 0 0 10px;
+                    font-family: Arial, Helvetica, sans-serif;
+                    font-size: 26px;
+                    font-weight: 800;
+                    color: #ffffff;
+                    line-height: 1.25;
+                  "
+                >
+                  Verify Your Email Address
+                </h1>
+                <p
+                  style="
+                    margin: 0 0 24px;
+                    font-family: Arial, Helvetica, sans-serif;
+                    font-size: 14px;
+                    color: rgba(255, 255, 255, 0.9);
+                    line-height: 1.6;
+                    max-width: 360px;
+                    margin-left: auto;
+                    margin-right: auto;
+                  "
+                >
+                  One quick step to activate your FarmFresh account and get
+                  started with the collective.
+                </p>
+
+                <table
+                  role="presentation"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="
+                    margin: 0 auto;
+                    background-color: rgba(255, 255, 255, 0.18);
+                    border-radius: 999px;
+                  "
+                >
+                  <tr>
+                    <td
+                      style="
+                        padding: 8px 18px;
+                        font-family: Arial, Helvetica, sans-serif;
+                        font-size: 11px;
+                        font-weight: 700;
+                        color: #ffffff;
+                        letter-spacing: 1px;
+                        text-transform: uppercase;
+                      "
+                    >
+                      &#9679; Action Required
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- BODY -->
+            <tr>
+              <td
+                class="force-bg-white body-pad"
+                bgcolor="#ffffff"
+                style="background-color: #ffffff; padding: 36px 40px 32px"
+              >
+                <table
+                  role="presentation"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="margin-bottom: 10px"
+                >
+                  <tr>
+                    <td valign="middle" style="padding-right: 9px">
+                      <table
+                        role="presentation"
+                        width="26"
+                        height="26"
+                        cellpadding="0"
+                        cellspacing="0"
+                        style="background-color: #d1fae5; border-radius: 8px"
+                      >
+                        <tr>
+                          <td align="center" valign="middle">
+                            <img
+                              src="https://res.cloudinary.com/aanshikbase/image/upload/FarmFresh/Email/4f75c245-a97e-4f5f-8f2c-e5a861def418.png"
+                              width="16"
+                              height="16"
+                              alt=""
+                            />
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td valign="middle">
+                      <span
+                        style="
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 19px;
+                          font-weight: 800;
+                          color: #064e3b;
+                        "
+                        >Hello, {{name}}</span
+                      >
+                    </td>
+                  </tr>
+                </table>
+
+                <p
+                  style="
+                    margin: 0 0 26px;
+                    font-family: Arial, Helvetica, sans-serif;
+                    font-size: 14px;
+                    color: #6b7280;
+                    line-height: 1.7;
+                  "
+                >
+                  Thanks for signing up with FarmFresh. To complete your
+                  registration and access your account, enter the verification
+                  code below. This code is valid for a limited time only.
+                </p>
+
+                <!-- OTP box -->
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="
+                    background-color: #ecfdf5;
+                    border: 1.5px solid #a7f3d0;
+                    border-radius: 16px;
+                    margin-bottom: 24px;
+                  "
+                >
+                  <tr>
+                    <td
+                      style="
+                        height: 3px;
+                        background-color: #10b981;
+                        border-radius: 3px 3px 0 0;
+                        font-size: 0;
+                        line-height: 0;
+                      "
+                    >
+                      &nbsp;
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding: 24px 24px 22px">
+                      <p
+                        style="
+                          margin: 0 0 16px;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 11px;
+                          font-weight: 700;
+                          color: #059669;
+                          letter-spacing: 1.5px;
+                          text-transform: uppercase;
+                        "
+                      >
+                        Your one-time verification code
+                      </p>
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="6"
+                        border="0"
+                        style="margin: 0 auto 16px"
+                      >
+                        <tr>
+                          {{otp_digits}}
+                        </tr>
+                      </table>
+
+                      <p
+                        style="
+                          margin: 0;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 12.5px;
+                          color: #9ca3af;
+                        "
+                      >
+                        Expires in
+                        <strong style="color: #d97706"
+                          >{{otpExpiry}} minutes</strong
+                        >
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- security notice -->
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="
+                    background-color: #fffbeb;
+                    border: 1px solid #fde68a;
+                    border-radius: 12px;
+                    margin-bottom: 28px;
+                  "
+                >
+                  <tr>
+                    <td
+                      width="34"
+                      valign="top"
+                      style="padding: 15px 0 15px 16px"
+                    >
+                      <table
+                        role="presentation"
+                        width="34"
+                        height="34"
+                        cellpadding="0"
+                        cellspacing="0"
+                        style="
+                          background-color: #fef3c7;
+                          border: 1px solid #fde68a;
+                          border-radius: 9px;
+                        "
+                      >
+                        <tr>
+                          <td align="center" valign="middle">
+                            <img
+                              src="https://res.cloudinary.com/aanshikbase/image/upload/FarmFresh/Email/4bc12e26-84c2-410b-8c8a-321053ba3b78.png"
+                              width="18"
+                              height="18"
+                              alt=""
+                            />
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <td valign="top" style="padding: 15px 16px 15px 13px">
+                      <p
+                        style="
+                          margin: 0 0 3px;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 12.5px;
+                          font-weight: 700;
+                          color: #92400e;
+                        "
+                      >
+                        Keep this code private
+                      </p>
+                      <p
+                        style="
+                          margin: 0;
+                          font-family: Arial, Helvetica, sans-serif;
+                          font-size: 12px;
+                          color: #a16207;
+                          line-height: 1.6;
+                        "
+                      >
+                        FarmFresh will never ask for this code over a call or
+                        message. If you did not request this, simply ignore this
+                        email.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+
+                <hr
+                  style="
+                    border: none;
+                    border-top: 1px solid #f3f4f6;
+                    margin: 0 0 22px;
+                  "
+                />
+
+                <p
+                  style="
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                    font-size: 12px;
+                    color: #9ca3af;
+                    line-height: 1.75;
+                    text-align: center;
+                  "
+                >
+                  This email was sent to
+                  <strong style="color: #6b7280">{{email}}</strong> because
+                  someone created a FarmFresh account using this address.<br /><br />
+                  Need help?&nbsp;<a
+                    href="mailto:{{supportEmail}}"
+                    style="
+                      color: #10b981;
+                      text-decoration: none;
+                      font-weight: 500;
+                    "
+                    >{{supportEmail}}</a
+                  >
+                </p>
+              </td>
+            </tr>
+
+            <!-- bottom strip -->
+            <tr>
+              <td
+                class="force-bg-black"
+                bgcolor="#000000"
+                style="background-color: #000000; padding: 16px 40px"
+              >
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                >
+                  <tr>
+                    <td
+                      align="left"
+                      valign="middle"
+                      style="
+                        font-family: Arial, Helvetica, sans-serif;
+                        font-size: 10px;
+                        color: #4b5563;
+                        letter-spacing: 1px;
+                        text-transform: uppercase;
+                      "
+                    >
+                      Powered by
+                    </td>
+                    <td align="right" valign="middle">
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                        border="0"
+                      >
+                        <tr>
+                          <td valign="middle" style="padding-right: 9px">
+                            <table
+                              role="presentation"
+                              width="26"
+                              height="26"
+                              cellpadding="0"
+                              cellspacing="0"
+                              style="
+                                background-color: #ffffff;
+                                border-radius: 7px;
+                              "
+                            >
+                              <tr>
+                                <td
+                                  align="center"
+                                  valign="middle"
+                                  style="
+                                    font-family: Arial, Helvetica, sans-serif;
+                                    font-size: 14px;
+                                    font-weight: 900;
+                                    color: #000000;
+                                  "
+                                >
+                                  A
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                          <td
+                            valign="middle"
+                            style="
+                              font-family: Arial, Helvetica, sans-serif;
+                              font-size: 12px;
+                              font-weight: 700;
+                              color: #ffffff;
+                              letter-spacing: 1px;
+                              text-transform: uppercase;
+                            "
+                          >
+                            Aanshik<span style="color: #6b7280">-dev</span>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>

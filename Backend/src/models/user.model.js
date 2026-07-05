@@ -13,7 +13,14 @@ const userSchema = new mongoose.Schema(
       unique: true,
       trim: true,
       lowercase: true,
-      minlength: 4
+      minlength: 4,
+    },
+    phone: {
+      type: String,
+      required: [true, "Phone is required"],
+      unique: true,
+      trim: true,
+      minLength: 10,
     },
     password: {
       type: String,
@@ -23,23 +30,21 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["COLLECTIVE", "FARMER", "ADMIN"]
+      enum: ["COLLECTIVE", "FARMER", "ADMIN"],
     },
     isActive: {
       type: Boolean,
-      default: true
+      default: true,
     },
     lastLogin: {
       type: Date,
-      default: null
-    }
+      default: null,
+    },
   },
   {
-    timestamps: true
-  }
+    timestamps: true,
+  },
 );
-
-userSchema.index({ username: 1 }, { unique: true });
 
 const User = mongoose.model("User", userSchema);
 export default User;

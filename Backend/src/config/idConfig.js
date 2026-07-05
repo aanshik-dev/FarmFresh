@@ -1,7 +1,7 @@
-export default idConfig = {
+const idConfig = {
   user: {
     prefix: "FF",
-    start: 500000
+    start: 100000
   },
 
   collective: {
@@ -54,3 +54,5 @@ export default idConfig = {
     start: 1000000
   }
 };
+
+export default idConfig;

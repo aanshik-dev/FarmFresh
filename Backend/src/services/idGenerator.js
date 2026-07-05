@@ -1,22 +1,22 @@
-import Counter from "../models/counter.model";
-import idConfig from "../config/idConfig";
+import Counter from "../models/counter.model.js";
+import idConfig from "../config/idConfig.js";
 
 const generateId = async (type) => {
-  const { prefix, offset } = idConfig[type];
+  const { prefix } = idConfig[type];
 
-  const count = await Counter.findOneAndUpdate(
+  const counter = await Counter.findOneAndUpdate(
     { _id: type },
+    { $inc: { sequence: 1 } },
     {
-      $inc: { sequence: 1 },
-      $setOnInsert: { sequence: start }
+      returnDocument: "after",
     },
-    {
-      new: true,
-      upsert: true
-    }
   );
 
-  return `${prefix}${count.sequence}`;
+  if (!counter) {
+    throw new Error(`Counter "${type}" not found. Run the seed script first.`);
+  }
+
+  return `${prefix}${counter.sequence}`;
 };
 
 export default generateId;
