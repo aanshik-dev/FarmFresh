@@ -7,6 +7,8 @@ dbConnect();
 
 import seedCounters from "./scripts/seedCounters.js";
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 seedCounters();
 
@@ -25,7 +27,8 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
-
+app.use("/api/users", userRoutes);
+app.use("/api/admin", adminRoutes);
 app.get("/", (req, res) => {
   res.json({ message: "FarmFresh backend is running" });
 });

@@ -26,21 +26,41 @@ const Loader = ({
   avatar = false,
 }) => {
   const { isDark } = useTheme();
-  const spinnerSize = { sm: "w-5 h-5", md: "w-8 h-8", lg: "w-12 h-12", xl: "w-16 h-16" };
-  const textSize   = { sm: "text-xs",  md: "text-sm",  lg: "text-base",  xl: "text-lg" };
+  const spinnerSize = {
+    sm: "w-5 h-5",
+    md: "w-8 h-8",
+    lg: "w-12 h-12",
+    xl: "w-16 h-16",
+  };
+  const textSize = {
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
+    xl: "text-lg",
+  };
   const skeletonBg = isDark ? "bg-slate-700/60" : "bg-slate-200";
   const trackBg = isDark ? "bg-slate-800" : "bg-slate-200";
   const mutedText = isDark ? "text-slate-400" : "text-slate-500";
 
   if (variant === "skeleton") {
     return (
-      <div className={`space-y-3 ${className}`} aria-label={label} aria-busy="true">
+      <div
+        className={`space-y-3 ${className}`}
+        aria-label={label}
+        aria-busy="true"
+      >
         {avatar && (
           <div className="flex items-center gap-3 mb-4">
-            <div className={`w-12 h-12 rounded-full animate-pulse ${skeletonBg}`} />
+            <div
+              className={`w-12 h-12 rounded-full animate-pulse ${skeletonBg}`}
+            />
             <div className="flex-1 space-y-2">
-              <div className={`h-3 rounded-full animate-pulse w-3/4 ${skeletonBg}`} />
-              <div className={`h-3 rounded-full animate-pulse w-1/2 ${skeletonBg}`} />
+              <div
+                className={`h-3 rounded-full animate-pulse w-3/4 ${skeletonBg}`}
+              />
+              <div
+                className={`h-3 rounded-full animate-pulse w-1/2 ${skeletonBg}`}
+              />
             </div>
           </div>
         )}
@@ -57,9 +77,13 @@ const Loader = ({
 
   if (variant === "bar") {
     return (
-      <div className={`w-full ${className}`} aria-label={label} aria-busy="true">
+      <div
+        className={`w-full ${className}`}
+        aria-label={label}
+        aria-busy="true"
+      >
         <div className={`h-1 rounded-full overflow-hidden ${trackBg}`}>
-          <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 animate-[progress_1.5s_ease-in-out_infinite] rounded-full" />
+          <div className="h-full bg-linear-to-r from-emerald-500 to-emerald-400 animate-[progress_1.5s_ease-in-out_infinite] rounded-full" />
         </div>
         <style>{`
           @keyframes progress {
@@ -73,7 +97,12 @@ const Loader = ({
   }
 
   if (variant === "dots") {
-    const dotSize = { sm: "w-1.5 h-1.5", md: "w-2 h-2", lg: "w-3 h-3", xl: "w-4 h-4" };
+    const dotSize = {
+      sm: "w-1.5 h-1.5",
+      md: "w-2 h-2",
+      lg: "w-3 h-3",
+      xl: "w-4 h-4",
+    };
     return (
       <div
         className={`flex items-center justify-center gap-1.5 ${className}`}

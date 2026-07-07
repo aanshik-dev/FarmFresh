@@ -63,8 +63,8 @@ const Login = () => {
       <div
         className={`hidden lg:flex flex-col justify-between relative w-1/2 overflow-hidden pb-25 pt-30 px-24 gap-6 ${
           isDark
-            ? "bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900"
-            : "bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700"
+            ? "bg-linear-to-br from-emerald-950 via-slate-900 to-emerald-900"
+            : "bg-linear-to-br from-emerald-700 via-emerald-600 to-teal-700"
         }`}
       >
         {/* Decorative blobs */}
@@ -79,12 +79,8 @@ const Login = () => {
           onClick={() => navigate("/")}
           className="text-white text-lg flex items-center gap-2 cursor-pointer mb-3"
         >
-          <Icon
-            width={20}
-            height={20}
-            icon="material-symbols:arrow-back-ios-new-rounded"
-          />
-          Back
+          <Icon icon="ph:arrow-left-bold" className="w-4 h-4" />
+          Back to Home
         </motion.div>
         {/* Center content */}
         <motion.div
@@ -265,7 +261,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl font-semibold text-sm bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

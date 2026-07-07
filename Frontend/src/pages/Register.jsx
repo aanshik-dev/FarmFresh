@@ -91,7 +91,8 @@ const CropTagInput = ({ selected, onChange, isDark }) => {
   const suggestions = ALL_CROPS.filter(
     (c) =>
       !selected.includes(c) &&
-      (query.trim().length === 0 || c.toLowerCase().includes(query.toLowerCase())),
+      (query.trim().length === 0 ||
+        c.toLowerCase().includes(query.toLowerCase())),
   );
 
   // Close dropdown on outside click
@@ -355,7 +356,7 @@ const MapModal = ({
                 onConfirm(tempPos);
                 onClose();
               }}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Confirm Location
             </button>
@@ -664,7 +665,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={otpLoading}
-                className="w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl font-semibold text-sm bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {otpLoading ? (
                   <>
@@ -753,7 +754,7 @@ const Register = () => {
                       className="hidden"
                     />
                     <div
-                      className={`relative w-16 h-16 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden transition-all ${photo ? "border-transparent" : isDark ? "border-slate-600 hover:border-emerald-500" : "border-slate-300 hover:border-emerald-400"}`}
+                      className={`relative w-25 h-25 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden transition-all ${photo ? "border-transparent" : isDark ? "border-slate-600 hover:border-emerald-500" : "border-slate-300 hover:border-emerald-400"}`}
                     >
                       {photo ? (
                         <img
@@ -1066,7 +1067,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading || !!passwordError}
-                className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl font-semibold text-sm bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

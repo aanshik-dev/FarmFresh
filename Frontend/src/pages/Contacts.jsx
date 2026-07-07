@@ -64,7 +64,7 @@ const Contacts = () => {
             className={`text-4xl md:text-5xl font-extrabold mb-6 tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}
           >
             Reach the{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-emerald-400">
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-yellow-300 to-emerald-400">
               Uttarakhand Base
             </span>
           </h1>

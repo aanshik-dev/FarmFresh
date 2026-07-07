@@ -42,9 +42,9 @@ const Button = ({
 
   const variantClasses = {
     primary:
-      "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 border border-emerald-500/0",
+      "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 border border-emerald-500/0",
     secondary:
-      "bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-emerald-950 shadow-lg shadow-amber-400/20 border border-amber-400/0",
+      "bg-linear-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-emerald-950 shadow-lg shadow-amber-400/20 border border-amber-400/0",
     outline: isDark
       ? "bg-transparent border border-emerald-500 text-emerald-400 hover:bg-emerald-500/10"
       : "bg-transparent border border-emerald-600 text-emerald-700 hover:bg-emerald-50",
@@ -52,7 +52,7 @@ const Button = ({
       ? "bg-transparent text-slate-300 hover:bg-slate-700/50 hover:text-white border border-transparent"
       : "bg-transparent text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 border border-transparent",
     danger:
-      "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white shadow-lg shadow-red-500/20 border border-red-500/0",
+      "bg-linear-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white shadow-lg shadow-red-500/20 border border-red-500/0",
   };
 
   return (
