@@ -8,7 +8,7 @@ const verifyEmail = async (req, res) => {
     const response = await otp.registerOtp(req.body);
     res.status(201).json(response);
   } catch (err) {
-    console.error("GET_OTP Error", err);
+    console.error(err);
     res.status(err.statusCode || 500).json({
       success: err.success,
       message: err.message,
@@ -22,7 +22,7 @@ const forgotPassword = async (req, res) => {
     const response = await otp.forgotPassOtp(req.body);
     res.status(201).json(response);
   } catch (err) {
-    console.error("FORGOT_PASSWORD Error", err);
+    console.error(err);
     res.status(err.statusCode || 500).json({
       success: err.success,
       message: err.message,
@@ -31,16 +31,12 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-const registerUser = async (req, res) => {
+const registerUser = async (req, res, next) => {
   try {
     const response = await register(req.body, req.file);
     res.status(201).json(response);
   } catch (err) {
-    console.error("REGISTER_USER Error", err);
-    res.status(err.statusCode || 500).json({
-      success: err.success,
-      message: err.message,
-    });
+    next(err);
   }
 };
 
@@ -56,9 +52,7 @@ const loginUser = async (req, res, next) => {
 const refreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-
     const result = await refreshAccessToken(refreshToken);
-
     res.status(200).json(result);
   } catch (err) {
     next(err);

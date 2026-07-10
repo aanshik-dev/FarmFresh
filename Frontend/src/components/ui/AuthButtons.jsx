@@ -32,9 +32,12 @@ export const SignupButton = ({ isDark, className = "", full = false }) => {
   const navigate = useNavigate();
   return (
     <motion.button
-      whileHover={{ scale: 1.03, boxShadow: "0 0 24px rgba(52, 211, 153, 0.35)" }}
+      whileHover={{
+        scale: 1.03,
+        boxShadow: "0 0 24px rgba(52, 211, 153, 0.35)",
+      }}
       whileTap={{ scale: 0.97 }}
-      onClick={() => navigate("/signup")}
+      onClick={() => navigate("/register")}
       className={`
         inline-flex items-center justify-center gap-1.5 rounded-xl text-sm font-semibold
         px-4 py-2 transition-all duration-200 cursor-pointer shadow-lg
@@ -44,13 +47,16 @@ export const SignupButton = ({ isDark, className = "", full = false }) => {
       `}
     >
       <Icon icon="ph:user-plus-bold" className="w-4 h-4" />
-      <span>Sign Up</span>
+      <span>Register</span>
     </motion.button>
   );
 };
 
 const AuthButtons = ({ isDark, layout = "row" }) => {
-  const wrap = layout === "row" ? "flex items-center gap-2.5" : "flex flex-col gap-2.5 w-full";
+  const wrap =
+    layout === "row"
+      ? "flex items-center gap-2.5"
+      : "flex flex-col gap-2.5 w-full";
   return (
     <div className={wrap}>
       <LoginButton isDark={isDark} full={layout !== "row"} />

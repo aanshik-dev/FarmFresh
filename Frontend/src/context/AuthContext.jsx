@@ -2,54 +2,10 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 
 const AuthContext = createContext(null);
 
-// Mock user database — replace with real API calls when backend is ready
-const MOCK_USERS = {
-  "farmer@farmfresh.com": {
-    id: "fg_001",
-    name: "Debendra Semwal",
-    email: "farmer@farmfresh.com",
-    role: "FARMER_GROUP",
-    groupName: "Triyuginarayan Organic Pulse Pioneers",
-    profilePhoto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
-    isProfileComplete: false,
-    phone: "+91 94120 78234",
-    address: "",
-    description: "",
-    crops: [],
-    coordinates: null,
-    numberOfFarmers: 12,
-    leadFarmerName: "Debendra Semwal",
-  },
-  "collective@farmfresh.com": {
-    id: "col_001",
-    name: "Ravi Kumar Sharma",
-    email: "collective@farmfresh.com",
-    role: "COLLECTIVE",
-    collectiveName: "Mandakini Organic Collective",
-    profilePhoto: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400",
-    isProfileComplete: false,
-    phone: "+91 1372 264211",
-    address: "",
-    description: "",
-    workers: 0,
-    crops: [],
-    coordinates: null,
-  },
-  "admin@farmfresh.com": {
-    id: "adm_001",
-    name: "System Administrator",
-    email: "admin@farmfresh.com",
-    role: "ADMIN",
-    profilePhoto: null,
-    isProfileComplete: true,
-    phone: null,
-  },
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem("farmfresh-user");
+      const stored = localStorage.getItem("user");
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -66,20 +22,20 @@ export const AuthProvider = ({ children }) => {
         `This account is registered as ${mockUser.role === "FARMER_GROUP" ? "Farmer Group" : "Collective"}, not ${role === "FARMER_GROUP" ? "Farmer Group" : "Collective"}.`
       );
     }
-    localStorage.setItem("farmfresh-user", JSON.stringify(mockUser));
+    localStorage.setItem("user", JSON.stringify(mockUser));
     setUser(mockUser);
     return mockUser;
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("farmfresh-user");
+    localStorage.removeItem("user");
     setUser(null);
   }, []);
 
   const updateUser = useCallback(
     (data) => {
       const updated = { ...user, ...data };
-      localStorage.setItem("farmfresh-user", JSON.stringify(updated));
+      localStorage.setItem("user", JSON.stringify(updated));
       setUser(updated);
       return updated;
     },

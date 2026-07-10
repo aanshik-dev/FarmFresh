@@ -28,6 +28,7 @@ const sendOtp = async (name, email, goal) => {
       const err = new Error(
         "Too many attempts. Please try again after 6 hours.",
       );
+      err.success = false;
       err.statusCode = 429;
       err.unblockAt = pendingOTP.blockedUntil;
       throw err;

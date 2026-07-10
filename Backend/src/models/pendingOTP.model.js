@@ -4,7 +4,6 @@ const pendingOTPSchema = new mongoose.Schema(
   {
     email: {
       type: String,
-      unique: true,
       required: true,
     },
     hashOtp: {
@@ -33,6 +32,7 @@ const pendingOTPSchema = new mongoose.Schema(
 );
 
 pendingOTPSchema.index({ email: 1, goal: 1 }, { unique: true });
+pendingOTPSchema.index({ blockedUntil: 1 }, { expireAfterSeconds: 0 });
 
 const PendingOTP = mongoose.model("PendingOTP", pendingOTPSchema);
 

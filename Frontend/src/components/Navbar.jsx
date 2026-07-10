@@ -38,9 +38,10 @@ const Navbar = () => {
       className={`
         relative flex items-center justify-center w-9 h-9 shrink-0 rounded-full
         transition-all duration-300 cursor-pointer
-        ${isDark
-          ? "bg-emerald-900/50 hover:bg-emerald-800/70 text-amber-300 border border-emerald-700/50"
-          : "bg-amber-100 hover:bg-amber-200 text-amber-600 border border-amber-300"
+        ${
+          isDark
+            ? "bg-emerald-900/50 hover:bg-emerald-800/70 text-amber-300 border border-emerald-700/50"
+            : "bg-amber-100 hover:bg-amber-200 text-amber-600 border border-amber-300"
         }
       `}
     >
@@ -73,16 +74,25 @@ const Navbar = () => {
               : "border-[#ffffff00]"
           }`}
         >
-          <div className={`h-full flex justify-start items-center shrink-0 transition-all duration-300 ${isDark ? "text-amber-50" : "text-slate-800"}`}>
+          <div
+            className={`h-full flex justify-start items-center shrink-0 transition-all duration-300 ${isDark ? "text-amber-50" : "text-slate-800"}`}
+          >
             <div
               className="h-full flex items-center justify-center gap-2.5 sm:gap-5 cursor-pointer"
               onClick={() => navigate("/")}
             >
-              <div className={`p-1.5 sm:p-2 rounded-full shrink-0 ${isDark ? "bg-emerald-800 text-emerald-200" : "bg-emerald-100 text-emerald-700"}`}>
-                <Icon icon="ph:plant-fill" className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7" />
+              <div
+                className={`p-1.5 sm:p-2 rounded-full shrink-0 ${isDark ? "bg-emerald-800 text-emerald-200" : "bg-emerald-100 text-emerald-700"}`}
+              >
+                <Icon
+                  icon="ph:plant-fill"
+                  className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7"
+                />
               </div>
               <div>
-                <p className={`text-sm sm:text-md md:text-xl quantico uppercase tracking-widest text-nowrap ${isDark ? "text-amber-50" : "text-slate-800"}`}>
+                <p
+                  className={`text-sm sm:text-md md:text-xl quantico uppercase tracking-widest text-nowrap ${isDark ? "text-amber-50" : "text-slate-800"}`}
+                >
                   FarmFresh
                 </p>
                 <p className="hidden sm:block uppercase text-xs tracking-widest text-emerald-500 font-thin quantico">
@@ -104,8 +114,8 @@ const Navbar = () => {
                         ? "font-semibold text-emerald-300 bg-emerald-900/40"
                         : "font-semibold text-emerald-700 bg-emerald-100/70"
                       : isDark
-                      ? "text-gray-300 hover:text-white hover:bg-emerald-900/25"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-emerald-100/50"
+                        ? "text-gray-300 hover:text-white hover:bg-emerald-900/25"
+                        : "text-slate-800 hover:text-black hover:bg-emerald-100/50"
                   }`}
                 >
                   {link.label}
@@ -144,50 +154,92 @@ const Navbar = () => {
 
         <AnimatePresence>
           {isMobileMenuOpen && (
-            <motion.nav
-              initial={{ opacity: 0, y: "-100%" }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: "-100%" }}
-              transition={{ duration: 0.3 }}
-              className={`lg:hidden py-4 border-t border-b z-20 relative ${
-                isDark
-                  ? "text-white bg-[#001f10]/71 backdrop-blur-xl shadow-[#00180e] shadow-2xl border-[#2a3b30]"
-                  : "text-slate-800 bg-white/90 backdrop-blur-xl shadow-emerald-900/10 shadow-2xl border-emerald-200"
-              }`}
-            >
-              <div className="flex flex-col gap-4 mx-4 py-5 px-3">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`px-4 py-3 rounded-lg text-base font-medium transition-all ${
-                      location.pathname === link.path
-                        ? isDark
-                          ? "bg-green-600/62 text-white"
-                          : "bg-emerald-100 text-emerald-800"
-                        : isDark
-                        ? "border-b border-green-600/43 hover:bg-green-600/16"
-                        : "border-b border-emerald-200 hover:bg-emerald-50"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+            <>
+              {/* Dark backdrop overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="fixed inset-0 top-16 bg-slate-950/40 backdrop-blur-xs z-10"
+              />
 
-                <div className={`flex flex-col gap-3 pt-3 mt-1 border-t ${isDark ? "border-green-600/43" : "border-emerald-200"}`}>
-                  <LoginButton isDark={isDark} full />
-                  <SignupButton isDark={isDark} full />
+              {/* Floating Glassmorphic Menu */}
+              <motion.nav
+                initial={{ opacity: 0, scale: 0.95, y: -15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -15 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className={`absolute left-4 right-4 top-18 rounded-3xl border p-5 z-20 shadow-2xl ${
+                  isDark
+                    ? "bg-slate-900/90 backdrop-blur-xl border-slate-800/80 shadow-black/60"
+                    : "bg-white/95 backdrop-blur-xl border-slate-200/80 shadow-slate-200/50"
+                }`}
+              >
+                <div className="flex flex-col gap-3">
+                  {/* Staggered Links */}
+                  {navLinks.map((link, idx) => {
+                    const isActive = location.pathname === link.path;
+                    const getIcon = (path) => {
+                      if (path === "/") return "ph:house-fill";
+                      if (path === "/about") return "ph:info-fill";
+                      if (path === "/features") return "ph:sparkle-fill";
+                      if (path === "/contact") return "ph:envelope-fill";
+                      return "ph:link-bold";
+                    };
+
+                    return (
+                      <motion.div
+                        key={link.path}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                      >
+                        <Link
+                          to={link.path}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold transition-all ${
+                            isActive
+                              ? isDark
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                              : isDark
+                                ? "text-slate-300 hover:bg-slate-800/50 border border-transparent"
+                                : "text-slate-600 hover:bg-slate-50 border border-transparent"
+                          }`}
+                        >
+                          <Icon
+                            icon={getIcon(link.path)}
+                            className={`w-5 h-5 ${isActive ? "text-emerald-400" : isDark ? "text-slate-500" : "text-slate-400"}`}
+                          />
+                          {link.label}
+                        </Link>
+                      </motion.div>
+                    );
+                  })}
+
+                  {/* Divider */}
+                  <div
+                    className={`h-px my-2 ${isDark ? "bg-slate-800" : "bg-slate-100"}`}
+                  />
+
+                  {/* Auth Buttons */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: navLinks.length * 0.05 }}
+                    className="flex flex-col gap-2.5"
+                  >
+                    <LoginButton isDark={isDark} full />
+                    <SignupButton isDark={isDark} full />
+                  </motion.div>
                 </div>
-              </div>
-            </motion.nav>
+              </motion.nav>
+            </>
           )}
         </AnimatePresence>
       </div>
-      <div
-        className="w-full h-full"
-        onClick={() => setIsMobileMenuOpen(false)}
-      ></div>
     </div>
   );
 };

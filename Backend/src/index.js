@@ -7,6 +7,7 @@ import seedCrops from "./scripts/seedData.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import collectiveRoutes from "./routes/collective.routes.js";
+import commonRoutes from "./routes/common.routes.js";
 
 await dbConnect();
 await seedCounters();
@@ -28,6 +29,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user/collective", collectiveRoutes);
+app.use("/api/data", commonRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "FarmFresh backend is running" });
