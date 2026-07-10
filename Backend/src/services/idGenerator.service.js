@@ -1,7 +1,7 @@
 import Counter from "../models/counter.model.js";
 import idConfig from "../config/idConfig.js";
 
-const generateId = async (type) => {
+const generateId = async (type, session) => {
   const { prefix } = idConfig[type];
 
   const counter = await Counter.findOneAndUpdate(
@@ -9,6 +9,7 @@ const generateId = async (type) => {
     { $inc: { sequence: 1 } },
     {
       returnDocument: "after",
+      ...(session ? { session } : {}),
     },
   );
 

@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 const verifyToken = (req, res, next) => {
   let token;
@@ -7,9 +7,10 @@ const verifyToken = (req, res, next) => {
     token = authHeader.split(" ")[1];
 
     if (!token) {
-      return res
-        .status(401)
-        .json({ message: "Unauthorized Access !!" });
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized Access !!",
+      });
     }
 
     try {
@@ -18,12 +19,13 @@ const verifyToken = (req, res, next) => {
       console.log("The decoded user is : ", req.user);
       next();
     } catch (error) {
-      res.status(400).json({ message: "Invalid access token !!" });
+      res.status(400).json({
+        success: false,
+        message: "Invalid or expired access token !!",
+      });
     }
   } else {
-    return res
-      .status(401)
-      .json({ message: "Unauthorized Access !!" });
+    return res.status(401).json({ message: "Unauthorized Access !!" });
   }
 };
 

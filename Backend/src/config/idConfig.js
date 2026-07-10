@@ -9,7 +9,7 @@ const idConfig = {
     start: 100000
   },
 
-  farmer: {
+  farmergroup: {
     prefix: "FG",
     start: 200000
   },

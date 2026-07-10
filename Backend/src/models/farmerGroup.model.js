@@ -5,38 +5,13 @@ const farmerGroupSchema = new mongoose.Schema(
     _id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
-      unique: true,
-    },
-    fid: {
-      type: String,
-      required: true,
-      unique: true,
+      auto: false,
     },
     name: {
       type: String,
       required: true,
       trim: true,
       maxlength: 100,
-    },
-    desc: {
-      type: String,
-      trim: true,
-      maxlength: 1000,
-    },
-    farmerCount: {
-      type: Number,
-      default: 1,
-    },
-    leadfarmer: {
-      type: String,
-      required: true,
-      trim: true,
-      lowercase: true,
-    },
-    profile: {
-      type: String,
-      default: "",
     },
     email: {
       type: String,
@@ -51,16 +26,36 @@ const farmerGroupSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    profile: {
+      type: String,
+      default: "",
+    },
+    desc: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+      default: "",
+    },
+    farmerCount: {
+      type: Number,
+      default: 1,
+    },
+    leadFarmer: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
     address: {
-      area: {
-        type: String,
-        trim: true,
-      },
       village: {
         type: String,
         trim: true,
       },
-      district: {
+      area: {
+        type: String,
+        trim: true,
+      },
+      city: {
         type: String,
         trim: true,
       },
@@ -86,10 +81,6 @@ const farmerGroupSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-
-farmerGroupSchema.index({ fid: 1 }, { unique: true });
-farmerGroupSchema.index({ email: 1 }, { unique: true });
-farmerGroupSchema.index({ phone: 1 }, { unique: true });
 
 const FarmerGroup = mongoose.model("FarmerGroup", farmerGroupSchema);
 export default FarmerGroup;

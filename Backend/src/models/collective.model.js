@@ -1,89 +1,83 @@
 import mongoose from "mongoose";
 
-const collectiveSchema = new mongoose.Schema({
-  _id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-    unique: true
-  },
-  cid: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 100
-  },
-  desc: {
-    type: String,
-    trim: true,
-    maxlength: 1000,
-  },
-  email: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true,
-    unique: true
-  },
-  phone: {
-    type: String,
-    required: true,
-    trim: true,
-    unique: true
-  },
-  profile: {
-    type: String,
-    default: "",
-  },
-  address: {
-    area: {
-      type: String,
-      trim: true
+const collectiveSchema = new mongoose.Schema(
+  {
+    _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      auto: false,
     },
-    city: {
+    name: {
       type: String,
-      trim: true
+      required: true,
+      trim: true,
+      maxlength: 100,
     },
-    state: {
+    email: {
       type: String,
-      trim: true
+      required: true,
+      trim: true,
+      lowercase: true,
+      unique: true,
     },
-    pincode: {
+    phone: {
       type: String,
-      trim: true
-    }
-  },
-  coord: {
-    lat: {
+      required: true,
+      trim: true,
+      unique: true,
+    },
+    profile: {
+      type: String,
+      default: "",
+    },
+    desc: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+      default: "",
+    },
+    workers: {
       type: Number,
-      trim: true
+      default: 0,
+      min: 0,
     },
-    long: {
+    address: {
+      area: {
+        type: String,
+        trim: true,
+      },
+      city: {
+        type: String,
+        trim: true,
+      },
+      state: {
+        type: String,
+        trim: true,
+      },
+      pinCode: {
+        type: String,
+        trim: true,
+      },
+    },
+    coord: {
+      lat: {
+        type: Number,
+        trim: true,
+      },
+      long: {
+        type: Number,
+        trim: true,
+      },
+    },
+    ratingAvg: {
       type: Number,
-      trim: true
-    }
+      default: 0,
+      min: 0,
+      max: 5,
+    },
   },
-  ratingAvg: {
-    type: Number,
-    default: 0,
-    min: 0,
-    max: 5,
-  },
-
-  workers: {
-    type: Number,
-    default: 0,
-    min: 0,
-  },
-}, { timestamps: true })
-
-collectiveSchema.index({ email: 1 }, { unique: true });
-collectiveSchema.index({ phone: 1 }, { unique: true });
+  { timestamps: true },
+);
 
 const Collective = mongoose.model("Collective", collectiveSchema);
 

@@ -15,13 +15,6 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       minlength: 4,
     },
-    phone: {
-      type: String,
-      required: [true, "Phone is required"],
-      unique: true,
-      trim: true,
-      minLength: 10,
-    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -30,7 +23,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["COLLECTIVE", "FARMER", "ADMIN"],
+      enum: ["COLLECTIVE", "FARMER_GROUP", "ADMIN"],
     },
     isActive: {
       type: Boolean,

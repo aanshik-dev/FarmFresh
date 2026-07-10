@@ -33,7 +33,7 @@ const SlideToggle = ({
       {/* Sliding pill — positioned absolutely, uses left% instead of translateX */}
       {activeIndex >= 0 && (
         <motion.div
-          className="absolute top-1 bottom-1 rounded-lg bg-linear-to-r from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20 pointer-events-none"
+          className="absolute top-1 bottom-1 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20 pointer-events-none"
           style={{ width: `calc(${pillWidthPercent}% - 4px)` }}
           animate={{ left: `calc(${activeIndex * pillWidthPercent}% + 4px)` }}
           initial={false}

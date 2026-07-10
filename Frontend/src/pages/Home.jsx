@@ -246,7 +246,7 @@ const Home = () => {
           >
             <button
               onClick={() => navigate("/register")}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
             >
               <Icon icon="ph:plant-fill" className="w-5 h-5" />
               Join as Farmer Group
@@ -390,7 +390,7 @@ const Home = () => {
                 }`}
               >
                 <div
-                  className={`w-11 h-11 rounded-xl mb-4 flex items-center justify-center bg-linear-to-br ${f.color} shadow-lg`}
+                  className={`w-11 h-11 rounded-xl mb-4 flex items-center justify-center bg-gradient-to-br ${f.color} shadow-lg`}
                 >
                   <Icon icon={f.icon} className="w-5 h-5 text-white" />
                 </div>
@@ -446,7 +446,7 @@ const Home = () => {
                   onClick={() => setStepsTab(t.id)}
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                     stepsTab === t.id
-                      ? "bg-linear-to-r from-emerald-500 to-emerald-600 text-white shadow"
+                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow"
                       : isDark
                         ? "text-slate-400 hover:text-white"
                         : "text-slate-500 hover:text-slate-800"
@@ -470,7 +470,7 @@ const Home = () => {
               >
                 <div className="flex items-center gap-3 mb-4">
                   <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center bg-linear-to-br ${stepsTab === "farmer" ? "from-emerald-500 to-teal-600" : "from-blue-500 to-indigo-600"} shadow-lg`}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br ${stepsTab === "farmer" ? "from-emerald-500 to-teal-600" : "from-blue-500 to-indigo-600"} shadow-lg`}
                   >
                     <Icon icon={step.icon} className="w-5 h-5 text-white" />
                   </div>
@@ -595,7 +595,7 @@ const Home = () => {
           <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={() => navigate("/register")}
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-semibold shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
             >
               <Icon icon="ph:plant-fill" className="w-5 h-5" />
               Get Started Free

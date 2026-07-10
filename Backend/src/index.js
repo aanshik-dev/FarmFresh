@@ -1,16 +1,16 @@
 import express from "express";
 import cors from "cors";
-import "dotenv/config"
+import "dotenv/config";
 import dbConnect from "./config/dbConnect.js";
-// dotenv.config();
-dbConnect();
-
 import seedCounters from "./scripts/seedCounters.js";
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
+import seedCrops from "./scripts/seedData.js";
 
-seedCounters();
+import authRoutes from "./routes/auth.routes.js";
+import collectiveRoutes from "./routes/collective.routes.js";
+
+await dbConnect();
+await seedCounters();
+await seedCrops();
 
 const app = express();
 
@@ -27,8 +27,8 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/user/collective", collectiveRoutes);
+
 app.get("/", (req, res) => {
   res.json({ message: "FarmFresh backend is running" });
 });
@@ -37,9 +37,14 @@ app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
+// Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: "Internal server error" });
+  console.error(err);
+
+  res.status(err.statusCode || 500).json({
+    success: err.success ?? false,
+    message: err.message || "Internal server error",
+  });
 });
 
 // Server

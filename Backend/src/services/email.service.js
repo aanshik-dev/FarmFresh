@@ -2,7 +2,7 @@ import path from "path";
 import transporter from "../config/mail.js";
 import loadTemplate from "../utils/templateEngine.js";
 
-const sendVerificationMail = async ({ name, email, otp }) => {
+const sendVerificationMail = async ({ name, email, otp, goal }) => {
   const otpDigitsHTML = otp
     .toString()
     .split("")
@@ -12,22 +12,30 @@ const sendVerificationMail = async ({ name, email, otp }) => {
     )
     .join("");
 
+  let templateName = "verifyEmail.html";
+  let subject = `FarmFresh | Verify your email with OTP: ${otp}`;
+
+  if (goal === "FORGOT_PASS") {
+    templateName = "forgotPassword.html";
+    subject = `FarmFresh | Reset your password with OTP: ${otp}`;
+  }
+
   const html = loadTemplate(
-    path.join(process.cwd(), "src/templates/verifyEmail.html"),
+    path.join(process.cwd(), "src/templates", templateName),
     {
       name,
       email,
       otp_digits: otpDigitsHTML,
       otp,
       supportEmail: "farmfresh.admin@gmail.com",
-      otpExpiry: 10,
+      otpExpiry: 20,
     },
   );
 
   await transporter.sendMail({
     from: `"FarmFresh" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: `FarmFresh | Verify your email with OTP: ${otp}`,
+    subject,
     html,
   });
 };
