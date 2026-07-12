@@ -3,7 +3,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const loginUser = async (email, password, role) => {
-  const user = await User.findOne({ username: email });
+  const user = await User.findOne({ username: email }).select("+password");
+  console.log(user);
   if (!user) {
     const err = new Error("No user registered with this email !!");
     err.statusCode = 401;

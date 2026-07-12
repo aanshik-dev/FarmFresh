@@ -3,6 +3,8 @@ import register from "../services/auth/register.service.js";
 import login from "../services/auth/login.service.js";
 import refreshAccessToken from "../services/auth/refresh.service.js";
 
+// export default { forgotOtpVerify };
+
 const verifyEmail = async (req, res) => {
   try {
     const response = await otp.registerOtp(req.body);
@@ -31,6 +33,7 @@ const forgotPassword = async (req, res) => {
   }
 };
 
+
 const registerUser = async (req, res, next) => {
   try {
     const response = await register(req.body, req.file);
@@ -42,7 +45,8 @@ const registerUser = async (req, res, next) => {
 
 const loginUser = async (req, res, next) => {
   try {
-    const result = await login(req.body);
+    const { email, password, role } = req.body;
+    const result = await login(email, password, role);
     res.status(200).json(result);
   } catch (err) {
     next(err);

@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/ui";
 import SlideToggle from "../components/common/SlideToggle";
+import { forgotPasswordOtp } from "../services/auth.service";
 
 const ROLE_OPTIONS = [
   { value: "FARMER_GROUP", label: "Farmer Group", icon: "ph:plant-fill" },
@@ -29,18 +30,18 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [Remember, setRemember] = useState(false);
+
+  // Forgot-password panel state
+  const [showForgotPanel, setShowForgotPanel] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const loggedInUser = await login(
-        email,
-        password,
-        email === "admin@farmfresh.com" ? undefined : role,
-      );
+      const loggedInUser = await login(email, password, role);
       toast.success("Welcome back to FarmFresh!", { title: "Logged in" });
       const userRole = loggedInUser?.role;
       if (userRole === "FARMER_GROUP") navigate("/dashboard/farmer/overview");
@@ -49,9 +50,38 @@ const Login = () => {
       else if (userRole === "ADMIN") navigate("/dashboard/admin/overview");
       else navigate("/");
     } catch (err) {
-      toast.error(err.message || "Login failed.", { title: "Error" });
+      toast.error(
+        err?.response?.data?.message || err.message || "Login failed.",
+        { title: "Error" },
+      );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      await forgotPasswordOtp(forgotEmail.trim());
+      toast.success(
+        "OTP sent to your email. Check your inbox and spam folder.",
+        { title: "OTP Sent", duration: 8000 },
+      );
+      setShowForgotPanel(false);
+      setForgotEmail("");
+      // TODO: Once backend /auth/reset-password endpoint is ready,
+      // open an OTP + new-password form here to complete the reset flow.
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message || err.message || "Failed to send OTP.",
+      );
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -288,15 +318,93 @@ const Login = () => {
                 className="accent-emerald-400 border-emerald-400 cursor-pointer"
                 type="checkbox"
                 checked={Remember}
-                onClick={() => setRemember(!Remember)}
+                onChange={() => setRemember(!Remember)}
               />
               Remember me
             </label>
 
-            <div className="cursor-pointer text-emerald-400" onClick={() => {}}>
+            <button
+              type="button"
+              onClick={() => setShowForgotPanel((p) => !p)}
+              className="text-emerald-400 hover:text-emerald-300 transition-colors text-sm cursor-pointer"
+            >
               Forgot password?
-            </div>
+            </button>
           </div>
+
+          {/* Forgot-password inline panel */}
+          <AnimatePresence>
+            {showForgotPanel && (
+              <motion.form
+                key="forgot"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handleForgotPassword}
+                className={`overflow-hidden rounded-xl border px-4 py-4 space-y-3 ${
+                  isDark
+                    ? "bg-slate-900 border-slate-700"
+                    : "bg-slate-50 border-slate-200"
+                }`}
+              >
+                <p
+                  className={`text-sm font-semibold ${
+                    isDark ? "text-slate-200" : "text-slate-800"
+                  }`}
+                >
+                  Reset your password
+                </p>
+                <p
+                  className={`text-xs ${
+                    isDark ? "text-slate-400" : "text-slate-500"
+                  }`}
+                >
+                  Enter your registered email and we&apos;ll send you an OTP.
+                </p>
+                <div className="relative">
+                  <Icon
+                    icon="ph:envelope-fill"
+                    className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                      isDark ? "text-slate-500" : "text-slate-400"
+                    }`}
+                  />
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                    className={`w-full rounded-xl border text-sm pl-10 pr-4 py-2.5 outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+                      isDark
+                        ? "bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-600"
+                        : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
+                    }`}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {forgotLoading ? (
+                    <>
+                      <Icon
+                        icon="svg-spinners:ring-resize"
+                        className="w-4 h-4"
+                      />
+                      Sending OTP…
+                    </>
+                  ) : (
+                    <>
+                      <Icon icon="ph:paper-plane-fill" className="w-4 h-4" />
+                      Send OTP
+                    </>
+                  )}
+                </button>
+              </motion.form>
+            )}
+          </AnimatePresence>
 
           <p
             className={`text-center text-sm mt-5 ${isDark ? "text-slate-400" : "text-slate-500"}`}

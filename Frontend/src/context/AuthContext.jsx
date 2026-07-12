@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
+import { login as loginService } from "../services/auth.service";
 
 const AuthContext = createContext(null);
 
@@ -13,24 +14,33 @@ export const AuthProvider = ({ children }) => {
   });
 
   const login = useCallback(async (email, password, role) => {
-    // TODO: call login service, store user in localStorage and state
+    const data = await loginService(email, password, role);
+
+    const { accessToken, refreshToken, user: userData } = data;
+
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    setUser(userData);
+    return userData;
   }, []);
 
   const logout = useCallback(() => {
-    // TODO: call logout service, clear localStorage and user state
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
     setUser(null);
   }, []);
 
   const updateUser = useCallback(
     (data) => {
-      // TODO: call update-user service and sync to localStorage/state
       const updated = { ...user, ...data };
       localStorage.setItem("user", JSON.stringify(updated));
       setUser(updated);
       return updated;
     },
-    [user]
+    [user],
   );
 
   return (
