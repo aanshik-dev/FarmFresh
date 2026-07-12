@@ -1,0 +1,164 @@
+{
+  "info": {
+    "_postman_id": "c1f8a846-5b4d-4e92-91f1-3ab1c0989b5c",
+    "name": "W6_AuthAPICollection_FarmFresh",
+    "description": "Postman Collection for Week 6 Deliverables testing Auth endpoints including Rate Limiting, Validation, and Protected routes.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "email", "value": "testuser@example.com", "type": "text" },
+                { "key": "password", "value": "password123", "type": "text" },
+                { "key": "role", "value": "FARMER_GROUP", "type": "text" },
+                { "key": "name", "value": "Test Farmer Group", "type": "text" },
+                { "key": "phone", "value": "9998887776", "type": "text" },
+                { "key": "state", "value": "Test State", "type": "text" },
+                { "key": "city", "value": "Test City", "type": "text" },
+                { "key": "area", "value": "Test Area", "type": "text" },
+                { "key": "village", "value": "Test Village", "type": "text" },
+                { "key": "pinCode", "value": "123456", "type": "text" },
+                { "key": "lat", "value": "20.00", "type": "text" },
+                { "key": "long", "value": "80.00", "type": "text" },
+                { "key": "otp", "value": "123456", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.environment.set(\"jwt_token\", jsonData.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"FARMER_GROUP\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refreshToken\": \"paste_refresh_token_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Protected Routes",
+      "item": [
+        {
+          "name": "Get User Collective Dashboard",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/user/collective/overview",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "user", "collective", "overview"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Common Data (Crops)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/data/crops",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "data", "crops"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:6000",
+      "type": "string"
+    }
+  ]
+}

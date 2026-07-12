@@ -26,8 +26,8 @@ const Login = () => {
   const navigate = useNavigate();
 
   const [role, setRole] = useState("FARMER_GROUP");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("aanshiksingh@gmail.com");
+  const [password, setPassword] = useState("password");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [Remember, setRemember] = useState(false);
@@ -310,8 +310,36 @@ const Login = () => {
             </button>
           </form>
 
+          {/* Social Login Separator */}
+          <div className="flex items-center my-6">
+            <div
+              className={`flex-grow border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}
+            ></div>
+            <span
+              className={`px-3 text-xs uppercase ${isDark ? "text-slate-500" : "text-slate-400"}`}
+            >
+              Or continue with
+            </span>
+            <div
+              className={`flex-grow border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}
+            ></div>
+          </div>
+
+          {/* Google Login Button */}
+          <a
+            href={`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`}
+            className={`w-full py-2.5 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              isDark
+                ? "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200"
+                : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+            }`}
+          >
+            <Icon icon="logos:google-icon" className="w-4 h-4" />
+            Sign in with Google
+          </a>
+
           <div
-            className={`flex justify-between py-3 ${isDark ? "text-slate-300" : "text-slate-600"}`}
+            className={`flex justify-between py-3 mt-4 ${isDark ? "text-slate-300" : "text-slate-600"}`}
           >
             <label className="flex items-center gap-2 cursor-pointer">
               <input

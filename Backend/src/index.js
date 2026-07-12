@@ -26,6 +26,9 @@ app.use(
 // Middlewares
 app.use(express.json());
 
+import passport from "./config/passport.js";
+app.use(passport.initialize());
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user/collective", collectiveRoutes);

@@ -17,6 +17,7 @@ import Features from "./pages/Features";
 import Contacts from "./pages/Contacts";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import OAuthCallback from "./pages/OAuthCallback";
 
 // Farmer pages
 import FarmerDashboard from "./pages/farmer/FarmerDashboard";
@@ -120,6 +121,7 @@ function App() {
                     </GuestRoute>
                   }
                 />
+                <Route path="/oauth/callback" element={<OAuthCallback />} />
               </Route>
 
               {/* ── Authenticated shell ── */}

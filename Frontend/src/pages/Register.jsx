@@ -57,7 +57,7 @@ const Register = () => {
   const [collectiveName, setCollectiveName] = useState("Aanshik's Collective");
   const [workers, setWorkers] = useState("50");
 
-  const refs = {
+  const inputRefs = {
     groupName: useRef(null),
     leadFarmerName: useRef(null),
     numberOfFarmers: useRef(null),
@@ -598,7 +598,7 @@ const Register = () => {
                         error={formErrors.groupName}
                       >
                         <input
-                          ref={refs.groupName}
+                          ref={inputRefs.groupName}
                           className={`${ic} ${formErrors.groupName ? "border-red-500" : ""}`}
                           placeholder="e.g. Triyuginarayan Organic Pulse Pioneers"
                           value={groupName}
@@ -614,7 +614,7 @@ const Register = () => {
                         error={formErrors.leadFarmerName}
                       >
                         <input
-                          ref={refs.leadFarmerName}
+                          ref={inputRefs.leadFarmerName}
                           className={`${ic} ${formErrors.leadFarmerName ? "border-red-500" : ""}`}
                           placeholder="Your full name"
                           value={leadFarmerName}
@@ -630,7 +630,7 @@ const Register = () => {
                         error={formErrors.numberOfFarmers}
                       >
                         <input
-                          ref={refs.numberOfFarmers}
+                          ref={inputRefs.numberOfFarmers}
                           className={`${ic} ${formErrors.numberOfFarmers ? "border-red-500" : ""}`}
                           type="number"
                           min="1"
@@ -660,7 +660,7 @@ const Register = () => {
                         error={formErrors.collectiveName}
                       >
                         <input
-                          ref={refs.collectiveName}
+                          ref={inputRefs.collectiveName}
                           className={`${ic} ${formErrors.collectiveName ? "border-red-500" : ""}`}
                           placeholder="e.g. Mandakini Organic Collective"
                           value={collectiveName}
@@ -686,7 +686,7 @@ const Register = () => {
 
                 <Field label="Phone" required error={formErrors.phone}>
                   <input
-                    ref={refs.phone}
+                    ref={inputRefs.phone}
                     className={`${ic} ${formErrors.phone ? "border-red-500" : ""}`}
                     type="tel"
                     placeholder="10-digit mobile number"
@@ -697,7 +697,7 @@ const Register = () => {
                 </Field>
                 <Field label="Email" required error={formErrors.email}>
                   <input
-                    ref={refs.email}
+                    ref={inputRefs.email}
                     className={`${ic} ${formErrors.email ? "border-red-500" : ""}`}
                     type="email"
                     placeholder="you@example.in"
@@ -709,7 +709,7 @@ const Register = () => {
                 <Field label="Password" required error={formErrors.password}>
                   <div className="relative">
                     <input
-                      ref={refs.password}
+                      ref={inputRefs.password}
                       className={`${ic} pr-10 ${formErrors.password ? "border-red-500" : ""}`}
                       type={showPass ? "text" : "password"}
                       placeholder="Min. 8 characters"
@@ -738,7 +738,7 @@ const Register = () => {
                   error={formErrors.confirm}
                 >
                   <input
-                    ref={refs.confirm}
+                    ref={inputRefs.confirm}
                     className={`${ic} ${formErrors.confirm ? "border-red-500 focus:border-red-500 focus:ring-red-500/40" : ""}`}
                     type="password"
                     placeholder="Re-enter password"
@@ -841,7 +841,7 @@ const Register = () => {
                   error={formErrors.village}
                 >
                   <input
-                    ref={refs.village}
+                    ref={inputRefs.village}
                     className={`${ic} ${formErrors.village ? "border-red-500" : ""}`}
                     placeholder="e.g. Triyuginarayan"
                     value={village}
@@ -853,7 +853,7 @@ const Register = () => {
                 </Field>
                 <Field label="District" required error={formErrors.district}>
                   <input
-                    ref={refs.district}
+                    ref={inputRefs.district}
                     className={`${ic} ${formErrors.district ? "border-red-500" : ""}`}
                     placeholder="e.g. Rudraprayag"
                     value={district}
@@ -865,7 +865,7 @@ const Register = () => {
                 </Field>
                 <Field label="State" required error={formErrors.state}>
                   <input
-                    ref={refs.state}
+                    ref={inputRefs.state}
                     className={`${ic} ${formErrors.state ? "border-red-500" : ""}`}
                     placeholder="e.g. Uttarakhand"
                     value={state}
@@ -875,7 +875,7 @@ const Register = () => {
                 </Field>
                 <Field label="Pincode" required error={formErrors.pincode}>
                   <input
-                    ref={refs.pincode}
+                    ref={inputRefs.pincode}
                     className={`${ic} ${formErrors.pincode ? "border-red-500" : ""}`}
                     placeholder="246444"
                     value={pincode}
@@ -887,7 +887,7 @@ const Register = () => {
                 </Field>
                 <Field label="Latitude" required error={formErrors.lat}>
                   <input
-                    ref={refs.lat}
+                    ref={inputRefs.lat}
                     className={`${ic} ${formErrors.lat ? "border-red-500" : ""}`}
                     placeholder="30.7333"
                     value={lat}
@@ -897,7 +897,7 @@ const Register = () => {
                 </Field>
                 <Field label="Longitude" required error={formErrors.lng}>
                   <input
-                    ref={refs.lng}
+                    ref={inputRefs.lng}
                     className={`${ic} ${formErrors.lng ? "border-red-500" : ""}`}
                     placeholder="79.0667"
                     value={lng}
