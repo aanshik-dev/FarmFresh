@@ -13,27 +13,18 @@ export const AuthProvider = ({ children }) => {
   });
 
   const login = useCallback(async (email, password, role) => {
-    await new Promise((r) => setTimeout(r, 900));
-    const mockUser = MOCK_USERS[email.toLowerCase()];
-    if (!mockUser) throw new Error("No account found with this email.");
-    if (password !== "password") throw new Error("Invalid password. (hint: use 'password')");
-    if (role && mockUser.role !== role) {
-      throw new Error(
-        `This account is registered as ${mockUser.role === "FARMER_GROUP" ? "Farmer Group" : "Collective"}, not ${role === "FARMER_GROUP" ? "Farmer Group" : "Collective"}.`
-      );
-    }
-    localStorage.setItem("user", JSON.stringify(mockUser));
-    setUser(mockUser);
-    return mockUser;
+    // TODO: call login service, store user in localStorage and state
   }, []);
 
   const logout = useCallback(() => {
+    // TODO: call logout service, clear localStorage and user state
     localStorage.removeItem("user");
     setUser(null);
   }, []);
 
   const updateUser = useCallback(
     (data) => {
+      // TODO: call update-user service and sync to localStorage/state
       const updated = { ...user, ...data };
       localStorage.setItem("user", JSON.stringify(updated));
       setUser(updated);
@@ -41,28 +32,6 @@ export const AuthProvider = ({ children }) => {
     },
     [user]
   );
-
-  const register = useCallback(async (formData, role) => {
-    // Simulate API delay for registration
-    await new Promise((r) => setTimeout(r, 800));
-    // Mock: always succeeds
-    return { success: true };
-  }, []);
-
-  const sendOTP = useCallback(async (phone) => {
-    await new Promise((r) => setTimeout(r, 600));
-    // Mock OTP is always 123456
-    return { success: true, mockOtp: "123456" };
-  }, []);
-
-  const verifyOTP = useCallback(async (phone, otp) => {
-    await new Promise((r) => setTimeout(r, 400));
-    return otp === "123456";
-  }, []);
-
-  const markProfileComplete = useCallback(() => {
-    updateUser({ isProfileComplete: true });
-  }, [updateUser]);
 
   return (
     <AuthContext.Provider
@@ -73,10 +42,6 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         updateUser,
-        register,
-        sendOTP,
-        verifyOTP,
-        markProfileComplete,
       }}
     >
       {children}

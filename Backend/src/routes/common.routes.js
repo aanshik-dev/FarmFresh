@@ -1,4 +1,4 @@
-import express from express
+import express from "express";
 import getAllCrops from "../controllers/common.controller.js";
 
 const router = express.Router();

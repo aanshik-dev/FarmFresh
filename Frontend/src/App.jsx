@@ -52,17 +52,16 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import ProfilePage from "./pages/common/ProfilePage";
 import SettingsPage from "./pages/common/SettingsPage";
 
-// ──────────────────────────────────────────────────
-// Route guards
-// ──────────────────────────────────────────────────
-
 /** Redirect logged-in users away from auth pages */
 const GuestRoute = ({ children }) => {
   const { isAuthenticated, role } = useAuth();
   if (!isAuthenticated) return children;
-  if (role === "FARMER_GROUP") return <Navigate to="/dashboard/farmer/overview" replace />;
-  if (role === "COLLECTIVE") return <Navigate to="/dashboard/collective/overview" replace />;
-  if (role === "ADMIN") return <Navigate to="/dashboard/admin/overview" replace />;
+  if (role === "FARMER_GROUP")
+    return <Navigate to="/dashboard/farmer/overview" replace />;
+  if (role === "COLLECTIVE")
+    return <Navigate to="/dashboard/collective/overview" replace />;
+  if (role === "ADMIN")
+    return <Navigate to="/dashboard/admin/overview" replace />;
   return children;
 };
 
@@ -70,7 +69,8 @@ const GuestRoute = ({ children }) => {
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, role } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/" replace />;
+  if (allowedRoles && !allowedRoles.includes(role))
+    return <Navigate to="/" replace />;
   return children;
 };
 
@@ -104,8 +104,22 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/features" element={<Features />} />
                 <Route path="/contact" element={<Contacts />} />
-                <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
-                <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+                <Route
+                  path="/login"
+                  element={
+                    <GuestRoute>
+                      <Login />
+                    </GuestRoute>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <GuestRoute>
+                      <Register />
+                    </GuestRoute>
+                  }
+                />
               </Route>
 
               {/* ── Authenticated shell ── */}
@@ -120,103 +134,199 @@ function App() {
                 {/* ── Farmer Group routes ── */}
                 <Route
                   path="farmer/overview"
-                  element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><FarmerDashboard /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
+                      <FarmerDashboard />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="farmer/profile"
-                  element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><FarmerProfile /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
+                      <FarmerProfile />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="farmer/crops"
-                  element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><CropManagement /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
+                      <CropManagement />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="farmer/collectives"
-                  element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><CollectiveBrowse /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
+                      <CollectiveBrowse />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="farmer/schedules"
-                  element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><FarmerSchedules /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
+                      <FarmerSchedules />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="farmer/notifications"
-                  element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><FarmerNotifications /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
+                      <FarmerNotifications />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="farmer/settings"
-                  element={<ProtectedRoute allowedRoles={["FARMER_GROUP"]}><FarmerSettings /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
+                      <FarmerSettings />
+                    </ProtectedRoute>
+                  }
                 />
 
                 {/* ── Collective routes ── */}
                 <Route
                   path="collective/overview"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><CollectiveDashboard /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <CollectiveDashboard />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/profile"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><CollectiveProfile /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <CollectiveProfile />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/farmers"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><FarmerGroupManagement /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <FarmerGroupManagement />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/crops"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><CropInventory /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <CropInventory />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/drivers"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><DriverManagement /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <DriverManagement />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/zones"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><ZoneManagement /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <ZoneManagement />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/schedules"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><PickupScheduler /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <PickupScheduler />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/history"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><CollectionHistory /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <CollectionHistory />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/announcements"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><Announcements /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <Announcements />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/notifications"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><CollectiveNotifications /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <CollectiveNotifications />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="collective/settings"
-                  element={<ProtectedRoute allowedRoles={["COLLECTIVE"]}><CollectiveSettings /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
+                      <CollectiveSettings />
+                    </ProtectedRoute>
+                  }
                 />
 
                 {/* ── Admin routes ── */}
                 <Route
                   path="admin/overview"
-                  element={<ProtectedRoute allowedRoles={["ADMIN"]}><AdminDashboard /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="admin/users"
-                  element={<ProtectedRoute allowedRoles={["ADMIN"]}><UserManagement /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <UserManagement />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="admin/farmer-groups"
-                  element={<ProtectedRoute allowedRoles={["ADMIN"]}><FarmerGroupAdmin /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <FarmerGroupAdmin />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="admin/collectives"
-                  element={<ProtectedRoute allowedRoles={["ADMIN"]}><CollectiveAdmin /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <CollectiveAdmin />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="admin/issues"
-                  element={<ProtectedRoute allowedRoles={["ADMIN"]}><IssueResolution /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <IssueResolution />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="admin/settings"
-                  element={<ProtectedRoute allowedRoles={["ADMIN"]}><AdminSettings /></ProtectedRoute>}
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <AdminSettings />
+                    </ProtectedRoute>
+                  }
                 />
 
                 {/* Default redirect */}
@@ -235,9 +345,12 @@ function App() {
 
 const DashboardRedirect = () => {
   const { role } = useAuth();
-  if (role === "FARMER_GROUP") return <Navigate to="/dashboard/farmer/overview" replace />;
-  if (role === "COLLECTIVE") return <Navigate to="/dashboard/collective/overview" replace />;
-  if (role === "ADMIN") return <Navigate to="/dashboard/admin/overview" replace />;
+  if (role === "FARMER_GROUP")
+    return <Navigate to="/dashboard/farmer/overview" replace />;
+  if (role === "COLLECTIVE")
+    return <Navigate to="/dashboard/collective/overview" replace />;
+  if (role === "ADMIN")
+    return <Navigate to="/dashboard/admin/overview" replace />;
   return <Navigate to="/login" replace />;
 };
 

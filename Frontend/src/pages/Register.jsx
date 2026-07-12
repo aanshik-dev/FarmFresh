@@ -3,387 +3,91 @@ import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
-import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/ui";
 import SlideToggle from "../components/common/SlideToggle";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
+import { getAllCrops } from "../services/common.service.js";
+import { register, registerOtp } from "../services/auth.service.js";
+import getTime from "../utils/time.js";
 
-// Fix Leaflet default icon paths broken by Vite
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+import MapModal from "../components/common/MapModal";
+import CropTagInput from "../components/common/CropTagInput";
+import { Field, inputCls } from "../components/common/FormFields";
 
 const ROLE_OPTIONS = [
   { value: "FARMER_GROUP", label: "Farmer Group", icon: "ph:plant-fill" },
   { value: "COLLECTIVE", label: "Collective", icon: "ph:buildings-fill" },
 ];
 
-const ALL_CROPS = [
-  "Rajma",
-  "Potato",
-  "Ginger",
-  "Garlic",
-  "Wheat",
-  "Barley",
-  "Peas",
-  "Mustard",
-  "Soyabean",
-  "Buckwheat",
-  "Amaranth",
-  "Lentils",
-  "Maize",
-  "Turmeric",
-  "Onion",
-  "Tomato",
-  "Cabbage",
-  "Spinach",
-  "Radish",
-  "Turnip",
-  "Cauliflower",
-  "Broccoli",
-  "Carrot",
-  "Beetroot",
-  "Coriander",
-  "Fenugreek",
-  "Chilli",
-  "Capsicum",
-  "Pumpkin",
-  "Bottle Gourd",
-  "Ridge Gourd",
-];
-
-// Map click handler component
-function MapClickHandler({ onMapClick }) {
-  useMapEvents({ click: (e) => onMapClick(e.latlng) });
-  return null;
-}
-
-// Field wrapper
-const Field = ({ label, required, children }) => (
-  <div className="space-y-1.5">
-    <label className="block text-sm font-medium text-slate-300">
-      {label} {required && <span className="text-red-400">*</span>}
-    </label>
-    {children}
-  </div>
-);
-
-const inputCls = (isDark) =>
-  `w-full rounded-xl border text-sm px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 transition-all ${
-    isDark
-      ? "bg-slate-900/80 border-slate-700 text-slate-100 placeholder:text-slate-600"
-      : "bg-white border-slate-300 text-slate-900 placeholder:text-slate-400"
-  }`;
-
-// ── Crop Tag Input Component ──────────────────────────────────────────────────
-const CropTagInput = ({ selected, onChange, isDark }) => {
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef(null);
-
-  // Show all unselected crops when focused with no query; filter when typing
-  const suggestions = ALL_CROPS.filter(
-    (c) =>
-      !selected.includes(c) &&
-      (query.trim().length === 0 || c.toLowerCase().includes(query.toLowerCase())),
-  );
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target))
-        setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const addCrop = (crop) => {
-    if (!selected.includes(crop)) onChange([...selected, crop]);
-    setQuery("");
-    setOpen(false);
-  };
-
-  const removeCrop = (crop) => onChange(selected.filter((c) => c !== crop));
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if (suggestions.length > 0) addCrop(suggestions[0]);
-      else if (query.trim()) addCrop(query.trim());
-    }
-    if (e.key === "Escape") setOpen(false);
-  };
-
-  return (
-    <div ref={wrapRef} className="relative space-y-2">
-      {/* Selected tags */}
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selected.map((crop) => (
-            <span
-              key={crop}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border transition-all ${
-                isDark
-                  ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-                  : "bg-emerald-50 border-emerald-300 text-emerald-700"
-              }`}
-            >
-              <Icon icon="ph:plant-fill" className="w-3 h-3" />
-              {crop}
-              <button
-                type="button"
-                onClick={() => removeCrop(crop)}
-                className="ml-0.5 hover:text-red-400 cursor-pointer transition-colors"
-              >
-                <Icon icon="ph:x-bold" className="w-2.5 h-2.5" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Search input */}
-      <div className="relative">
-        <Icon
-          icon="ph:magnifying-glass-fill"
-          className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${
-            isDark ? "text-slate-500" : "text-slate-400"
-          }`}
-        />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type to search crops…"
-          className={`${inputCls(isDark)} pl-9`}
-        />
-      </div>
-
-      {/* Dropdown suggestions */}
-      <AnimatePresence>
-        {open && suggestions.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15 }}
-            className={`absolute z-50 top-full mt-1 w-full rounded-xl border max-h-50 shadow-xl overflow-auto scrollbar-thin ${
-              isDark
-                ? "bg-slate-900 border-slate-700 shadow-black/40"
-                : "bg-white border-slate-200 shadow-slate-200/60"
-            }`}
-          >
-            {suggestions.map((crop, i) => (
-              <button
-                key={crop}
-                type="button"
-                onMouseDown={() => addCrop(crop)}
-                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-left transition-colors cursor-pointer ${
-                  isDark
-                    ? "text-slate-300 hover:bg-slate-800"
-                    : "text-slate-700 hover:bg-slate-50"
-                } ${i !== 0 ? (isDark ? "border-t border-slate-800" : "border-t border-slate-100") : ""}`}
-              >
-                <Icon
-                  icon="ph:plant-fill"
-                  className="w-4 h-4 text-emerald-500 shrink-0"
-                />
-                {crop}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {selected.length === 0 && (
-        <p
-          className={`text-xs ${isDark ? "text-slate-600" : "text-slate-400"}`}
-        >
-          No crops added yet. Search and click to add.
-        </p>
-      )}
-    </div>
-  );
-};
-
-// ── Map Modal ─────────────────────────────────────────────────────────────────
-const MapModal = ({
-  isDark,
-  open,
-  onClose,
-  onConfirm,
-  initialPos,
-  initialCenter,
-}) => {
-  const [tempPos, setTempPos] = useState(initialPos);
-  const [center] = useState(initialCenter || [30.7333, 79.0667]);
-
-  useEffect(() => {
-    setTempPos(initialPos);
-  }, [initialPos, open]);
-
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      {/* Overlay */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2 }}
-        className={`relative z-10 w-full max-w-2xl rounded-2xl border overflow-hidden shadow-2xl ${
-          isDark
-            ? "bg-slate-900 border-slate-700 shadow-black/60"
-            : "bg-white border-slate-200"
-        }`}
-      >
-        {/* Header */}
-        <div
-          className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-slate-700/80" : "border-slate-200"}`}
-        >
-          <div className="flex items-center gap-2.5">
-            <div
-              className={`p-1.5 rounded-lg ${isDark ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-100 text-emerald-600"}`}
-            >
-              <Icon icon="ph:map-trifold-fill" className="w-4 h-4" />
-            </div>
-            <div>
-              <p
-                className={`text-sm font-semibold ${isDark ? "text-white" : "text-slate-900"}`}
-              >
-                Choose Location on Map
-              </p>
-              <p
-                className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}
-              >
-                Click anywhere to pin your location
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`p-1.5 rounded-lg cursor-pointer transition-colors ${isDark ? "text-slate-400 hover:bg-slate-800 hover:text-white" : "text-slate-500 hover:bg-slate-100"}`}
-          >
-            <Icon icon="ph:x-bold" className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Map */}
-        <div className="h-80 relative">
-          <MapContainer
-            center={tempPos ? [tempPos.lat, tempPos.lng] : center}
-            zoom={tempPos ? 13 : 8}
-            className="w-full h-full"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapClickHandler onMapClick={(latlng) => setTempPos(latlng)} />
-            {tempPos && <Marker position={[tempPos.lat, tempPos.lng]} />}
-          </MapContainer>
-
-          {!tempPos && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[999]">
-              <div
-                className={`rounded-xl px-5 py-3 text-center border backdrop-blur-sm ${isDark ? "bg-slate-900/85 border-slate-700" : "bg-white/85 border-slate-200"}`}
-              >
-                <Icon
-                  icon="ph:map-pin-fill"
-                  className="w-7 h-7 text-emerald-400 mx-auto mb-1"
-                />
-                <p
-                  className={`text-xs font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}
-                >
-                  Click the map to pin location
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div
-          className={`flex items-center justify-between px-5 py-3.5 border-t gap-3 ${isDark ? "border-slate-700/80 bg-slate-900/60" : "border-slate-200 bg-slate-50"}`}
-        >
-          <span
-            className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}
-          >
-            {tempPos ? (
-              <>
-                Pinned:{" "}
-                <span className={isDark ? "text-slate-300" : "text-slate-700"}>
-                  {tempPos.lat.toFixed(5)}, {tempPos.lng.toFixed(5)}
-                </span>
-              </>
-            ) : (
-              "No location selected"
-            )}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className={`px-4 py-2 rounded-xl text-sm font-medium border cursor-pointer transition-colors ${isDark ? "border-slate-700 text-slate-400 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-100"}`}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              disabled={!tempPos}
-              onClick={() => {
-                onConfirm(tempPos);
-                onClose();
-              }}
-              className="px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Confirm Location
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
-// ── Main Register Component ───────────────────────────────────────────────────
 const Register = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { register, sendOTP, verifyOTP } = useAuth();
 
+  const [allCrops, setAllCrops] = useState([]);
   const [role, setRole] = useState("FARMER_GROUP");
-  const [step, setStep] = useState("form"); // form | otp
+  const [step, setStep] = useState("form"); // "form" | "otp"
   const [loading, setLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [otp, setOtp] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [mockOtp, setMockOtp] = useState(null);
   const [locLoading, setLocLoading] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
-  // Reset form when switching roles
+  const [email, setEmail] = useState("aanshiksinghtomar@gmail.com");
+  const [phone, setPhone] = useState("8822665588");
+  const [password, setPassword] = useState("password");
+  const [confirm, setConfirm] = useState("password");
+  const [photo, setPhoto] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
+
+  const [village, setVillage] = useState("");
+  const [district, setDistrict] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [markerPos, setMarkerPos] = useState(null);
+
+  const [groupName, setGroupName] = useState("Aanshik Farming Group");
+  const [numberOfFarmers, setNumberOfFarmers] = useState("15");
+  const [leadFarmerName, setLeadFarmerName] = useState("Aanshik Singh");
+  const [selectedCrops, setSelectedCrops] = useState([]);
+
+  const [collectiveName, setCollectiveName] = useState("Aanshik's Collective");
+  const [workers, setWorkers] = useState("50");
+
+  const refs = {
+    groupName: useRef(null),
+    leadFarmerName: useRef(null),
+    numberOfFarmers: useRef(null),
+    collectiveName: useRef(null),
+    email: useRef(null),
+    phone: useRef(null),
+    password: useRef(null),
+    confirm: useRef(null),
+    village: useRef(null),
+    district: useRef(null),
+    state: useRef(null),
+    pincode: useRef(null),
+    lat: useRef(null),
+    lng: useRef(null),
+  };
+
+  // ── Fetch crops on mount
+  useEffect(() => {
+    const fetchCrops = async () => {
+      try {
+        const data = await getAllCrops();
+        setAllCrops(data.crops);
+      } catch (err) {
+        toast.error("Failed to load crops list.");
+      }
+    };
+    fetchCrops();
+  }, []);
+
+  // ── Reset form when switching roles
   const handleRoleChange = (newRole) => {
     setRole(newRole);
     setEmail("");
@@ -391,13 +95,13 @@ const Register = () => {
     setPassword("");
     setConfirm("");
     setPhoto(null);
+    setPhotoFile(null);
     setSelectedCrops([]);
     setGroupName("");
     setLeadFarmerName("");
     setNumberOfFarmers("");
     setCollectiveName("");
     setWorkers("");
-    // Reset address too
     setVillage("");
     setDistrict("");
     setState("");
@@ -407,34 +111,72 @@ const Register = () => {
     setMarkerPos(null);
   };
 
-  // Shared
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [photo, setPhoto] = useState(null);
+  const validate = () => {
+    const fail = (field, message) => {
+      setFormErrors({ [field]: message });
+      toast.error(message, { title: "Fix this first" });
+      refs[field]?.current?.focus();
+      refs[field]?.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      return false;
+    };
 
-  // Address
-  const [village, setVillage] = useState("");
-  const [district, setDistrict] = useState("");
-  const [state, setState] = useState("");
-  const [pincode, setPincode] = useState("");
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
-  const [markerPos, setMarkerPos] = useState(null);
+    // Role-specific
+    if (role === "FARMER_GROUP") {
+      if (!groupName.trim())
+        return fail("groupName", "Farmer group name is required.");
+      if (!leadFarmerName.trim())
+        return fail("leadFarmerName", "Lead farmer name is required.");
+      if (!numberOfFarmers || Number(numberOfFarmers) < 1)
+        return fail("numberOfFarmers", "Enter a valid number of farmers.");
+    } else {
+      if (!collectiveName.trim())
+        return fail("collectiveName", "Collective name is required.");
+    }
 
-  // Farmer-specific
-  const [groupName, setGroupName] = useState("");
-  const [numberOfFarmers, setNumberOfFarmers] = useState("");
-  const [leadFarmerName, setLeadFarmerName] = useState("");
-  const [selectedCrops, setSelectedCrops] = useState([]);
+    // Email
+    if (!email.trim()) return fail("email", "Email is required.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return fail("email", "Enter a valid email address.");
 
-  // Collective-specific
-  const [collectiveName, setCollectiveName] = useState("");
-  const [workers, setWorkers] = useState("");
+    // Phone — must be exactly 10 digits
+    const digitsOnly = phone.replace(/\D/g, "");
+    if (!phone.trim()) return fail("phone", "Phone number is required.");
+    if (digitsOnly.length !== 10)
+      return fail("phone", "Phone number must be exactly 10 digits.");
 
-  const passwordError =
-    confirm && confirm !== password ? "Passwords do not match" : "";
+    // Password
+    if (!password) return fail("password", "Password is required.");
+    if (password.length < 8)
+      return fail("password", "Password must be at least 8 characters.");
+
+    // Confirm password
+    if (!confirm) return fail("confirm", "Please confirm your password.");
+    if (confirm !== password) return fail("confirm", "Passwords do not match.");
+
+    // Address
+    if (!village.trim()) return fail("village", "Village / Town is required.");
+    if (!district.trim()) return fail("district", "District is required.");
+    if (!state.trim()) return fail("state", "State is required.");
+    if (!pincode.trim()) return fail("pincode", "Pincode is required.");
+
+    // Coordinates
+    if (!lat)
+      return fail(
+        "lat",
+        "Latitude is required. Use Auto-fill or Choose on Map.",
+      );
+    if (!lng)
+      return fail(
+        "lng",
+        "Longitude is required. Use Auto-fill or Choose on Map.",
+      );
+
+    setFormErrors({});
+    return true;
+  };
 
   const ic = inputCls(isDark);
 
@@ -485,6 +227,7 @@ const Register = () => {
     );
   };
 
+  // ── Handle map pin confirmation
   const handleMapConfirm = useCallback(
     (latlng) => {
       setMarkerPos(latlng);
@@ -498,88 +241,139 @@ const Register = () => {
     [reverseGeocode, toast],
   );
 
+  // ── Step 1: Validate form then send OTP
   const handleSendOTP = async (e) => {
     e.preventDefault();
-    if (passwordError) return;
+    if (!validate()) return;
     setLoading(true);
     try {
-      const result = await sendOTP(phone);
-      setMockOtp(result.mockOtp);
+      const name = role === "FARMER_GROUP" ? groupName : collectiveName;
+
+      const res = await registerOtp(name, email);
+      console.log(res);
+      const leftAttempt = 5 - (res?.attempts || 5);
       setStep("otp");
-      toast.info(`OTP sent. Demo OTP: ${result.mockOtp}`, {
-        title: "OTP Sent",
-        duration: 8000,
-      });
+      toast.info(
+        <>
+          OTP has been sent successfully !!
+          <br />
+          please check your inbox & spam folder.
+          <br />
+          You have {leftAttempt} attempts remaining.
+        </>,
+        {
+          title: "OTP Sent",
+          duration: 8000,
+        },
+      );
     } catch (err) {
-      toast.error(err.message || "Failed to send OTP");
+      const unblockAt = err?.response?.data?.unblockAt;
+      const formattedTime = getTime(unblockAt);
+
+      const message = err?.response?.data?.message?.includes(
+        "many attempts",
+      ) ? (
+        <>
+          Too many attempts !!
+          <br />
+          Please try again after {formattedTime ? formattedTime : "6 hours"}.
+        </>
+      ) : (
+        err?.response?.data?.message || err.message || "Failed to send OTP."
+      );
+
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyAndRegister = async (e) => {
+  // ── Step 2: Verify OTP & Register
+  const handleRegister = async (e) => {
     e.preventDefault();
     setOtpLoading(true);
     try {
-      const valid = await verifyOTP(phone, otp);
-      if (!valid) {
-        toast.error(`Invalid OTP. Demo OTP is: ${mockOtp}`);
-        return;
+      const formData = new FormData();
+
+      // ── Common fields (field names match register.service.js exactly)
+      formData.append("role", role);
+      formData.append("email", email);
+      formData.append("phone", phone);
+      formData.append("password", password);
+      formData.append("otp", otp);
+
+      // ── Address fields
+      formData.append("village", village);
+      formData.append("area", district);
+      formData.append("city", district);
+      formData.append("state", state);
+      formData.append("pinCode", pincode);
+
+      formData.append("lat", lat);
+      formData.append("long", lng);
+
+      if (photoFile) formData.append("profile", photoFile);
+
+      formData.append("crops", JSON.stringify(selectedCrops));
+
+      if (role === "FARMER_GROUP") {
+        formData.append("name", groupName);
+        formData.append("leadFarmer", leadFarmerName);
+        formData.append("farmerCount", numberOfFarmers);
+        formData.append("workers", "");
+      } else {
+        formData.append("name", collectiveName);
+        formData.append("workers", workers);
+        formData.append("leadFarmer", "");
+        formData.append("farmerCount", "");
       }
-      const address = [village, district, state, pincode]
-        .filter(Boolean)
-        .join(", ");
-      const coords =
-        lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
-      const formData =
-        role === "FARMER_GROUP"
-          ? {
-              groupName,
-              numberOfFarmers,
-              leadFarmerName,
-              email,
-              phone,
-              password,
-              crops: selectedCrops,
-              address,
-              village,
-              district,
-              state,
-              pincode,
-              coordinates: coords,
-            }
-          : {
-              collectiveName,
-              workers,
-              email,
-              phone,
-              password,
-              address,
-              village,
-              district,
-              state,
-              pincode,
-              coordinates: coords,
-            };
-      await register(formData, role);
-      toast.success("Account created! Please log in.", {
-        title: "Registered!",
-      });
+
+      await register(formData);
+
+      toast.success(
+        <>
+          Account Created Successfully!!
+          <br />
+          Welcome onboard {name}
+          <br />
+          Please login to proceed.
+        </>,
+        {
+          title: "Registered!",
+        },
+      );
       navigate("/login");
     } catch (err) {
-      toast.error(err.message || "Registration failed");
+      toast.error(
+        err?.response?.data?.message || err.message || "Registration failed.",
+      );
     } finally {
       setOtpLoading(false);
     }
   };
 
+  // {
+  //     "success": true,
+  //     "message": "Registration successful.",
+  //     "res": {
+  //         "uid": "FG200002",
+  //         "name": "Param Singh and Sons",
+  //         "email": "aanshikSingh@gmail.com",
+  //         "phone": "882266996",
+  //         "profileUrl": "https://res.cloudinary.com/aanshik-dev-cloud/image/upload/v1783866385/farmfresh/userProfiles/FG200002.jpg"
+  //     }
+  // }
+
+  // ── Photo change handler — keeps both preview URL and raw File object
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
-    if (file) setPhoto(URL.createObjectURL(file));
+    if (file) {
+      setPhoto(URL.createObjectURL(file));
+      setPhotoFile(file);
+    }
   };
 
   const cardCls = `rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`;
-  const labelCls = `block text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`;
   const sectionTitleCls = `text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2 ${isDark ? "text-slate-400" : "text-slate-500"}`;
 
   return (
@@ -603,7 +397,7 @@ const Register = () => {
       </AnimatePresence>
 
       {step === "otp" ? (
-        // ── OTP STEP ──
+        // ── OTP STEP
         <div className="flex items-center justify-center min-h-screen px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -615,14 +409,14 @@ const Register = () => {
                 className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-emerald-500/10" : "bg-emerald-100"}`}
               >
                 <Icon
-                  icon="ph:device-mobile-fill"
+                  icon="ph:envelope-open-fill"
                   className="w-8 h-8 text-emerald-400"
                 />
               </div>
               <h2
                 className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}
               >
-                Verify OTP
+                Verify Your Email
               </h2>
               <p
                 className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}
@@ -631,27 +425,19 @@ const Register = () => {
                 <span
                   className={`font-medium ${isDark ? "text-white" : "text-slate-900"}`}
                 >
-                  {phone}
+                  {email}
                 </span>
               </p>
-            </div>
-            <div
-              className={`rounded-xl border p-4 mb-6 flex items-center gap-3 ${isDark ? "bg-emerald-500/5 border-emerald-500/20" : "bg-emerald-50 border-emerald-200"}`}
-            >
-              <Icon
-                icon="ph:info-fill"
-                className="w-5 h-5 text-emerald-400 shrink-0"
-              />
               <p
-                className={`text-sm ${isDark ? "text-slate-300" : "text-slate-700"}`}
+                className={`text-sm font-thin opacity-70 mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}
               >
-                Demo OTP:{" "}
-                <span className="font-bold text-emerald-400 text-lg tracking-widest">
-                  {mockOtp}
-                </span>
+                Please check your inbox and spam folder.
+                <br />
+                OTP is valid for 20 minutes.
               </p>
             </div>
-            <form onSubmit={handleVerifyAndRegister} className="space-y-4">
+
+            <form onSubmit={handleRegister} className="space-y-4">
               <input
                 type="text"
                 placeholder="_ _ _ _ _ _"
@@ -692,7 +478,7 @@ const Register = () => {
           </motion.div>
         </div>
       ) : (
-        // ── MAIN FORM STEP ──
+        // ── MAIN FORM STEP
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pt-24">
           {/* Back */}
           <motion.button
@@ -736,7 +522,7 @@ const Register = () => {
           </div>
 
           <form onSubmit={handleSendOTP} className="space-y-5">
-            {/* ── ROW 1: Identity ── */}
+            {/* ── Identity */}
             <div className={cardCls}>
               <p className={sectionTitleCls}>
                 <Icon icon="ph:user-fill" className="w-3.5 h-3.5" />
@@ -791,12 +577,12 @@ const Register = () => {
                     <p
                       className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}
                     >
-                      Optional. Click to upload.
+                      Optional. Max 2 MB.
                     </p>
                   </div>
                 </div>
 
-                {/* Role-specific */}
+                {/* Role-specific fields */}
                 <AnimatePresence mode="wait">
                   {role === "FARMER_GROUP" ? (
                     <motion.div
@@ -806,33 +592,57 @@ const Register = () => {
                       exit={{ opacity: 0 }}
                       className="contents"
                     >
-                      <Field label="Farmer Group Name" required>
+                      <Field
+                        label="Farmer Group Name"
+                        required
+                        error={formErrors.groupName}
+                      >
                         <input
-                          className={ic}
+                          ref={refs.groupName}
+                          className={`${ic} ${formErrors.groupName ? "border-red-500" : ""}`}
                           placeholder="e.g. Triyuginarayan Organic Pulse Pioneers"
                           value={groupName}
                           onChange={(e) => setGroupName(e.target.value)}
-                          required
+                          onFocus={() =>
+                            setFormErrors((p) => ({ ...p, groupName: "" }))
+                          }
                         />
                       </Field>
-                      <Field label="Lead Farmer Name" required>
+                      <Field
+                        label="Lead Farmer Name"
+                        required
+                        error={formErrors.leadFarmerName}
+                      >
                         <input
-                          className={ic}
+                          ref={refs.leadFarmerName}
+                          className={`${ic} ${formErrors.leadFarmerName ? "border-red-500" : ""}`}
                           placeholder="Your full name"
                           value={leadFarmerName}
                           onChange={(e) => setLeadFarmerName(e.target.value)}
-                          required
+                          onFocus={() =>
+                            setFormErrors((p) => ({ ...p, leadFarmerName: "" }))
+                          }
                         />
                       </Field>
-                      <Field label="No. of Farmers" required>
+                      <Field
+                        label="No. of Farmers"
+                        required
+                        error={formErrors.numberOfFarmers}
+                      >
                         <input
-                          className={ic}
+                          ref={refs.numberOfFarmers}
+                          className={`${ic} ${formErrors.numberOfFarmers ? "border-red-500" : ""}`}
                           type="number"
                           min="1"
                           placeholder="12"
                           value={numberOfFarmers}
                           onChange={(e) => setNumberOfFarmers(e.target.value)}
-                          required
+                          onFocus={() =>
+                            setFormErrors((p) => ({
+                              ...p,
+                              numberOfFarmers: "",
+                            }))
+                          }
                         />
                       </Field>
                     </motion.div>
@@ -844,13 +654,20 @@ const Register = () => {
                       exit={{ opacity: 0 }}
                       className="contents"
                     >
-                      <Field label="Collective Name" required>
+                      <Field
+                        label="Collective Name"
+                        required
+                        error={formErrors.collectiveName}
+                      >
                         <input
-                          className={ic}
+                          ref={refs.collectiveName}
+                          className={`${ic} ${formErrors.collectiveName ? "border-red-500" : ""}`}
                           placeholder="e.g. Mandakini Organic Collective"
                           value={collectiveName}
                           onChange={(e) => setCollectiveName(e.target.value)}
-                          required
+                          onFocus={() =>
+                            setFormErrors((p) => ({ ...p, collectiveName: "" }))
+                          }
                         />
                       </Field>
                       <Field label="Total Workers / Staff">
@@ -867,35 +684,40 @@ const Register = () => {
                   )}
                 </AnimatePresence>
 
-                <Field label="Phone" required>
+                <Field label="Phone" required error={formErrors.phone}>
                   <input
-                    className={ic}
+                    ref={refs.phone}
+                    className={`${ic} ${formErrors.phone ? "border-red-500" : ""}`}
                     type="tel"
-                    placeholder="+91 98765 43210"
+                    placeholder="10-digit mobile number"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    required
+                    onFocus={() => setFormErrors((p) => ({ ...p, phone: "" }))}
                   />
                 </Field>
-                <Field label="Email" required>
+                <Field label="Email" required error={formErrors.email}>
                   <input
-                    className={ic}
+                    ref={refs.email}
+                    className={`${ic} ${formErrors.email ? "border-red-500" : ""}`}
                     type="email"
                     placeholder="you@example.in"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    required
+                    onFocus={() => setFormErrors((p) => ({ ...p, email: "" }))}
                   />
                 </Field>
-                <Field label="Password" required>
+                <Field label="Password" required error={formErrors.password}>
                   <div className="relative">
                     <input
-                      className={`${ic} pr-10`}
+                      ref={refs.password}
+                      className={`${ic} pr-10 ${formErrors.password ? "border-red-500" : ""}`}
                       type={showPass ? "text" : "password"}
                       placeholder="Min. 8 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
+                      onFocus={() =>
+                        setFormErrors((p) => ({ ...p, password: "" }))
+                      }
                       minLength={8}
                     />
                     <button
@@ -910,23 +732,27 @@ const Register = () => {
                     </button>
                   </div>
                 </Field>
-                <Field label="Confirm Password" required>
+                <Field
+                  label="Confirm Password"
+                  required
+                  error={formErrors.confirm}
+                >
                   <input
-                    className={`${ic} ${confirm && confirm !== password ? "border-red-500 focus:border-red-500 focus:ring-red-500/40" : ""}`}
+                    ref={refs.confirm}
+                    className={`${ic} ${formErrors.confirm ? "border-red-500 focus:border-red-500 focus:ring-red-500/40" : ""}`}
                     type="password"
                     placeholder="Re-enter password"
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
-                    required
+                    onFocus={() =>
+                      setFormErrors((p) => ({ ...p, confirm: "" }))
+                    }
                   />
-                  {passwordError && (
-                    <p className="text-xs text-red-400 mt-1">{passwordError}</p>
-                  )}
                 </Field>
               </div>
             </div>
 
-            {/* ── ROW 2: Crops (both roles) ── */}
+            {/* ── Crops */}
             <div className={cardCls}>
               <p className={sectionTitleCls}>
                 <Icon
@@ -935,14 +761,16 @@ const Register = () => {
                 />
                 {role === "FARMER_GROUP" ? "Crops Grown" : "Crops Handled"}
               </p>
+              {/* CropTagInput shows names in the list view; on selection it stores the crop code */}
               <CropTagInput
                 selected={selectedCrops}
                 onChange={setSelectedCrops}
+                crops={allCrops}
                 isDark={isDark}
               />
             </div>
 
-            {/* ── ROW 3: Address ── */}
+            {/* ── Location & Address */}
             <div className={cardCls}>
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                 <p className={sectionTitleCls}>
@@ -953,7 +781,6 @@ const Register = () => {
                   Location & Address
                 </p>
                 <div className="flex gap-2">
-                  {/* Auto-fill button */}
                   <button
                     type="button"
                     onClick={handleAutoFill}
@@ -979,7 +806,6 @@ const Register = () => {
                       </>
                     )}
                   </button>
-                  {/* Choose on map button */}
                   <button
                     type="button"
                     onClick={() => setMapOpen(true)}
@@ -995,7 +821,6 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Pin status indicator */}
               {lat && lng && (
                 <div
                   className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg mb-4 ${isDark ? "bg-emerald-500/8 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}
@@ -1010,62 +835,84 @@ const Register = () => {
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Village / Town">
+                <Field
+                  label="Village / Town"
+                  required
+                  error={formErrors.village}
+                >
                   <input
-                    className={ic}
+                    ref={refs.village}
+                    className={`${ic} ${formErrors.village ? "border-red-500" : ""}`}
                     placeholder="e.g. Triyuginarayan"
                     value={village}
                     onChange={(e) => setVillage(e.target.value)}
+                    onFocus={() =>
+                      setFormErrors((p) => ({ ...p, village: "" }))
+                    }
                   />
                 </Field>
-                <Field label="District">
+                <Field label="District" required error={formErrors.district}>
                   <input
-                    className={ic}
+                    ref={refs.district}
+                    className={`${ic} ${formErrors.district ? "border-red-500" : ""}`}
                     placeholder="e.g. Rudraprayag"
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
+                    onFocus={() =>
+                      setFormErrors((p) => ({ ...p, district: "" }))
+                    }
                   />
                 </Field>
-                <Field label="State">
+                <Field label="State" required error={formErrors.state}>
                   <input
-                    className={ic}
+                    ref={refs.state}
+                    className={`${ic} ${formErrors.state ? "border-red-500" : ""}`}
                     placeholder="e.g. Uttarakhand"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
+                    onFocus={() => setFormErrors((p) => ({ ...p, state: "" }))}
                   />
                 </Field>
-                <Field label="Pincode">
+                <Field label="Pincode" required error={formErrors.pincode}>
                   <input
-                    className={ic}
+                    ref={refs.pincode}
+                    className={`${ic} ${formErrors.pincode ? "border-red-500" : ""}`}
                     placeholder="246444"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
+                    onFocus={() =>
+                      setFormErrors((p) => ({ ...p, pincode: "" }))
+                    }
                   />
                 </Field>
-                <Field label="Latitude">
+                <Field label="Latitude" required error={formErrors.lat}>
                   <input
-                    className={ic}
+                    ref={refs.lat}
+                    className={`${ic} ${formErrors.lat ? "border-red-500" : ""}`}
                     placeholder="30.7333"
                     value={lat}
                     onChange={(e) => setLat(e.target.value)}
+                    onFocus={() => setFormErrors((p) => ({ ...p, lat: "" }))}
                   />
                 </Field>
-                <Field label="Longitude">
+                <Field label="Longitude" required error={formErrors.lng}>
                   <input
-                    className={ic}
+                    ref={refs.lng}
+                    className={`${ic} ${formErrors.lng ? "border-red-500" : ""}`}
                     placeholder="79.0667"
                     value={lng}
                     onChange={(e) => setLng(e.target.value)}
+                    onFocus={() => setFormErrors((p) => ({ ...p, lng: "" }))}
                   />
                 </Field>
               </div>
             </div>
 
-            {/* ── Submit ── */}
+            {/* ── Submit */}
             <div className="space-y-3 pb-8">
               <button
                 type="submit"
-                disabled={loading || !!passwordError}
+                disabled={loading}
                 className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
@@ -1075,8 +922,8 @@ const Register = () => {
                   </>
                 ) : (
                   <>
-                    <Icon icon="ph:device-mobile-fill" className="w-4 h-4" />{" "}
-                    Send OTP & Continue
+                    <Icon icon="ph:envelope-fill" className="w-4 h-4" /> Send
+                    OTP & Continue
                   </>
                 )}
               </button>

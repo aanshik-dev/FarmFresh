@@ -41,7 +41,7 @@ const sendOtp = async (name, email, goal) => {
     }
   }
 
-  await sendVerificationMail({ name, email, otp, goal });
+  // await sendVerificationMail({ name, email, otp, goal });
 
   if (pendingOTP) {
     pendingOTP.hashOtp = hashOtp;
@@ -105,6 +105,7 @@ const verifyOtp = async (email, otp, goal) => {
 const registerOtp = async (data) => {
   const { name, email } = data;
   const userEmailExists = await User.findOne({ username: email });
+
   if (userEmailExists) {
     const err = new Error("User already exists with the given email !!");
     err.statusCode = 409;

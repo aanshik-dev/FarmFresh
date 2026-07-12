@@ -88,7 +88,23 @@ const registerUser = async (data, file) => {
   });
 
   if (existingUser) {
-    const err = new Error("User already exists.");
+    const err = new Error("User already exists with this email !!");
+    err.statusCode = 409;
+    err.success = false;
+    throw err;
+  }
+  const farmerPhone = await FarmerGroup.findOne({
+    phone,
+  });
+
+  const collectivePhone = await Collective.findOne({
+    phone,
+  });
+
+  if (farmerPhone || collectivePhone) {
+    const err = new Error(
+      "This phone is already linked with some other account !!",
+    );
     err.statusCode = 409;
     err.success = false;
     throw err;
@@ -193,7 +209,8 @@ const registerUser = async (data, file) => {
     });
   } catch (err) {
     if (err.code === 11000) {
-      const error = new Error("User already exists.");
+      const field = Object.keys(err.keyValue || {})[0] || "email/phone";
+      const error = new Error(`User already exists with this ${field}.`);
       error.statusCode = 409;
       error.success = false;
       throw error;
