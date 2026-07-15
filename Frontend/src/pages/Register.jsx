@@ -169,6 +169,10 @@ const Register = () => {
       toast.error("Leader/Manager name is required.");
       return false;
     }
+    if (photoFile && photoFile.size > 2 * 1024 * 1024) {
+      toast.error("Image size must be less than 2MB.");
+      return false;
+    }
     return true;
   };
 

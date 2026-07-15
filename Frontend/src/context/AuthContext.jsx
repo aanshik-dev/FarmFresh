@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { login as loginService } from "../services/auth.service";
+import { getCurrentUser } from "../services/user.service";
 
 const AuthContext = createContext(null);
 
@@ -13,15 +14,17 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  const [profileLoading, setProfileLoading] = useState(false);
+
   const login = useCallback(async (email, password, role) => {
     const data = await loginService(email, password, role);
-    console.log("login data", data);
-
     const { accessToken, refreshToken, user: userData } = data;
 
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("user", JSON.stringify(userData));
+
+    sessionStorage.removeItem("profile_banner_dismissed");
 
     setUser(userData);
     return userData;
@@ -31,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    sessionStorage.removeItem("profile_banner_dismissed");
     setUser(null);
   }, []);
 
@@ -44,15 +48,33 @@ export const AuthProvider = ({ children }) => {
     [user],
   );
 
+  const fetchAndSyncUser = useCallback(async () => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    setProfileLoading(true);
+    try {
+      const freshUser = await getCurrentUser();
+      const merged = { ...freshUser };
+      localStorage.setItem("user", JSON.stringify(merged));
+      setUser(merged);
+    } catch (err) {
+      console.warn("fetchAndSyncUser failed:", err?.response?.status);
+    } finally {
+      setProfileLoading(false);
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
         role: user?.role || null,
+        profileLoading,
         login,
         logout,
         updateUser,
+        fetchAndSyncUser,
       }}
     >
       {children}

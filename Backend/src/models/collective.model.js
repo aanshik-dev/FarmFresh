@@ -47,12 +47,22 @@ const collectiveSchema = new mongoose.Schema(
       min: 0,
     },
     address: {
+      locality: {
+        type: String,
+        default: "",
+        trim: true,
+      },
       area: {
         type: String,
         default: "",
         trim: true,
       },
-      city: {
+      town: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      district: {
         type: String,
         default: "",
         trim: true,

@@ -20,6 +20,10 @@ const adminSchema = mongoose.Schema(
       type: String,
       default: "",
     },
+    desc: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );

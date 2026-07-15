@@ -39,6 +39,7 @@ export const adminSidebarLinks = [
   { path: "/dashboard/admin/farmer-groups", label: "Farmer Groups",  icon: "ph:plant-fill" },
   { path: "/dashboard/admin/collectives",   label: "Collectives",    icon: "ph:buildings-fill" },
   { path: "/dashboard/admin/issues",        label: "Issues",         icon: "ph:warning-circle-fill", badge: true },
+  { path: "/dashboard/admin/profile",       label: "Profile",        icon: "ph:user-circle-fill" },
   { path: "/dashboard/admin/settings",      label: "Settings",       icon: "ph:gear-six-fill" },
 ];
 

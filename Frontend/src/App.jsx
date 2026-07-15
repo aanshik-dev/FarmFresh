@@ -18,6 +18,7 @@ import Contacts from "./pages/Contacts";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import OAuthCallback from "./pages/OAuthCallback";
+import AdminLogin from "./pages/AdminLogin";
 
 // Farmer pages
 import FarmerDashboard from "./pages/farmer/FarmerDashboard";
@@ -26,7 +27,6 @@ import CropManagement from "./pages/farmer/CropManagement";
 import CollectiveBrowse from "./pages/farmer/CollectiveBrowse";
 import FarmerSchedules from "./pages/farmer/FarmerSchedules";
 import FarmerNotifications from "./pages/farmer/FarmerNotifications";
-import FarmerSettings from "./pages/farmer/FarmerSettings";
 
 // Collective pages
 import CollectiveDashboard from "./pages/collective/CollectiveDashboard";
@@ -39,7 +39,6 @@ import PickupScheduler from "./pages/collective/PickupScheduler";
 import CollectionHistory from "./pages/collective/CollectionHistory";
 import Announcements from "./pages/collective/Announcements";
 import CollectiveNotifications from "./pages/collective/CollectiveNotifications";
-import CollectiveSettings from "./pages/collective/CollectiveSettings";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -50,10 +49,9 @@ import IssueResolution from "./pages/admin/IssueResolution";
 import AdminSettings from "./pages/admin/AdminSettings";
 
 // Common pages
-import ProfilePage from "./pages/common/ProfilePage";
+import UserProfile from "./pages/common/UserProfile";
 import SettingsPage from "./pages/common/SettingsPage";
 
-/** Redirect logged-in users away from auth pages */
 const GuestRoute = ({ children }) => {
   const { isAuthenticated, role } = useAuth();
   if (!isAuthenticated) return children;
@@ -66,7 +64,6 @@ const GuestRoute = ({ children }) => {
   return children;
 };
 
-/** Require auth to access */
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, role } = useAuth();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
@@ -124,6 +121,16 @@ function App() {
                 <Route path="/oauth/callback" element={<OAuthCallback />} />
               </Route>
 
+              {/* ── Admin Login (No Layout) ── */}
+              <Route
+                path="/admin-login"
+                element={
+                  <GuestRoute>
+                    <AdminLogin />
+                  </GuestRoute>
+                }
+              />
+
               {/* ── Authenticated shell ── */}
               <Route
                 path="/dashboard"
@@ -146,7 +153,7 @@ function App() {
                   path="farmer/profile"
                   element={
                     <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
-                      <FarmerProfile />
+                      <UserProfile />
                     </ProtectedRoute>
                   }
                 />
@@ -186,7 +193,7 @@ function App() {
                   path="farmer/settings"
                   element={
                     <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
-                      <FarmerSettings />
+                      <SettingsPage />
                     </ProtectedRoute>
                   }
                 />
@@ -204,7 +211,7 @@ function App() {
                   path="collective/profile"
                   element={
                     <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
-                      <CollectiveProfile />
+                      <UserProfile />
                     </ProtectedRoute>
                   }
                 />
@@ -276,12 +283,20 @@ function App() {
                   path="collective/settings"
                   element={
                     <ProtectedRoute allowedRoles={["COLLECTIVE"]}>
-                      <CollectiveSettings />
+                      <SettingsPage />
                     </ProtectedRoute>
                   }
                 />
 
                 {/* ── Admin routes ── */}
+                <Route
+                  path="admin/profile"
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <UserProfile />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="admin/overview"
                   element={

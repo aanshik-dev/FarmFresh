@@ -32,8 +32,10 @@ const seedAdmin = async () => {
         const adminProfile = new Admin({
           _id: adminUser._id,
           name: "Administrator",
-          phone: "9999999999",
-          profile: "",
+          phone: "9426XX1024",
+          profile:
+            "https://res.cloudinary.com/aanshik-dev-cloud/image/upload/v1784106164/farmfresh/userProfiles/AD101.png",
+          desc: "I am admin and developer of farmfresh",
         });
         await adminProfile.save({ session });
         console.log("✅ Admin created successfully !!");

@@ -5,13 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../components/ui";
-import SlideToggle from "../components/common/SlideToggle";
 import { forgotPasswordOtp, resetPassword } from "../services/auth.service";
-
-const ROLE_OPTIONS = [
-  { value: "FARMER_GROUP", label: "Farmer Group", icon: "ph:plant-fill" },
-  { value: "COLLECTIVE", label: "Collective", icon: "ph:buildings-fill" },
-];
 
 const HERO_FEATURES = [
   { icon: "ph:plant-fill", label: "Crop lifecycle tracking" },
@@ -26,8 +20,8 @@ const Login = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [role, setRole] = useState("FARMER_GROUP");
-  const [email, setEmail] = useState("raman@ff.in");
+  const role = "ADMIN";
+  const [email, setEmail] = useState("aanshiksinghtomar@gmail.com");
   const [password, setPassword] = useState("password");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -177,16 +171,16 @@ const Login = () => {
     >
       {/* ── LEFT HERO PANEL (hidden on mobile) ── */}
       <div
-        className={`hidden lg:flex flex-col justify-between relative w-1/2 overflow-hidden pb-25 pt-26 px-24 gap-6 ${
+        className={`hidden lg:flex flex-col justify-between relative w-1/2 overflow-hidden py-22 px-24 gap-6 ${
           isDark
-            ? "bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900"
-            : "bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700"
+            ? "bg-gradient-to-br from-violet-950 via-slate-900 to-violet-900"
+            : "bg-gradient-to-br from-violet-700 via-violet-600 to-teal-700"
         }`}
       >
         {/* Decorative blobs */}
-        <div className="pointer-events-none absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 right-0 w-96 h-96 rounded-full bg-amber-400/10 blur-3xl" />
-        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-emerald-400/10 blur-2xl" />
+        <div className="pointer-events-none absolute -top-24 -left-24 w-80 h-80 rounded-full bg-violet-400/5 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 w-96 h-96 rounded-full bg-violet-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-violet-400/10 blur-2xl" />
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -212,11 +206,11 @@ const Login = () => {
           <div>
             <h2 className="text-5xl font-extrabold text-white leading-14 mb-4">
               The
-              <span className="text-amber-300"> Digital Hub</span> for
+              <span className="text-violet-300"> Digital Hub</span> for
               <br />
               Modern Farmers
             </h2>
-            <p className="text-emerald-100/80 text-base leading-relaxed max-w-sm">
+            <p className="text-violet-100/80 text-base leading-relaxed max-w-sm">
               Connecting organic farmer groups with collectives for seamless
               harvest coordination, transparent pricing, and reduced
               post-harvest loss.
@@ -229,7 +223,7 @@ const Login = () => {
                 <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
                   <Icon icon={f.icon} className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-emerald-100/90 text-sm font-medium">
+                <span className="text-violet-100/90 text-sm font-medium">
                   {f.label}
                 </span>
               </div>
@@ -246,7 +240,7 @@ const Login = () => {
           ].map((s) => (
             <div key={s.label}>
               <p className="text-2xl font-black text-white">{s.value}</p>
-              <p className="text-xs text-emerald-200/70">{s.label}</p>
+              <p className="text-xs text-violet-200/70">{s.label}</p>
             </div>
           ))}
         </div>
@@ -261,7 +255,7 @@ const Login = () => {
         {/* Mobile-only brand */}
         <div className="flex items-center gap-2 mb-8 lg:hidden">
           <div
-            className={`p-1.5 rounded-lg ${isDark ? "bg-emerald-800/70 text-emerald-300" : "bg-emerald-100 text-emerald-600"}`}
+            className={`p-1.5 rounded-lg ${isDark ? "bg-violet-800/70 text-violet-300" : "bg-violet-100 text-violet-600"}`}
           >
             <Icon icon="ph:plant-fill" className="w-5 h-5" />
           </div>
@@ -293,31 +287,13 @@ const Login = () => {
                     <h1
                       className={`text-3xl font-bold mb-1.5 flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}
                     >
-                      Welcome back
+                      <><Icon icon="ph:shield-check-fill" className="text-violet-500" /> Admin Login</>
                     </h1>
                     <p
                       className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}
                     >
-                      Sign in to your FarmFresh account
+                      Sign in to access the administrator portal
                     </p>
-                  </div>
-
-                  {/* Role toggle and Admin button */}
-                  <div className="mb-4 flex items-end gap-3">
-                  <div className="w-full">
-                      <p
-                        className={`text-xs font-medium mb-2 uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}
-                      >
-                        Account Type
-                      </p>
-                      <SlideToggle
-                        options={ROLE_OPTIONS}
-                        value={role}
-                        onChange={setRole}
-                        size="md"
-                      />
-                    </div>
-                    
                   </div>
 
                   {/* Form */}
@@ -340,12 +316,12 @@ const Login = () => {
                         />
                         <input
                           type="email"
-                          placeholder={role === "FARMER_GROUP" ? "farmer@farmfresh.com" : "collective@farmfresh.com"}
+                          placeholder="admin@farmfresh.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
                           className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 outline-none transition-all focus:ring-2 ${
-                            "focus:ring-emerald-500/40 focus:border-emerald-500"
+                            "focus:ring-violet-500/40 focus:border-violet-500"
                           } ${
                             isDark
                               ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
@@ -374,7 +350,7 @@ const Login = () => {
                           onChange={(e) => setPassword(e.target.value)}
                           required
                           className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 ${
-                            "focus:ring-emerald-500/40 focus:border-emerald-500"
+                            "focus:ring-violet-500/40 focus:border-violet-500"
                           } ${
                             isDark
                               ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
@@ -397,25 +373,15 @@ const Login = () => {
                     </div>
 
                     <div
-                      className={`flex justify-between pb-1.5 ${isDark ? "text-slate-300" : "text-slate-600"}`}
+                      className={`flex justify-end pb-1.5 ${isDark ? "text-slate-300" : "text-slate-600"}`}
                     >
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="accent-emerald-400 border-emerald-400 cursor-pointer"
-                          type="checkbox"
-                          checked={Remember}
-                          onChange={() => setRemember(!Remember)}
-                        />
-                        <span>
-                          Remember me
-                        </span>
-                      </label>
+                      
 
                       <button
                         type="button"
                         onClick={() => setShowForgotPanel(true)}
                         className={`transition-colors text-sm cursor-pointer ${
-                          "text-emerald-400 hover:text-emerald-300"
+                          "text-violet-400 hover:text-violet-300"
                         }`}
                       >
                         Forgot password?
@@ -427,7 +393,7 @@ const Login = () => {
                       type="submit"
                       disabled={loading}
                       className={`w-full py-3 rounded-xl font-semibold text-sm text-white shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
-                        "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-emerald-500/20"
+                        "bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 shadow-violet-500/20"
                       }`}
                     >
                       {loading ? (
@@ -447,53 +413,6 @@ const Login = () => {
                     </button>
                   </form>
 
-                  {/* Social Login Separator */}
-                  <div className="flex items-center my-4">
-                        <div
-                          className={`flex-grow border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}
-                        ></div>
-                        <span
-                          className={`px-3 text-xs uppercase ${isDark ? "text-slate-500" : "text-slate-400"}`}
-                        >
-                          Or continue with
-                        </span>
-                        <div
-                          className={`flex-grow border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}
-                        ></div>
-                      </div>
-
-                      {/* Google Login Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google?role=${role}`;
-                        }}
-                        className={`w-full py-2.5 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                          isDark
-                            ? "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200"
-                            : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
-                        }`}
-                      >
-                        <Icon icon="logos:google-icon" className="w-4 h-4" />
-                        Sign in with Google |{" "}
-                        {role === "FARMER_GROUP"
-                          ? "Farmer Group"
-                          : "Collective"}
-                      </button>
-
-                  <p
-                    className={`text-center text-sm mt-5 ${isDark ? "text-slate-400" : "text-slate-500"}`}
-                  >
-                    Don't have an account?{" "}
-                    <Link
-                      to="/register"
-                      className={`${
-                        "text-emerald-500 hover:text-emerald-400"
-                      } font-semibold`}
-                    >
-                      Register
-                    </Link>
-                  </p>
                 </motion.div>
               ) : (
                 <motion.div
@@ -552,7 +471,7 @@ const Login = () => {
                             value={fEmail}
                             onChange={(e) => setFEmail(e.target.value)}
                             required
-                            className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+                            className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 outline-none transition-all focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 ${
                               isDark
                                 ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
                                 : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
@@ -573,7 +492,6 @@ const Login = () => {
                         </button>
                       </div>
                     </div>
-
                     {/* OTP Input */}
                     <div className="relative">
                       <Icon
@@ -586,7 +504,7 @@ const Login = () => {
                         value={fOtp}
                         onChange={(e) => setFOtp(e.target.value)}
                         required
-                        className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 tracking-widest outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+                        className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 tracking-widest outline-none transition-all focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 ${
                           isDark
                             ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
                             : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
@@ -612,7 +530,7 @@ const Login = () => {
                           value={fPassword}
                           onChange={(e) => setFPassword(e.target.value)}
                           required
-                          className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+                          className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 ${
                             isDark
                               ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
                               : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
@@ -646,7 +564,7 @@ const Login = () => {
                           value={fConfirm}
                           onChange={(e) => setFConfirm(e.target.value)}
                           required
-                          className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+                          className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 ${
                             isDark
                               ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
                               : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
@@ -671,7 +589,7 @@ const Login = () => {
                     <button
                       type="submit"
                       disabled={fLoading}
-                      className="w-full py-3 mt-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full py-3 mt-6 rounded-xl font-semibold text-sm bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white shadow-lg shadow-violet-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {fLoading ? (
                         <>

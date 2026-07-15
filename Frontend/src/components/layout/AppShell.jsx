@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
@@ -6,6 +6,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { farmerSidebarLinks, collectiveSidebarLinks, adminSidebarLinks } from "../../utils/InterfaceData";
 import { farmerNotifications, collectiveNotifications } from "../../utils/InterfaceData";
+import ProfileBanner from "../common/ProfileBanner";
 
 // ──────────────────────────────────────────────────
 // Top Header
@@ -157,7 +158,7 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen }) => {
                 </div>
 
                 {[
-                  { label: "Profile", icon: "ph:user-circle-fill", path: role === "FARMER_GROUP" ? "/dashboard/farmer/profile" : role === "COLLECTIVE" ? "/dashboard/collective/profile" : null },
+                  { label: "Profile", icon: "ph:user-circle-fill", path: role === "FARMER_GROUP" ? "/dashboard/farmer/profile" : role === "COLLECTIVE" ? "/dashboard/collective/profile" : role === "ADMIN" ? "/dashboard/admin/profile" : null },
                   { label: "Settings", icon: "ph:gear-six-fill", path: role === "FARMER_GROUP" ? "/dashboard/farmer/settings" : role === "COLLECTIVE" ? "/dashboard/collective/settings" : role === "ADMIN" ? "/dashboard/admin/settings" : null },
                 ].filter(i => i.path).map(item => (
                   <button
@@ -438,6 +439,14 @@ const AppShell = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(false);
+
+  const { fetchAndSyncUser } = useAuth();
+
+  // Fetch full user profile once when the shell mounts
+  useEffect(() => {
+    fetchAndSyncUser();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleSidebar = useCallback(() => setSidebarOpen(p => !p), []);
   const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -463,9 +472,10 @@ const AppShell = () => {
 
       {/* Main content — shifts right of sidebar on desktop */}
       <main
-        className="pt-16 pb-20 md:pb-0 transition-all duration-300 min-h-screen"
+        className={`pb-20 md:pb-0 transition-all duration-300 min-h-screen pt-16`}
         style={{ marginLeft: `${sidebarWidth}px` }}
       >
+        <ProfileBanner onVisibilityChange={setBannerVisible} />
         {/* Remove sidebar margin on mobile — handled by the overlay drawer */}
         <style>{`@media (max-width: 767px) { main { margin-left: 0 !important; } }`}</style>
         <Outlet />

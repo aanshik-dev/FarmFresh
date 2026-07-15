@@ -45,10 +45,9 @@ const farmerGroupSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      lowercase: true,
     },
     address: {
-      village: {
+      locality: {
         type: String,
         default: "",
         trim: true,
@@ -58,7 +57,12 @@ const farmerGroupSchema = new mongoose.Schema(
         default: "",
         trim: true,
       },
-      city: {
+      town: {
+        type: String,
+        default: "",
+        trim: true,
+      },
+      district: {
         type: String,
         default: "",
         trim: true,
