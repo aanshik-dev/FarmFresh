@@ -22,13 +22,18 @@ const collectiveSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-      required: true,
       trim: true,
       unique: true,
+      sparse: true,
     },
     profile: {
       type: String,
       default: "",
+    },
+    manager: {
+      type: String,
+      required: true,
+      trim: true,
     },
     desc: {
       type: String,
@@ -44,28 +49,34 @@ const collectiveSchema = new mongoose.Schema(
     address: {
       area: {
         type: String,
+        default: "",
         trim: true,
       },
       city: {
         type: String,
+        default: "",
         trim: true,
       },
       state: {
         type: String,
+        default: "",
         trim: true,
       },
       pinCode: {
         type: String,
+        default: "",
         trim: true,
       },
     },
     coord: {
       lat: {
         type: Number,
+        default: "",
         trim: true,
       },
       long: {
         type: Number,
+        default: "",
         trim: true,
       },
     },

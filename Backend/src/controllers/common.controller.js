@@ -1,4 +1,5 @@
 import Crop from "../models/crop.model.js";
+import throwErr from "../utils/throwErr.js";
 
 const getAllCrops = async (req, res) => {
   try {
@@ -10,11 +11,7 @@ const getAllCrops = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
+    throwErr(500, "Internal server error");
   }
 };
 

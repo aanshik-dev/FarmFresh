@@ -15,10 +15,11 @@ export const register = async (formData) => {
   return response.data;
 };
 
-export const registerOtp = async (name, email) => {
+export const registerOtp = async (name, email, phone) => {
   const response = await api.post("/auth/get-otp", {
     name,
     email,
+    phone,
   });
   return response.data;
 };
@@ -32,7 +33,7 @@ export const forgotPasswordOtp = async (email) => {
 };
 
 export const resetPassword = async (email, otp, password) => {
-  const response = await api.post("/auth/resetpassword", {
+  const response = await api.post("/auth/forgot-password", {
     email,
     otp,
     password,

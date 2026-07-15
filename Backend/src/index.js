@@ -4,14 +4,17 @@ import "dotenv/config";
 import dbConnect from "./config/dbConnect.js";
 import seedCounters from "./scripts/seedCounters.js";
 import seedCrops from "./scripts/seedData.js";
+import seedAdmin from "./scripts/seedAdmin.js";
 
-import authRoutes from "./routes/auth.routes.js";
-import collectiveRoutes from "./routes/collective.routes.js";
-import commonRoutes from "./routes/common.routes.js";
+import authRoutes from "./routes/auth.route.js";
+import collectiveRoutes from "./routes/collective.route.js";
+import commonRoutes from "./routes/common.route.js";
+import userRoutes from "./routes/user.route.js";
 
 await dbConnect();
 await seedCounters();
 await seedCrops();
+await seedAdmin();
 
 const app = express();
 
@@ -33,6 +36,7 @@ app.use(passport.initialize());
 app.use("/api/auth", authRoutes);
 app.use("/api/user/collective", collectiveRoutes);
 app.use("/api/data", commonRoutes);
+app.use("/api/user", userRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "FarmFresh backend is running" });

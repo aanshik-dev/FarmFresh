@@ -1,271 +1,234 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../components/ui";
 import SlideToggle from "../components/common/SlideToggle";
-import { getAllCrops } from "../services/common.service.js";
 import { register, registerOtp } from "../services/auth.service.js";
 import getTime from "../utils/time.js";
 
-import MapModal from "../components/common/MapModal";
-import CropTagInput from "../components/common/CropTagInput";
-import { Field, inputCls } from "../components/common/FormFields";
-
+// ─── Constants ────────────────────────────────────────────────────────────────
 const ROLE_OPTIONS = [
   { value: "FARMER_GROUP", label: "Farmer Group", icon: "ph:plant-fill" },
   { value: "COLLECTIVE", label: "Collective", icon: "ph:buildings-fill" },
 ];
 
+const HERO_STEPS = [
+  { icon: "ph:user-circle-fill", label: "Set up your account identity" },
+  { icon: "ph:lock-key-fill", label: "Secure your access credentials" },
+  { icon: "ph:seal-check-fill", label: "Verify your email with OTP" },
+];
+
+const TOTAL_STEPS = 3;
+
+// ─── Input field component
+const Field = ({ label, icon, required, children }) => {
+  const { isDark } = useTheme();
+  return (
+    <div className="space-y-1.5">
+      <label
+        className={`block text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}
+      >
+        {label}
+        {required && <span className="text-rose-400 ml-0.5">*</span>}
+      </label>
+      <div className="relative">
+        {icon && (
+          <Icon
+            icon={icon}
+            className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? "text-slate-500" : "text-slate-400"}`}
+          />
+        )}
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// ─── Step progress bar
+const StepBar = ({ current, total }) => {
+  const { isDark } = useTheme();
+  return (
+    <div className="flex items-center gap-2 mb-5">
+      {Array.from({ length: total }).map((_, i) => (
+        <React.Fragment key={i}>
+          <div
+            className={`h-1 flex-1 rounded-full transition-all duration-500 ${
+              i < current
+                ? "bg-emerald-500"
+                : isDark
+                  ? "bg-slate-700"
+                  : "bg-slate-200"
+            }`}
+          />
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
+
+// ─── Main Component
 const Register = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [allCrops, setAllCrops] = useState([]);
-  const [role, setRole] = useState("FARMER_GROUP");
-  const [step, setStep] = useState("form"); // "form" | "otp"
+  // ── Wizard state
+  const [step, setStep] = useState(1); // 1=Profile, 2=Credentials, 3=OTP
   const [loading, setLoading] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [locLoading, setLocLoading] = useState(false);
-  const [mapOpen, setMapOpen] = useState(false);
-  const [formErrors, setFormErrors] = useState({});
+  const [errors, setErrors] = useState({});
 
-  const [email, setEmail] = useState("aanshiksinghtomar@gmail.com");
-  const [phone, setPhone] = useState("8822665588");
-  const [password, setPassword] = useState("password");
-  const [confirm, setConfirm] = useState("password");
+  // ── Step 1 — Profile
+  const [role, setRole] = useState("FARMER_GROUP");
+  const [name, setName] = useState("User Farmer/Collective");
+  const [leader, setLeader] = useState("Aanshik");
   const [photo, setPhoto] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
 
-  const [village, setVillage] = useState("");
-  const [district, setDistrict] = useState("");
-  const [state, setState] = useState("");
-  const [pincode, setPincode] = useState("");
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
-  const [markerPos, setMarkerPos] = useState(null);
+  // ── Step 2 — Credentials
+  const [email, setEmail] = useState("aanshiksinghtomar@gmail.com");
+  const [phone, setPhone] = useState("8855885588");
+  const [password, setPassword] = useState("password");
+  const [confirm, setConfirm] = useState("password");
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const [groupName, setGroupName] = useState("Aanshik Farming Group");
-  const [numberOfFarmers, setNumberOfFarmers] = useState("15");
-  const [leadFarmerName, setLeadFarmerName] = useState("Aanshik Singh");
-  const [selectedCrops, setSelectedCrops] = useState([]);
+  // ── Step 3 — OTP (6 boxes)
+  const [otpDigits, setOtpDigits] = useState(Array(6).fill(""));
+  const otpRefs = Array.from({ length: 6 }, () => React.createRef());
+  const [resendTimer, setResendTimer] = useState(0);
 
-  const [collectiveName, setCollectiveName] = useState("Aanshik's Collective");
-  const [workers, setWorkers] = useState("50");
-
-  const inputRefs = {
-    groupName: useRef(null),
-    leadFarmerName: useRef(null),
-    numberOfFarmers: useRef(null),
-    collectiveName: useRef(null),
-    email: useRef(null),
-    phone: useRef(null),
-    password: useRef(null),
-    confirm: useRef(null),
-    village: useRef(null),
-    district: useRef(null),
-    state: useRef(null),
-    pincode: useRef(null),
-    lat: useRef(null),
-    lng: useRef(null),
-  };
-
-  // ── Fetch crops on mount
   useEffect(() => {
-    const fetchCrops = async () => {
-      try {
-        const data = await getAllCrops();
-        setAllCrops(data.crops);
-      } catch (err) {
-        toast.error("Failed to load crops list.");
-      }
-    };
-    fetchCrops();
-  }, []);
+    let interval;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
-  // ── Reset form when switching roles
-  const handleRoleChange = (newRole) => {
-    setRole(newRole);
-    setEmail("");
-    setPhone("");
-    setPassword("");
-    setConfirm("");
-    setPhoto(null);
-    setPhotoFile(null);
-    setSelectedCrops([]);
-    setGroupName("");
-    setLeadFarmerName("");
-    setNumberOfFarmers("");
-    setCollectiveName("");
-    setWorkers("");
-    setVillage("");
-    setDistrict("");
-    setState("");
-    setPincode("");
-    setLat("");
-    setLng("");
-    setMarkerPos(null);
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
   };
 
-  const validate = () => {
-    const fail = (field, message) => {
-      setFormErrors({ [field]: message });
-      toast.error(message, { title: "Fix this first" });
-      refs[field]?.current?.focus();
-      refs[field]?.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+  // ─── Shared input class
+  const ic = `w-full rounded-xl border text-sm pl-10 pr-4 py-3 outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+    isDark
+      ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
+      : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
+  }`;
+
+  const icNoIcon = ic.replace("pl-10", "px-4");
+
+  // ─── Handlers
+  const handlePhotoChange = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setPhotoFile(f);
+    setPhoto(URL.createObjectURL(f));
+  };
+
+  const handleOtpDigit = (index, value) => {
+    const digit = value.replace(/\D/g, "").slice(-1);
+    const next = [...otpDigits];
+    next[index] = digit;
+    setOtpDigits(next);
+    if (digit && index < 5) otpRefs[index + 1].current?.focus();
+  };
+
+  const handleOtpKey = (index, e) => {
+    if (e.key === "Backspace" && !otpDigits[index] && index > 0)
+      otpRefs[index - 1].current?.focus();
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
+    const next = Array(6).fill("");
+    pasted.split("").forEach((c, i) => {
+      next[i] = c;
+    });
+    setOtpDigits(next);
+    if (pasted.length > 0) otpRefs[Math.min(pasted.length, 5)].current?.focus();
+  };
+
+  const validateStep1 = () => {
+    if (!name.trim()) {
+      toast.error("Name is required.");
       return false;
-    };
-
-    // Role-specific
-    if (role === "FARMER_GROUP") {
-      if (!groupName.trim())
-        return fail("groupName", "Farmer group name is required.");
-      if (!leadFarmerName.trim())
-        return fail("leadFarmerName", "Lead farmer name is required.");
-      if (!numberOfFarmers || Number(numberOfFarmers) < 1)
-        return fail("numberOfFarmers", "Enter a valid number of farmers.");
-    } else {
-      if (!collectiveName.trim())
-        return fail("collectiveName", "Collective name is required.");
     }
-
-    // Email
-    if (!email.trim()) return fail("email", "Email is required.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return fail("email", "Enter a valid email address.");
-
-    // Phone — must be exactly 10 digits
-    const digitsOnly = phone.replace(/\D/g, "");
-    if (!phone.trim()) return fail("phone", "Phone number is required.");
-    if (digitsOnly.length !== 10)
-      return fail("phone", "Phone number must be exactly 10 digits.");
-
-    // Password
-    if (!password) return fail("password", "Password is required.");
-    if (password.length < 8)
-      return fail("password", "Password must be at least 8 characters.");
-
-    // Confirm password
-    if (!confirm) return fail("confirm", "Please confirm your password.");
-    if (confirm !== password) return fail("confirm", "Passwords do not match.");
-
-    // Address
-    if (!village.trim()) return fail("village", "Village / Town is required.");
-    if (!district.trim()) return fail("district", "District is required.");
-    if (!state.trim()) return fail("state", "State is required.");
-    if (!pincode.trim()) return fail("pincode", "Pincode is required.");
-
-    // Coordinates
-    if (!lat)
-      return fail(
-        "lat",
-        "Latitude is required. Use Auto-fill or Choose on Map.",
-      );
-    if (!lng)
-      return fail(
-        "lng",
-        "Longitude is required. Use Auto-fill or Choose on Map.",
-      );
-
-    setFormErrors({});
+    if (!leader.trim()) {
+      toast.error("Leader/Manager name is required.");
+      return false;
+    }
     return true;
   };
 
-  const ic = inputCls(isDark);
-
-  const reverseGeocode = useCallback(
-    async (la, lo) => {
-      try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${la}&lon=${lo}&format=json`,
-        );
-        const data = await res.json();
-        const addr = data.address || {};
-        setVillage(
-          addr.village || addr.hamlet || addr.suburb || addr.town || "",
-        );
-        setDistrict(addr.district || addr.county || "");
-        setState(addr.state || "");
-        setPincode(addr.postcode || "");
-      } catch {
-        toast.error("Could not fetch address. Please fill manually.");
-      }
-    },
-    [toast],
-  );
-
-  const handleAutoFill = () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation not supported.");
-      return;
+  const validateStep2 = () => {
+    if (!email.trim()) {
+      toast.error("Email is required.");
+      return false;
     }
-    setLocLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        const { latitude, longitude } = coords;
-        setLat(latitude.toFixed(6));
-        setLng(longitude.toFixed(6));
-        setMarkerPos({ lat: latitude, lng: longitude });
-        reverseGeocode(latitude, longitude);
-        setLocLoading(false);
-        toast.success("Location detected and address filled!", {
-          title: "Location",
-        });
-      },
-      () => {
-        setLocLoading(false);
-        toast.error("Location access denied. Please allow or fill manually.");
-      },
-      { timeout: 10000 },
-    );
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Invalid email address.");
+      return false;
+    }
+    if (!phone.trim()) {
+      toast.error("Phone is required.");
+      return false;
+    }
+    if (!/^[0-9]{10}$/.test(phone)) {
+      toast.error("Must be a valid 10-digit number.");
+      return false;
+    }
+    if (!password) {
+      toast.error("Password is required.");
+      return false;
+    }
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return false;
+    }
+    if (password !== confirm) {
+      toast.error("Passwords do not match.");
+      return false;
+    }
+    return true;
   };
 
-  // ── Handle map pin confirmation
-  const handleMapConfirm = useCallback(
-    (latlng) => {
-      setMarkerPos(latlng);
-      setLat(latlng.lat.toFixed(6));
-      setLng(latlng.lng.toFixed(6));
-      reverseGeocode(latlng.lat, latlng.lng);
-      toast.success("Location pinned and address filled!", {
-        title: "Location",
-      });
-    },
-    [reverseGeocode, toast],
-  );
+  const handleNextStep1 = () => {
+    if (validateStep1()) setStep(2);
+  };
 
-  // ── Step 1: Validate form then send OTP
-  const handleSendOTP = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setLoading(true);
+  const handleSendOtp = async () => {
+    if (!validateStep2()) return;
+    setOtpLoading(true);
     try {
-      const name = role === "FARMER_GROUP" ? groupName : collectiveName;
-
-      const res = await registerOtp(name, email);
+      const res = await registerOtp(name, email, phone);
       console.log(res);
-      const leftAttempt = 5 - (res?.attempts || 5);
-      setStep("otp");
-      toast.info(
+      toast.success(
         <>
           OTP has been sent successfully !!
           <br />
           please check your inbox & spam folder.
           <br />
-          You have {leftAttempt} attempts remaining.
+          You have {res.leftAttempts} attempts remaining.
         </>,
         {
           title: "OTP Sent",
           duration: 8000,
         },
       );
+      setResendTimer(90);
+      setStep(3);
     } catch (err) {
       const unblockAt = err?.response?.data?.unblockAt;
       const formattedTime = getTime(unblockAt);
@@ -284,664 +247,670 @@ const Register = () => {
 
       toast.error(message);
     } finally {
-      setLoading(false);
+      setOtpLoading(false);
     }
   };
 
-  // ── Step 2: Verify OTP & Register
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setOtpLoading(true);
+  const handleRegister = async () => {
+    const otp = otpDigits.join("");
+    if (otp.length !== 6) {
+      toast.error("Please enter the full 6-digit OTP.");
+      return;
+    }
+    setLoading(true);
     try {
       const formData = new FormData();
-
-      // ── Common fields (field names match register.service.js exactly)
       formData.append("role", role);
+      formData.append("name", name);
       formData.append("email", email);
       formData.append("phone", phone);
       formData.append("password", password);
+      formData.append("leader", leader);
       formData.append("otp", otp);
-
-      // ── Address fields
-      formData.append("village", village);
-      formData.append("area", district);
-      formData.append("city", district);
-      formData.append("state", state);
-      formData.append("pinCode", pincode);
-
-      formData.append("lat", lat);
-      formData.append("long", lng);
-
       if (photoFile) formData.append("profile", photoFile);
 
-      formData.append("crops", JSON.stringify(selectedCrops));
-
-      if (role === "FARMER_GROUP") {
-        formData.append("name", groupName);
-        formData.append("leadFarmer", leadFarmerName);
-        formData.append("farmerCount", numberOfFarmers);
-        formData.append("workers", "");
-      } else {
-        formData.append("name", collectiveName);
-        formData.append("workers", workers);
-        formData.append("leadFarmer", "");
-        formData.append("farmerCount", "");
-      }
-
       await register(formData);
-
       toast.success(
         <>
           Account Created Successfully!!
           <br />
-          Welcome onboard {name}
+          Welcome onboard {leader}
           <br />
           Please login to proceed.
         </>,
         {
           title: "Registered!",
+          duration: 6000,
         },
       );
       navigate("/login");
     } catch (err) {
       toast.error(
         err?.response?.data?.message || err.message || "Registration failed.",
+        { title: "Error" },
       );
     } finally {
-      setOtpLoading(false);
+      setLoading(false);
     }
   };
 
-  // {
-  //     "success": true,
-  //     "message": "Registration successful.",
-  //     "res": {
-  //         "uid": "FG200002",
-  //         "name": "Param Singh and Sons",
-  //         "email": "aanshikSingh@gmail.com",
-  //         "phone": "882266996",
-  //         "profileUrl": "https://res.cloudinary.com/aanshik-dev-cloud/image/upload/v1783866385/farmfresh/userProfiles/FG200002.jpg"
-  //     }
-  // }
+  // ─── Step labels
+  const stepTitles = [
+    { title: "Create Your Account", sub: "Set up your profile identity" },
+    { title: "Secure Your Access", sub: "Your login credentials" },
+    { title: "Verify Your Email", sub: `OTP sent to ${email || "your email"}` },
+  ];
 
-  // ── Photo change handler — keeps both preview URL and raw File object
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPhoto(URL.createObjectURL(file));
-      setPhotoFile(file);
-    }
-  };
+  const currentTitle = stepTitles[step - 1];
 
-  const cardCls = `rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`;
-  const sectionTitleCls = `text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2 ${isDark ? "text-slate-400" : "text-slate-500"}`;
-
+  // ─── Render
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${isDark ? "bg-slate-950" : "bg-slate-100"}`}
+      className={`min-h-screen flex transition-colors duration-300 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}
     >
-      {/* Map Modal */}
-      <AnimatePresence>
-        {mapOpen && (
-          <MapModal
-            isDark={isDark}
-            open={mapOpen}
-            onClose={() => setMapOpen(false)}
-            onConfirm={handleMapConfirm}
-            initialPos={markerPos}
-            initialCenter={
-              lat && lng ? [parseFloat(lat), parseFloat(lng)] : undefined
-            }
+      {/* ── LEFT HERO PANEL (hidden on mobile) ── */}
+      <div
+        className={`hidden lg:flex flex-col justify-between relative w-1/2 overflow-hidden pb-25 pt-26 px-24 gap-6 ${
+          isDark
+            ? "bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-900"
+            : "bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700"
+        }`}
+      >
+        {/* Decorative blobs */}
+        <div className="pointer-events-none absolute -top-24 -left-24 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 w-96 h-96 rounded-full bg-amber-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-emerald-400/10 blur-2xl" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          onClick={() => navigate("/")}
+          className="text-white text-lg flex items-center gap-2 cursor-pointer mb-3"
+        >
+          <Icon
+            width={20}
+            height={20}
+            icon="material-symbols:arrow-back-ios-new-rounded"
           />
-        )}
-      </AnimatePresence>
+          Back
+        </motion.div>
 
-      {step === "otp" ? (
-        // ── OTP STEP
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`w-full max-w-md rounded-3xl border p-8 ${isDark ? "bg-slate-900/80 border-slate-800" : "bg-white border-slate-200 shadow-xl"}`}
-          >
-            <div className="text-center mb-7">
-              <div
-                className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${isDark ? "bg-emerald-500/10" : "bg-emerald-100"}`}
-              >
-                <Icon
-                  icon="ph:envelope-open-fill"
-                  className="w-8 h-8 text-emerald-400"
-                />
-              </div>
-              <h2
-                className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}
-              >
-                Verify Your Email
-              </h2>
-              <p
-                className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}
-              >
-                Enter the OTP sent to{" "}
-                <span
-                  className={`font-medium ${isDark ? "text-white" : "text-slate-900"}`}
-                >
-                  {email}
-                </span>
-              </p>
-              <p
-                className={`text-sm font-thin opacity-70 mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}
-              >
-                Please check your inbox and spam folder.
-                <br />
-                OTP is valid for 20 minutes.
-              </p>
-            </div>
-
-            <form onSubmit={handleRegister} className="space-y-4">
-              <input
-                type="text"
-                placeholder="_ _ _ _ _ _"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                maxLength={6}
-                className={`w-full rounded-xl border text-center text-3xl tracking-[0.6em] py-4 outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 ${isDark ? "border-slate-700 bg-slate-800 text-white" : "border-slate-300 bg-white text-slate-900"}`}
-                required
-              />
-              <button
-                type="submit"
-                disabled={otpLoading}
-                className="w-full py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white transition-all cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {otpLoading ? (
-                  <>
-                    <Icon icon="svg-spinners:ring-resize" className="w-4 h-4" />{" "}
-                    Verifying…
-                  </>
-                ) : (
-                  <>
-                    <Icon icon="ph:check-bold" className="w-4 h-4" /> Verify &
-                    Create Account
-                  </>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setStep("form");
-                  setOtp("");
-                }}
-                className={`w-full text-sm text-center cursor-pointer ${isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-700"}`}
-              >
-                ← Back to form
-              </button>
-            </form>
-          </motion.div>
-        </div>
-      ) : (
-        // ── MAIN FORM STEP
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 pt-24">
-          {/* Back */}
-          <motion.button
-            type="button"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            onClick={() => navigate("/")}
-            className={`flex items-center gap-2 text-sm mb-6 cursor-pointer transition-colors ${isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"}`}
-          >
-            <Icon icon="ph:arrow-left-bold" className="w-4 h-4" />
-            Back to Home
-          </motion.button>
-
-          {/* Page header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div>
-              <h1
-                className={`text-2xl sm:text-3xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}
-              >
-                Create Your Account
-              </h1>
-              <p
-                className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}
-              >
-                Join FarmFresh and start managing your harvest.
-              </p>
-            </div>
-            <div className="sm:min-w-72">
-              <p
-                className={`text-xs font-semibold uppercase tracking-wider mb-1.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
-              >
-                Account Type
-              </p>
-              <SlideToggle
-                options={ROLE_OPTIONS}
-                value={role}
-                onChange={handleRoleChange}
-                size="md"
-              />
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="z-10 space-y-8"
+        >
+          <div>
+            <h2 className="text-5xl font-extrabold text-white leading-14 mb-4">
+              Join the
+              <span className="text-amber-300"> FarmFresh</span>
+              <br />
+              Network
+            </h2>
+            <p className="text-emerald-100/80 text-base leading-relaxed max-w-sm">
+              Connect with India's growing organic farming ecosystem. Register
+              your Farmer Group or Collective and start coordinating smarter
+              harvests today.
+            </p>
           </div>
 
-          <form onSubmit={handleSendOTP} className="space-y-5">
-            {/* ── Identity */}
-            <div className={cardCls}>
-              <p className={sectionTitleCls}>
-                <Icon icon="ph:user-fill" className="w-3.5 h-3.5" />
-                Identity
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Profile photo */}
-                <div className="flex items-center gap-4 sm:col-span-2">
-                  <label className="cursor-pointer group shrink-0">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
+          {/* Step indicators */}
+          <div className="space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300/70">
+              Registration Steps
+            </p>
+            {HERO_STEPS.map((s, i) => (
+              <div key={s.label} className="flex items-center gap-3">
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 ${
+                    i + 1 < step
+                      ? "bg-emerald-400/90"
+                      : i + 1 === step
+                        ? "bg-white/20 ring-2 ring-white/40"
+                        : "bg-white/10"
+                  }`}
+                >
+                  {i + 1 < step ? (
+                    <Icon
+                      icon="ph:check-bold"
+                      className="w-4 h-4 text-emerald-900"
                     />
-                    <div
-                      className={`relative w-16 h-16 rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden transition-all ${photo ? "border-transparent" : isDark ? "border-slate-600 hover:border-emerald-500" : "border-slate-300 hover:border-emerald-400"}`}
-                    >
-                      {photo ? (
-                        <img
-                          src={photo}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center gap-0.5">
-                          <Icon
-                            icon="ph:camera-fill"
-                            className={`w-5 h-5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
-                          />
-                          <span
-                            className={`text-[9px] ${isDark ? "text-slate-500" : "text-slate-400"}`}
-                          >
-                            Photo
-                          </span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-xl">
-                        <Icon
-                          icon="ph:pencil-fill"
-                          className="w-4 h-4 text-white"
-                        />
-                      </div>
+                  ) : (
+                    <Icon icon={s.icon} className="w-4 h-4 text-white" />
+                  )}
+                </div>
+                <span
+                  className={`text-sm font-medium transition-all duration-300 ${
+                    i + 1 === step ? "text-white" : "text-emerald-100/60"
+                  }`}
+                >
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Bottom stat bar */}
+        <div className="flex items-center gap-6 z-10 mt-3">
+          {[
+            { value: "12+", label: "Farmer Groups" },
+            { value: "40%", label: "Less Decay" },
+            { value: "5", label: "Collectives" },
+          ].map((s) => (
+            <div key={s.label}>
+              <p className="text-2xl font-black text-white">{s.value}</p>
+              <p className="text-xs text-emerald-200/70">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── RIGHT FORM PANEL ── */}
+      <div
+        className={`flex-1 flex flex-col items-center justify-center px-5 sm:px-10 py-8 lg:py-16 ${
+          isDark ? "bg-slate-950" : "bg-slate-50"
+        }`}
+      >
+        {/* Mobile-only brand */}
+        <div className="flex items-center gap-2 mb-8 lg:hidden">
+          <div
+            className={`p-1.5 rounded-lg ${isDark ? "bg-emerald-800/70 text-emerald-300" : "bg-emerald-100 text-emerald-600"}`}
+          >
+            <Icon icon="ph:plant-fill" className="w-5 h-5" />
+          </div>
+          <span
+            className={`font-bold quantico uppercase tracking-widest text-sm ${isDark ? "text-white" : "text-slate-900"}`}
+          >
+            FarmFresh
+          </span>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+          className="w-full max-w-md"
+        >
+          {/* Heading */}
+          <div className="mb-6 text-center lg:text-left">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.25 }}
+              >
+                <h1
+                  className={`text-3xl font-bold mb-1.5 ${isDark ? "text-white" : "text-slate-900"}`}
+                >
+                  {currentTitle.title}
+                </h1>
+                <p
+                  className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                >
+                  {currentTitle.sub}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Step progress */}
+          <StepBar current={step} total={TOTAL_STEPS} />
+
+          {/* ── STEP 1: Profile ── */}
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-5"
+              >
+                {/* Role */}
+                <div>
+                  <p
+                    className={`text-xs font-medium mb-2 uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}
+                  >
+                    Account Type
+                  </p>
+                  <SlideToggle
+                    options={ROLE_OPTIONS}
+                    value={role}
+                    onChange={setRole}
+                    size="md"
+                  />
+                </div>
+
+                {/* Profile photo — hover pencil avatar */}
+                <label className="flex items-center gap-5 cursor-pointer group">
+                  <div
+                    className={`relative w-18 h-18 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center ${
+                      isDark ? "bg-slate-800" : "bg-slate-100"
+                    } ring-2 ring-offset-2 ${
+                      isDark
+                        ? "ring-slate-700 ring-offset-slate-950"
+                        : "ring-slate-200 ring-offset-slate-50"
+                    }`}
+                  >
+                    {photo ? (
+                      <img
+                        src={photo}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Icon
+                        icon="ph:user-fill"
+                        className={`w-10 h-10 ${
+                          isDark ? "text-slate-600" : "text-slate-400"
+                        }`}
+                      />
+                    )}
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <Icon
+                        icon="ph:pencil-fill"
+                        className="w-5 h-5 text-white"
+                      />
+                      <span className="text-white text-[10px] mt-1 font-semibold">
+                        {photo ? "Change" : "Upload"}
+                      </span>
                     </div>
-                  </label>
-                  <div>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
                     <p
-                      className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-800"}`}
+                      className={`text-sm font-semibold ${
+                        isDark ? "text-slate-200" : "text-slate-800"
+                      }`}
                     >
                       Profile Photo
                     </p>
                     <p
-                      className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}
+                      className={`text-xs ${
+                        isDark ? "text-slate-500" : "text-slate-400"
+                      }`}
                     >
-                      Optional. Max 2 MB.
+                      Optional - shown publicly
+                    </p>
+                    <p
+                      className={`text-xs mt-1 ${
+                        isDark ? "text-slate-600" : "text-slate-400"
+                      }`}
+                    >
+                      JPG, PNG · max 2 MB
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                </label>
+
+                {/* Group / Collective name */}
+                <Field
+                  label={
+                    role === "FARMER_GROUP"
+                      ? "Farmer Group Name"
+                      : "Collective Name"
+                  }
+                  icon={
+                    role === "FARMER_GROUP"
+                      ? "ph:plant-fill"
+                      : "ph:buildings-fill"
+                  }
+                  error={errors.name}
+                  required
+                >
+                  <input
+                    type="text"
+                    placeholder={
+                      role === "FARMER_GROUP"
+                        ? "e.g. Himalayan Farmers Group"
+                        : "e.g. GreenValley Collective"
+                    }
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setErrors((p) => ({ ...p, name: "" }));
+                    }}
+                    className={`${ic} ${errors.name ? "border-rose-500" : ""}`}
+                  />
+                </Field>
+
+                {/* Leader / Manager */}
+                <Field
+                  label={
+                    role === "FARMER_GROUP"
+                      ? "Lead Farmer Name"
+                      : "Manager Name"
+                  }
+                  icon="ph:user-fill"
+                  error={errors.leader}
+                  required
+                >
+                  <input
+                    type="text"
+                    placeholder={
+                      role === "FARMER_GROUP"
+                        ? "e.g. Rajan Sharma"
+                        : "e.g. Priya Mehta"
+                    }
+                    value={leader}
+                    onChange={(e) => {
+                      setLeader(e.target.value);
+                      setErrors((p) => ({ ...p, leader: "" }));
+                    }}
+                    className={`${ic} ${errors.leader ? "border-rose-500" : ""}`}
+                  />
+                </Field>
+
+                <button
+                  onClick={handleNextStep1}
+                  className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-[.98] text-white font-semibold text-sm transition-all"
+                >
+                  Next Step
+                </button>
+
+                <p
+                  className={`text-center text-sm ${isDark ? "text-slate-500" : "text-slate-400"}`}
+                >
+                  Already have an account?{" "}
+                  <Link
+                    to="/login"
+                    className="text-emerald-500 hover:text-emerald-400 font-semibold"
+                  >
+                    Sign in
+                  </Link>
+                </p>
+              </motion.div>
+            )}
+
+            {/* ── STEP 2: Credentials ── */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-4"
+              >
+                {/* Email */}
+                <Field
+                  label="Email Address"
+                  icon="ph:envelope-fill"
+                  error={errors.email}
+                  required
+                >
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors((p) => ({ ...p, email: "" }));
+                    }}
+                    className={`${ic} ${errors.email ? "border-rose-500" : ""}`}
+                  />
+                </Field>
+
+                {/* Phone */}
+                <Field
+                  label="Phone Number"
+                  icon="ph:phone-fill"
+                  error={errors.phone}
+                  required
+                >
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="10-digit mobile number"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value.replace(/\D/g, ""));
+                      setErrors((p) => ({ ...p, phone: "" }));
+                    }}
+                    className={`${ic} ${errors.phone ? "border-rose-500" : ""}`}
+                  />
+                </Field>
+
+                {/* Password */}
+                <Field
+                  label="Password"
+                  icon="ph:lock-key-fill"
+                  error={errors.password}
+                  required
+                >
+                  <input
+                    type={showPass ? "text" : "password"}
+                    placeholder="Min. 6 characters"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrors((p) => ({ ...p, password: "" }));
+                    }}
+                    className={`${ic} pr-10 ${errors.password ? "border-rose-500" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((v) => !v)}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}
+                  >
+                    <Icon
+                      icon={showPass ? "ph:eye-slash-fill" : "ph:eye-fill"}
+                      className="w-4 h-4"
+                    />
+                  </button>
+                </Field>
+
+                {/* Confirm Password */}
+                <Field
+                  label="Confirm Password"
+                  icon="ph:lock-key-fill"
+                  error={errors.confirm}
+                  required
+                >
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    placeholder="Repeat your password"
+                    value={confirm}
+                    onChange={(e) => {
+                      setConfirm(e.target.value);
+                      setErrors((p) => ({ ...p, confirm: "" }));
+                    }}
+                    className={`${ic} pr-10 ${errors.confirm ? "border-rose-500" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((v) => !v)}
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}
+                  >
+                    <Icon
+                      icon={showConfirm ? "ph:eye-slash-fill" : "ph:eye-fill"}
+                      className="w-4 h-4"
+                    />
+                  </button>
+                </Field>
+
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={() => setStep(1)}
+                    className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-all ${
+                      isDark
+                        ? "border-slate-700 text-slate-300 hover:bg-slate-800"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleSendOtp}
+                    disabled={otpLoading}
+                    className="flex-[2] py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-[.98] disabled:opacity-60 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  >
+                    {otpLoading ? (
+                      <>
+                        <Icon
+                          icon="ph:spinner-gap"
+                          className="w-4 h-4 animate-spin"
+                        />
+                        Sending OTP…
+                      </>
+                    ) : (
+                      "Send OTP"
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── STEP 3: OTP ── */}
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, x: 40 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-5"
+              >
+                {/* Info card */}
+                <div
+                  className={`flex items-start gap-3 p-4 rounded-xl border ${
+                    isDark
+                      ? "bg-emerald-950/40 border-emerald-800/40"
+                      : "bg-emerald-50 border-emerald-200"
+                  }`}
+                >
+                  <Icon
+                    icon="ph:envelope-open-fill"
+                    className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"
+                  />
+                  <div>
+                    <p
+                      className={`text-sm font-semibold ${isDark ? "text-emerald-300" : "text-emerald-700"}`}
+                    >
+                      OTP sent to your email
+                    </p>
+                    <p
+                      className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                    >
+                      Check your inbox and spam folder
                     </p>
                   </div>
                 </div>
 
-                {/* Role-specific fields */}
-                <AnimatePresence mode="wait">
-                  {role === "FARMER_GROUP" ? (
-                    <motion.div
-                      key="farmer"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="contents"
-                    >
-                      <Field
-                        label="Farmer Group Name"
-                        required
-                        error={formErrors.groupName}
-                      >
-                        <input
-                          ref={inputRefs.groupName}
-                          className={`${ic} ${formErrors.groupName ? "border-red-500" : ""}`}
-                          placeholder="e.g. Triyuginarayan Organic Pulse Pioneers"
-                          value={groupName}
-                          onChange={(e) => setGroupName(e.target.value)}
-                          onFocus={() =>
-                            setFormErrors((p) => ({ ...p, groupName: "" }))
-                          }
-                        />
-                      </Field>
-                      <Field
-                        label="Lead Farmer Name"
-                        required
-                        error={formErrors.leadFarmerName}
-                      >
-                        <input
-                          ref={inputRefs.leadFarmerName}
-                          className={`${ic} ${formErrors.leadFarmerName ? "border-red-500" : ""}`}
-                          placeholder="Your full name"
-                          value={leadFarmerName}
-                          onChange={(e) => setLeadFarmerName(e.target.value)}
-                          onFocus={() =>
-                            setFormErrors((p) => ({ ...p, leadFarmerName: "" }))
-                          }
-                        />
-                      </Field>
-                      <Field
-                        label="No. of Farmers"
-                        required
-                        error={formErrors.numberOfFarmers}
-                      >
-                        <input
-                          ref={inputRefs.numberOfFarmers}
-                          className={`${ic} ${formErrors.numberOfFarmers ? "border-red-500" : ""}`}
-                          type="number"
-                          min="1"
-                          placeholder="12"
-                          value={numberOfFarmers}
-                          onChange={(e) => setNumberOfFarmers(e.target.value)}
-                          onFocus={() =>
-                            setFormErrors((p) => ({
-                              ...p,
-                              numberOfFarmers: "",
-                            }))
-                          }
-                        />
-                      </Field>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="collective"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="contents"
-                    >
-                      <Field
-                        label="Collective Name"
-                        required
-                        error={formErrors.collectiveName}
-                      >
-                        <input
-                          ref={inputRefs.collectiveName}
-                          className={`${ic} ${formErrors.collectiveName ? "border-red-500" : ""}`}
-                          placeholder="e.g. Mandakini Organic Collective"
-                          value={collectiveName}
-                          onChange={(e) => setCollectiveName(e.target.value)}
-                          onFocus={() =>
-                            setFormErrors((p) => ({ ...p, collectiveName: "" }))
-                          }
-                        />
-                      </Field>
-                      <Field label="Total Workers / Staff">
-                        <input
-                          className={ic}
-                          type="number"
-                          min="1"
-                          placeholder="25"
-                          value={workers}
-                          onChange={(e) => setWorkers(e.target.value)}
-                        />
-                      </Field>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <Field label="Phone" required error={formErrors.phone}>
-                  <input
-                    ref={inputRefs.phone}
-                    className={`${ic} ${formErrors.phone ? "border-red-500" : ""}`}
-                    type="tel"
-                    placeholder="10-digit mobile number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    onFocus={() => setFormErrors((p) => ({ ...p, phone: "" }))}
-                  />
-                </Field>
-                <Field label="Email" required error={formErrors.email}>
-                  <input
-                    ref={inputRefs.email}
-                    className={`${ic} ${formErrors.email ? "border-red-500" : ""}`}
-                    type="email"
-                    placeholder="you@example.in"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onFocus={() => setFormErrors((p) => ({ ...p, email: "" }))}
-                  />
-                </Field>
-                <Field label="Password" required error={formErrors.password}>
-                  <div className="relative">
-                    <input
-                      ref={inputRefs.password}
-                      className={`${ic} pr-10 ${formErrors.password ? "border-red-500" : ""}`}
-                      type={showPass ? "text" : "password"}
-                      placeholder="Min. 8 characters"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onFocus={() =>
-                        setFormErrors((p) => ({ ...p, password: "" }))
-                      }
-                      minLength={8}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPass((p) => !p)}
-                      className={`absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer ${isDark ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}
-                    >
-                      <Icon
-                        icon={showPass ? "ph:eye-slash-fill" : "ph:eye-fill"}
-                        className="w-4 h-4"
+                {/* 6-box OTP input */}
+                <div className="space-y-2">
+                  <label
+                    className={`block text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}
+                  >
+                    6-Digit OTP
+                    <span className="text-rose-400 ml-0.5">*</span>
+                  </label>
+                  <div className="flex gap-2.5">
+                    {otpDigits.map((digit, i) => (
+                      <input
+                        key={i}
+                        ref={otpRefs[i]}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpDigit(i, e.target.value)}
+                        onKeyDown={(e) => handleOtpKey(i, e)}
+                        onPaste={i === 0 ? handleOtpPaste : undefined}
+                        className={`flex-1 min-w-0 aspect-square rounded-xl border text-center font-mono text-xl font-bold outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+                          isDark
+                            ? "bg-slate-900 border-slate-700 text-slate-100"
+                            : "bg-white border-slate-200 text-slate-900"
+                        } ${errors.otp ? "border-rose-500" : ""} ${
+                          digit
+                            ? isDark
+                              ? "border-emerald-600 bg-emerald-950/40"
+                              : "border-emerald-400 bg-emerald-50"
+                            : ""
+                        }`}
                       />
-                    </button>
+                    ))}
                   </div>
-                </Field>
-                <Field
-                  label="Confirm Password"
-                  required
-                  error={formErrors.confirm}
-                >
-                  <input
-                    ref={inputRefs.confirm}
-                    className={`${ic} ${formErrors.confirm ? "border-red-500 focus:border-red-500 focus:ring-red-500/40" : ""}`}
-                    type="password"
-                    placeholder="Re-enter password"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    onFocus={() =>
-                      setFormErrors((p) => ({ ...p, confirm: "" }))
-                    }
-                  />
-                </Field>
-              </div>
-            </div>
+                  {errors.otp && (
+                    <p className="text-xs text-rose-400">{errors.otp}</p>
+                  )}
+                </div>
 
-            {/* ── Crops */}
-            <div className={cardCls}>
-              <p className={sectionTitleCls}>
-                <Icon
-                  icon="ph:plant-fill"
-                  className="w-3.5 h-3.5 text-emerald-400"
-                />
-                {role === "FARMER_GROUP" ? "Crops Grown" : "Crops Handled"}
-              </p>
-              {/* CropTagInput shows names in the list view; on selection it stores the crop code */}
-              <CropTagInput
-                selected={selectedCrops}
-                onChange={setSelectedCrops}
-                crops={allCrops}
-                isDark={isDark}
-              />
-            </div>
-
-            {/* ── Location & Address */}
-            <div className={cardCls}>
-              <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                <p className={sectionTitleCls}>
-                  <Icon
-                    icon="ph:map-pin-fill"
-                    className="w-3.5 h-3.5 text-blue-400"
-                  />
-                  Location & Address
-                </p>
-                <div className="flex gap-2">
+                {/* Resend */}
+                <div className="text-center">
                   <button
-                    type="button"
-                    onClick={handleAutoFill}
-                    disabled={locLoading}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer disabled:opacity-60 ${
+                    onClick={handleSendOtp}
+                    disabled={otpLoading || resendTimer > 0}
+                    className={`text-sm font-semibold transition-colors ${
+                      resendTimer > 0
+                        ? isDark
+                          ? "text-slate-500 cursor-not-allowed"
+                          : "text-slate-400 cursor-not-allowed"
+                        : "text-emerald-500 hover:text-emerald-400"
+                    } disabled:opacity-50`}
+                  >
+                    {otpLoading
+                      ? "Resending…"
+                      : resendTimer > 0
+                        ? `Resend OTP in ${formatTime(resendTimer)}`
+                        : "Resend OTP"}
+                  </button>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setStep(2);
+                      setOtpDigits(["", "", "", "", "", ""]);
+                    }}
+                    className={`flex-1 py-3 rounded-xl border text-sm font-semibold transition-all ${
                       isDark
-                        ? "bg-blue-500/10 text-blue-400 border-blue-500/25 hover:bg-blue-500/20"
-                        : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                        ? "border-slate-700 text-slate-300 hover:bg-slate-800"
+                        : "border-slate-200 text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    {locLoading ? (
+                    Back
+                  </button>
+                  <button
+                    onClick={handleRegister}
+                    disabled={loading}
+                    className="flex-[2] py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-[.98] disabled:opacity-60 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
                       <>
                         <Icon
-                          icon="svg-spinners:ring-resize"
-                          className="w-3.5 h-3.5"
-                        />{" "}
-                        Detecting…
+                          icon="ph:spinner-gap"
+                          className="w-4 h-4 animate-spin"
+                        />
+                        Creating Account…
                       </>
                     ) : (
                       <>
-                        <Icon icon="ph:gps-fix-fill" className="w-3.5 h-3.5" />{" "}
-                        Auto-fill
+                        <Icon
+                          icon="ph:user-circle-plus-fill"
+                          className="w-4 h-4"
+                        />
+                        Create Account
                       </>
                     )}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setMapOpen(true)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                      isDark
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/20"
-                        : "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
-                    }`}
-                  >
-                    <Icon icon="ph:map-trifold-fill" className="w-3.5 h-3.5" />
-                    Choose on Map
-                  </button>
                 </div>
-              </div>
-
-              {lat && lng && (
-                <div
-                  className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg mb-4 ${isDark ? "bg-emerald-500/8 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200"}`}
-                >
-                  <Icon
-                    icon="ph:map-pin-fill"
-                    className="w-3.5 h-3.5 shrink-0"
-                  />
-                  Location pinned: {parseFloat(lat).toFixed(4)},{" "}
-                  {parseFloat(lng).toFixed(4)}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field
-                  label="Village / Town"
-                  required
-                  error={formErrors.village}
-                >
-                  <input
-                    ref={inputRefs.village}
-                    className={`${ic} ${formErrors.village ? "border-red-500" : ""}`}
-                    placeholder="e.g. Triyuginarayan"
-                    value={village}
-                    onChange={(e) => setVillage(e.target.value)}
-                    onFocus={() =>
-                      setFormErrors((p) => ({ ...p, village: "" }))
-                    }
-                  />
-                </Field>
-                <Field label="District" required error={formErrors.district}>
-                  <input
-                    ref={inputRefs.district}
-                    className={`${ic} ${formErrors.district ? "border-red-500" : ""}`}
-                    placeholder="e.g. Rudraprayag"
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    onFocus={() =>
-                      setFormErrors((p) => ({ ...p, district: "" }))
-                    }
-                  />
-                </Field>
-                <Field label="State" required error={formErrors.state}>
-                  <input
-                    ref={inputRefs.state}
-                    className={`${ic} ${formErrors.state ? "border-red-500" : ""}`}
-                    placeholder="e.g. Uttarakhand"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    onFocus={() => setFormErrors((p) => ({ ...p, state: "" }))}
-                  />
-                </Field>
-                <Field label="Pincode" required error={formErrors.pincode}>
-                  <input
-                    ref={inputRefs.pincode}
-                    className={`${ic} ${formErrors.pincode ? "border-red-500" : ""}`}
-                    placeholder="246444"
-                    value={pincode}
-                    onChange={(e) => setPincode(e.target.value)}
-                    onFocus={() =>
-                      setFormErrors((p) => ({ ...p, pincode: "" }))
-                    }
-                  />
-                </Field>
-                <Field label="Latitude" required error={formErrors.lat}>
-                  <input
-                    ref={inputRefs.lat}
-                    className={`${ic} ${formErrors.lat ? "border-red-500" : ""}`}
-                    placeholder="30.7333"
-                    value={lat}
-                    onChange={(e) => setLat(e.target.value)}
-                    onFocus={() => setFormErrors((p) => ({ ...p, lat: "" }))}
-                  />
-                </Field>
-                <Field label="Longitude" required error={formErrors.lng}>
-                  <input
-                    ref={inputRefs.lng}
-                    className={`${ic} ${formErrors.lng ? "border-red-500" : ""}`}
-                    placeholder="79.0667"
-                    value={lng}
-                    onChange={(e) => setLng(e.target.value)}
-                    onFocus={() => setFormErrors((p) => ({ ...p, lng: "" }))}
-                  />
-                </Field>
-              </div>
-            </div>
-
-            {/* ── Submit */}
-            <div className="space-y-3 pb-8">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Icon icon="svg-spinners:ring-resize" className="w-4 h-4" />{" "}
-                    Sending OTP…
-                  </>
-                ) : (
-                  <>
-                    <Icon icon="ph:envelope-fill" className="w-4 h-4" /> Send
-                    OTP & Continue
-                  </>
-                )}
-              </button>
-              <p
-                className={`text-center text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}
-              >
-                Already have an account?{" "}
-                <Link
-                  to="/login"
-                  className="text-emerald-500 hover:text-emerald-400 font-semibold"
-                >
-                  Sign in →
-                </Link>
-              </p>
-            </div>
-          </form>
-        </div>
-      )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
     </div>
   );
 };

@@ -7,6 +7,7 @@ import Collective from "../../models/collective.model.js";
 
 import generateOTP from "../../utils/otpGenerate.js";
 import sendVerificationMail from "../email.service.js";
+import throwErr from "../../utils/throwErr.js";
 
 // Reusable function to send OTP
 const sendOtp = async (name, email, goal) => {
@@ -65,7 +66,7 @@ const sendOtp = async (name, email, goal) => {
 
   return {
     message: "OTP sent successfully !!",
-    attempts: attempts,
+    leftAttempts: 5 - attempts,
     otp: otp,
   };
 };
@@ -103,7 +104,7 @@ const verifyOtp = async (email, otp, goal) => {
 
 // Sends OTP email for registration - verification is done in register service
 const registerOtp = async (data) => {
-  const { name, email } = data;
+  const { name, email, phone } = data;
   const userEmailExists = await User.findOne({ username: email });
 
   if (userEmailExists) {
@@ -111,12 +112,27 @@ const registerOtp = async (data) => {
     err.statusCode = 409;
     throw err;
   }
+  const farmerPhone = await FarmerGroup.findOne({
+    phone,
+  });
+  const collectivePhone = await Collective.findOne({
+    phone,
+  });
+  if (farmerPhone || collectivePhone) {
+    const err = new Error(
+      "This phone is already linked with some other account !!",
+    );
+    err.statusCode = 409;
+    err.success = false;
+    throw err;
+  }
+
   const result = await sendOtp(name, email, "REGISTER");
   return result;
 };
 
 // Sends an OTP email to reset password
-const forgotPassOtp = async (data) => {
+const forgotSendOtp = async (data) => {
   const { email } = data;
   const userExists = await User.findOne({ username: email });
   if (!userExists) {
@@ -137,13 +153,18 @@ const forgotPassOtp = async (data) => {
 };
 
 // Verify reset password otp
-const forgotOtpVerify = async (data) => {
-  const { email, otp } = data;
+const forgotVerifyOtp = async (data) => {
+  const { email, otp, password } = data;
 
   await verifyOtp(email, otp, "FORGOT_PASS");
+  if (!password || password.length < 8) {
+    throwErr(400, "Password must be at least 8 characters !!");
+  }
+  const hashPass = await bcrypt.hash(password, 10);
+  await User.findOneAndUpdate({ username: email }, { password: hashPass });
   await PendingOTP.deleteOne({ email, goal: "FORGOT_PASS" });
 
   return { success: true, message: "OTP verified successfully !!" };
 };
 
-export default { registerOtp, forgotPassOtp, verifyOtp, forgotOtpVerify };
+export default { registerOtp, forgotSendOtp, verifyOtp, forgotVerifyOtp };

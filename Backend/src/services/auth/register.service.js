@@ -5,13 +5,12 @@ import User from "../../models/user.model.js";
 import PendingOTP from "../../models/pendingOTP.model.js";
 import FarmerGroup from "../../models/farmerGroup.model.js";
 import Collective from "../../models/collective.model.js";
-import FarmerCrop from "../../models/farmerCrop.model.js";
 import Crop from "../../models/crop.model.js";
-import CollectedCrop from "../../models/collectedCrops.model.js";
 
 import otpService from "./otp.service.js";
 import generateId from "../idGenerator.service.js";
 import bcrypt from "bcryptjs";
+import throwErr from "../../utils/throwErr.js";
 
 const addCrops = async ({
   ownerId,
@@ -36,10 +35,7 @@ const addCrops = async ({
     const cropId = cropMap.get(cropCode);
 
     if (!cropId) {
-      const err = new Error(`Crop with id: '${cropCode}' not found !!`);
-      err.statusCode = 404;
-      err.success = false;
-      throw err;
+      throwErr(404, `Crop with id: '${cropCode}' not found !!`);
     }
 
     mappings.push({
@@ -52,62 +48,22 @@ const addCrops = async ({
 };
 
 const registerUser = async (data, file) => {
-  let {
-    role,
-    name,
-    email,
-    phone,
-    workers,
-    leadFarmer,
-    farmerCount,
-    password,
-    crops = [],
-    village,
-    area,
-    city,
-    state,
-    pinCode,
-    lat,
-    long,
-    otp,
-  } = data;
-
-  if (typeof crops === "string") {
-    try {
-      crops = JSON.parse(crops);
-    } catch {
-      const err = new Error("Invalid crops format.");
-      err.statusCode = 400;
-      err.success = false;
-      throw err;
-    }
-  }
+  let { role, name, email, phone, leader, password, otp } = data;
 
   const existingUser = await User.findOne({
     username: email,
   });
 
   if (existingUser) {
-    const err = new Error("User already exists with this email !!");
-    err.statusCode = 409;
-    err.success = false;
-    throw err;
+    throwErr(409, "User already exists with this email !!");
   }
-  const farmerPhone = await FarmerGroup.findOne({
-    phone,
-  });
-
-  const collectivePhone = await Collective.findOne({
-    phone,
-  });
+  const [farmerPhone, collectivePhone] = await Promise.all([
+    FarmerGroup.findOne({ phone }),
+    Collective.findOne({ phone }),
+  ]);
 
   if (farmerPhone || collectivePhone) {
-    const err = new Error(
-      "This phone is already linked with some other account !!",
-    );
-    err.statusCode = 409;
-    err.success = false;
-    throw err;
+    throwErr(409, "This phone is already linked with some other account !!");
   }
 
   await otpService.verifyOtp(email, otp, "REGISTER");
@@ -126,10 +82,7 @@ const registerUser = async (data, file) => {
       COLLECTIVE: "collective",
     };
     if (!roleMap[role]) {
-      const err = new Error("Invalid role.");
-      err.statusCode = 400;
-      err.success = false;
-      throw err;
+      throwErr(400, "Invalid role.");
     }
 
     await session.withTransaction(async () => {
@@ -139,6 +92,7 @@ const registerUser = async (data, file) => {
         username: email,
         password: hashPassword,
         role,
+        provider: "LOCAL",
         isActive: true,
         lastLogin: null,
       });
@@ -152,29 +106,9 @@ const registerUser = async (data, file) => {
           email,
           phone,
           profile: profileUrl,
-          farmerCount,
-          leadFarmer,
-          address: {
-            village,
-            area,
-            city,
-            state,
-            pinCode,
-          },
-          coord: {
-            lat,
-            long,
-          },
+          leadFarmer: leader,
         });
         await farmerGroup.save({ session });
-
-        await addCrops({
-          ownerId: farmerGroup._id,
-          crops,
-          MappingModel: FarmerCrop,
-          ownerField: "fid",
-          session,
-        });
       } else if (role === "COLLECTIVE") {
         const newCollective = new Collective({
           _id: newUser._id,
@@ -182,38 +116,16 @@ const registerUser = async (data, file) => {
           email,
           phone,
           profile: profileUrl,
-          workers,
-          address: {
-            area,
-            city,
-            state,
-            pinCode,
-          },
-          coord: {
-            lat,
-            long,
-          },
-          ratingAvg: 0,
+          manager: leader,
         });
         await newCollective.save({ session });
-
-        await addCrops({
-          ownerId: newCollective._id,
-          crops,
-          MappingModel: CollectedCrop,
-          ownerField: "cid",
-          session,
-        });
       }
       await PendingOTP.deleteOne({ email, goal: "REGISTER" }, { session });
     });
   } catch (err) {
     if (err.code === 11000) {
       const field = Object.keys(err.keyValue || {})[0] || "email/phone";
-      const error = new Error(`User already exists with this ${field}.`);
-      error.statusCode = 409;
-      error.success = false;
-      throw error;
+      throwErr(409, `User already exists with this ${field}.`);
     }
     throw err;
   } finally {
@@ -242,9 +154,10 @@ const registerUser = async (data, file) => {
         );
       }
     } catch (uploadError) {
-      console.error(
-        `Registration succeeded, but image upload failed for UID ${uid}:`,
-        uploadError,
+      console.error(uploadError);
+      throwErr(
+        500,
+        `Registration succeeded, but image upload failed for UID ${uid}`,
       );
     }
   }

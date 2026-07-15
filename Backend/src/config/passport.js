@@ -3,70 +3,100 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import mongoose from "mongoose";
 import User from "../models/user.model.js";
 import FarmerGroup from "../models/farmerGroup.model.js";
+import Collective from "../models/collective.model.js";
 import generateId from "../services/idGenerator.service.js";
 
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID || "dummy_client_id",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "dummy_secret",
-      callbackURL: "http://localhost:5000/api/auth/google/callback",
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK,
+      passReqToCallback: true,
     },
-    async (accessToken, refreshToken, profile, done) => {
+    async (req, accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails[0].value;
         const name = profile.displayName;
 
-        // Check if user exists
         let user = await User.findOne({ username: email }).select("+password");
-
         if (user) {
-          return done(null, user);
+          if (user.role == req.query.state) {
+            await User.findByIdAndUpdate(
+              { _id: user._id },
+              { $set: { lastLogin: Date.now() } },
+            );
+            return done(null, user);
+          } else {
+            throw new Error("You are already registered as a different role");
+          }
         }
 
-        // If user doesn't exist, create a new one as FARMER_GROUP
+        const [existingFG, existingCol] = await Promise.all([
+          FarmerGroup.findOne({ email }, "_id"),
+          Collective.findOne({ email }, "_id"),
+        ]);
+        const existingProfile = existingFG || existingCol;
+        if (existingProfile) {
+          user = await User.findById(existingProfile._id).select("+password");
+          if (user) {
+            if (user.role == req.query.state) {
+              await User.findByIdAndUpdate(
+                { _id: user._id },
+                { $set: { lastLogin: Date.now() } },
+              );
+              return done(null, user);
+            } else {
+              throw new Error("You are already registered as a different role");
+            }
+          }
+        }
+
+        const role = ["FARMER_GROUP", "COLLECTIVE"].includes(req.query.state)
+          ? req.query.state
+          : "FARMER_GROUP";
+
+        const rolePrefix =
+          role === "FARMER_GROUP" ? "farmergroup" : "collective";
+
         const session = await mongoose.startSession();
         let newUser;
 
         await session.withTransaction(async () => {
-          const uid = await generateId("farmergroup", session);
+          const uid = await generateId(rolePrefix, session);
 
           newUser = new User({
             uid,
             username: email,
-            password: "OAUTH_USER", // dummy password since they use Google
-            role: "FARMER_GROUP",
+            password: "OAUTH_USER",
+            role,
+            provider: "GOOGLE",
             isActive: true,
             lastLogin: Date.now(),
           });
 
           await newUser.save({ session });
 
-          // Generate dummy unique phone for the schema requirement
-          const dummyPhone = `999${Math.floor(1000000 + Math.random() * 9000000)}`;
-
-          const farmerGroup = new FarmerGroup({
-            _id: newUser._id,
-            name: name,
-            email: email,
-            phone: dummyPhone,
-            profile: profile.photos[0]?.value || "",
-            farmerCount: 1,
-            leadFarmer: name,
-            address: {
-              village: "Unknown",
-              area: "Unknown",
-              city: "Unknown",
-              state: "Unknown",
-              pinCode: "000000",
-              location: {
-                type: "Point",
-                coordinates: [0, 0], // default long, lat
-              },
-            },
-          });
-
-          await farmerGroup.save({ session });
+          if (role === "FARMER_GROUP") {
+            const farmerGroup = new FarmerGroup({
+              _id: newUser._id,
+              name: `Group ${uid}`,
+              email,
+              profile: profile.photos[0]?.value || "",
+              farmerCount: 1,
+              leadFarmer: name,
+            });
+            await farmerGroup.save({ session });
+          } else {
+            const collective = new Collective({
+              _id: newUser._id,
+              name: `Collective ${uid}`,
+              email,
+              profile: profile.photos[0]?.value || "",
+              manager: name,
+            });
+            await collective.save({ session });
+          }
         });
 
         await session.endSession();

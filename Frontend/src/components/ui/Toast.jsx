@@ -3,19 +3,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useTheme } from "../../context/ThemeContext";
 
-/**
- * Toast system
- *
- * Usage:
- *   1. Wrap your app (or a subtree) in <ToastProvider>
- *   2. In any child: const { toast } = useToast();
- *      toast.success("Saved!") / toast.error("Failed.") / toast.info("Note") / toast.warning("Watch out")
- *
- * toast(message, options) options:
- *   @param {'success'|'error'|'info'|'warning'} [type='info']
- *   @param {number} [duration=3500]   - ms before auto-dismiss (0 = manual only)
- *   @param {string} [title]           - optional bold heading above message
- */
 
 const ToastContext = createContext(null);
 
@@ -122,10 +109,7 @@ export const useToast = () => {
   return ctx;
 };
 
-/**
- * Standalone Toast display component (if you prefer to pass toasts manually)
- * Props: same shape as internal toast object
- */
+
 export const Toast = ({ type = "info", title, message, onDismiss }) => {
   const { isDark } = useTheme();
   return (

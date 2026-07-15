@@ -29,6 +29,13 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;
 
+    if (
+      original.url?.includes("/auth/login") ||
+      original.url?.includes("/auth/register")
+    ) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !original._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -59,7 +66,7 @@ api.interceptors.response.use(
           { refreshToken },
         );
 
-        const newAccessToken = data.token;
+        const newAccessToken = data.accessToken;
         localStorage.setItem("accessToken", newAccessToken);
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
 

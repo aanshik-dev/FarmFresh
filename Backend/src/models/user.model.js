@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       enum: ["COLLECTIVE", "FARMER_GROUP", "ADMIN"],
     },
+    provider: {
+      type: String,
+      enum: ["LOCAL", "GOOGLE"],
+      default: "LOCAL",
+      required: true,
+    },
     isActive: {
       type: Boolean,
       default: true,

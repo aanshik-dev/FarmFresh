@@ -1,40 +1,30 @@
 import User from "../../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import throwErr from "../../utils/throwErr.js";
 
 const loginUser = async (email, password, role) => {
   const user = await User.findOne({ username: email }).select("+password");
-  console.log(user);
+
   if (!user) {
-    const err = new Error("No user registered with this email !!");
-    err.statusCode = 401;
-    err.success = false;
-    throw err;
+    throwErr(401, "No user registered with this email !!");
   }
 
   if (user.role !== role) {
-    const err = new Error("Invalid role selected.");
-    err.statusCode = 403;
-    err.success = false;
-    throw err;
+    throwErr(403, "Invalid role selected.");
   }
 
   if (!user.isActive) {
-    const err = new Error(
+    throwErr(
+      403,
       "Your account is deactivated. Please contact admin for more details.",
     );
-    err.statusCode = 403;
-    err.success = false;
-    throw err;
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
-    const err = new Error("Invalid password !!");
-    err.statusCode = 401;
-    err.success = false;
-    throw err;
+    throwErr(401, "Invalid password !!");
   }
 
   const accessToken = jwt.sign(
@@ -46,7 +36,7 @@ const loginUser = async (email, password, role) => {
   const refreshToken = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: "7d" },
+    { expiresIn: "48h" },
   );
 
   await User.updateOne({ _id: user._id }, { $set: { lastLogin: Date.now() } });

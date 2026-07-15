@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password, role) => {
     const data = await loginService(email, password, role);
+    console.log("login data", data);
 
     const { accessToken, refreshToken, user: userData } = data;
 

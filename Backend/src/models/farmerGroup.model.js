@@ -23,8 +23,8 @@ const farmerGroupSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
-      required: true,
       unique: true,
+      sparse: true,
     },
     profile: {
       type: String,
@@ -39,6 +39,7 @@ const farmerGroupSchema = new mongoose.Schema(
     farmerCount: {
       type: Number,
       default: 1,
+      required: true,
     },
     leadFarmer: {
       type: String,
@@ -49,32 +50,39 @@ const farmerGroupSchema = new mongoose.Schema(
     address: {
       village: {
         type: String,
+        default: "",
         trim: true,
       },
       area: {
         type: String,
+        default: "",
         trim: true,
       },
       city: {
         type: String,
+        default: "",
         trim: true,
       },
       state: {
         type: String,
+        default: "",
         trim: true,
       },
       pinCode: {
         type: String,
+        default: "",
         trim: true,
       },
     },
     coord: {
       lat: {
         type: String,
+        default: "",
         trim: true,
       },
       long: {
         type: String,
+        default: "",
         trim: true,
       },
     },

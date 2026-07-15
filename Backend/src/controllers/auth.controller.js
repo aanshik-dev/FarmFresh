@@ -3,8 +3,6 @@ import register from "../services/auth/register.service.js";
 import login from "../services/auth/login.service.js";
 import refreshAccessToken from "../services/auth/refresh.service.js";
 
-// export default { forgotOtpVerify };
-
 const verifyEmail = async (req, res) => {
   try {
     const response = await otp.registerOtp(req.body);
@@ -19,9 +17,18 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-const forgotPassword = async (req, res) => {
+const registerUser = async (req, res, next) => {
   try {
-    const response = await otp.forgotPassOtp(req.body);
+    const response = await register(req.body, req.file);
+    res.status(201).json(response);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const forgotPassOtp = async (req, res) => {
+  try {
+    const response = await otp.forgotSendOtp(req.body);
     res.status(201).json(response);
   } catch (err) {
     console.error(err);
@@ -33,13 +40,17 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-
-const registerUser = async (req, res, next) => {
+const forgotPassVerify = async (req, res) => {
   try {
-    const response = await register(req.body, req.file);
+    const response = await otp.forgotVerifyOtp(req.body);
     res.status(201).json(response);
   } catch (err) {
-    next(err);
+    console.error(err);
+    res.status(err.statusCode || 500).json({
+      success: err.success,
+      message: err.message,
+      unblockAt: err.unblockAt || null,
+    });
   }
 };
 
@@ -63,4 +74,4 @@ const refreshToken = async (req, res, next) => {
   }
 };
 
-export { verifyEmail, forgotPassword, loginUser, registerUser, refreshToken };
+export { verifyEmail, forgotPassOtp, forgotPassVerify, loginUser, registerUser, refreshToken };
