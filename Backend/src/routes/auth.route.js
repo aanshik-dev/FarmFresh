@@ -58,7 +58,7 @@ router.get("/google", (req, res, next) => {
   passport.authenticate("google", {
     scope: ["profile", "email"],
     session: false,
-    state: role, // survives the Google redirect round-trip
+    state: role,
   })(req, res, next);
 });
 

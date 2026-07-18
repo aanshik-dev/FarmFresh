@@ -1,7 +1,3 @@
-// ──────────────────────────────────────────────────
-// Navigation data
-// ──────────────────────────────────────────────────
-
 export const navLinks = [
   { path: "/", label: "Home" },
   { path: "/about", label: "About" },

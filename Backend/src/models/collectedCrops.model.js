@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
+import { string } from "zod";
 
 const collectedCropSchema = new mongoose.Schema(
   {
-    cid: {
+    collective: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Collective",
       required: true,
@@ -23,6 +24,11 @@ const collectedCropSchema = new mongoose.Schema(
       required: true,
       default: 0,
       min: 0,
+    },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "INACTIVE"],
+      default: "ACTIVE",
     },
   },
   { timestamps: true },

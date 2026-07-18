@@ -117,7 +117,6 @@ const UserProfile = () => {
   const [saving, setSaving] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
-  const [deactivating, setDeactivating] = useState(false);
 
   // ── Edit state — seeded from live user object
   const [name, setName] = useState("");
@@ -1018,53 +1017,7 @@ const UserProfile = () => {
           </div>
         )}
 
-        {/* ── DANGER ZONE ──────────────────────────────────────────────── */}
-        <div
-          className={`rounded-2xl border p-5 ${isDark ? "bg-red-950/20 border-red-900/40" : "bg-red-50 border-red-200"}`}
-        >
-          <h2
-            className={`text-sm font-semibold mb-1 flex items-center gap-2 ${isDark ? "text-red-400" : "text-red-600"}`}
-          >
-            <Icon icon="ph:warning-octagon-fill" className="w-4 h-4" />
-            Danger Zone
-          </h2>
-          <p
-            className={`text-xs mb-4 ${isDark ? "text-slate-400" : "text-slate-500"}`}
-          >
-            Deactivating your account will prevent login. Contact support to
-            reactivate.
-          </p>
-          <button
-            onClick={() => {
-              if (!deactivating) {
-                setDeactivating(true);
-                toast.error(
-                  "Are you sure? Click the button again to confirm deactivation.",
-                  { duration: 5000 },
-                );
-              } else {
-                // TODO: call deactivate API
-                toast.error(
-                  "Account deactivation is not yet implemented. Contact support.",
-                );
-                setDeactivating(false);
-              }
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer border transition-all ${
-              deactivating
-                ? "bg-red-600 border-red-500 text-white shadow-lg shadow-red-500/20 hover:bg-red-700"
-                : isDark
-                  ? "border-red-800/60 text-red-400 hover:bg-red-900/30"
-                  : "border-red-300 text-red-600 hover:bg-red-100"
-            }`}
-          >
-            <Icon
-              icon={deactivating ? "ph:warning-fill" : "ph:user-minus-fill"}
-              className="w-4 h-4"
-            />
-            {deactivating ? "Click again to confirm" : "Deactivate Account"}
-          </button>
-        </div>
+
       </div>
     </div>
   );

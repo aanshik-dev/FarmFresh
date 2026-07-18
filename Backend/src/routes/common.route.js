@@ -7,10 +7,6 @@ const router = express.Router();
 
 router.get("/crops", getAllCrops);
 
-// ==========================================
-// Dummy Endpoints to showcase Role-Based Access
-// ==========================================
-
 // Accessible ONLY by FARMER_GROUP
 router.get(
   "/farmer-only",

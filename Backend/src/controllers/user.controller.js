@@ -1,10 +1,11 @@
-import { updateSchema } from "../validations/auth.validation.js";
+import { updateSchema } from "../validations/user.validation.js";
 import uploadImage from "../utils/uploadImage.js";
 import User from "../models/user.model.js";
 import Collective from "../models/collective.model.js";
 import FarmerGroup from "../models/farmerGroup.model.js";
 import throwErr from "../utils/throwErr.js";
 import Admin from "../models/admin.model.js";
+import bcrypt from "bcryptjs";
 
 const getCurrentUser = async (req, res) => {
   try {
@@ -172,4 +173,48 @@ const deactivateCurrentUser = async (req, res, next) => {
   }
 };
 
-export default { getCurrentUser, updateCurrentUser, deactivateCurrentUser };
+const changePassword = async (req, res, next) => {
+  try {
+    const { oldPass, newPass } = req.body;
+    if (!oldPass || !newPass) {
+      return throwErr(400, "Old and new passwords are required");
+    }
+    if (newPass.length < 8) {
+      return throwErr(400, "Password must be at least 8 characters long");
+    }
+    if (oldPass === newPass) {
+      return throwErr(400, "Old and new passwords must not be same");
+    }
+    const { id } = req.user;
+    const user = await User.findById(id).select("+password");
+
+    if (!user) {
+      return throwErr(404, "User not found");
+    }
+    if (user.provider !== "LOCAL") {
+      return throwErr(400, "Password reset not allowed for this provider");
+    }
+    const isMatch = await bcrypt.compare(oldPass, user.password);
+    if (!isMatch) {
+      return throwErr(400, "Incorrect old password");
+    }
+    const hashedPassword = await bcrypt.hash(newPass, 10);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successful",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export default {
+  getCurrentUser,
+  updateCurrentUser,
+  deactivateCurrentUser,
+  changePassword,
+};

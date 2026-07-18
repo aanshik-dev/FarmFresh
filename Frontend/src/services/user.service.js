@@ -14,3 +14,8 @@ export const deactivateAccount = async () => {
   const response = await api.patch("/user/me/deactivate");
   return response;
 };
+
+export const resetPassword = async (oldPass, newPass) => {
+  const response = await api.patch("/user/me/change-password", { oldPass, newPass });
+  return response;
+};

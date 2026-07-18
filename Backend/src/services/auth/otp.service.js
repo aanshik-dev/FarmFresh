@@ -76,29 +76,17 @@ const verifyOtp = async (email, otp, goal) => {
   const pendingOTP = await PendingOTP.findOne({ email, goal });
 
   if (!pendingOTP) {
-    const err = new Error("OTP not requested with this email !!");
-    err.statusCode = 404;
-    err.success = false;
-    throw err;
+    throwErr(404, "OTP not requested with this email");
   }
   if (pendingOTP.expiry < new Date()) {
-    const err = new Error("OTP has expired !!");
-    err.statusCode = 401;
-    err.success = false;
-    throw err;
+    throwErr(401, "OTP has expired");
   }
   if (!otp) {
-    const err = new Error("OTP is required");
-    err.statusCode = 400;
-    err.success = false;
-    throw err;
+    throwErr(400, "OTP is required");
   }
   const isOtpValid = await bcrypt.compare(otp, pendingOTP.hashOtp);
   if (!isOtpValid) {
-    const err = new Error("Invalid OTP !!");
-    err.statusCode = 403;
-    err.success = false;
-    throw err;
+    throwErr(403, "Invalid OTP");
   }
 };
 
@@ -108,9 +96,7 @@ const registerOtp = async (data) => {
   const userEmailExists = await User.findOne({ username: email });
 
   if (userEmailExists) {
-    const err = new Error("User already exists with the given email !!");
-    err.statusCode = 409;
-    throw err;
+    throwErr(409, "User already exists with the given email");
   }
   const farmerPhone = await FarmerGroup.findOne({
     phone,
@@ -119,12 +105,7 @@ const registerOtp = async (data) => {
     phone,
   });
   if (farmerPhone || collectivePhone) {
-    const err = new Error(
-      "This phone is already linked with some other account !!",
-    );
-    err.statusCode = 409;
-    err.success = false;
-    throw err;
+    throwErr(409, "This phone is already linked with some other account");
   }
 
   const result = await sendOtp(name, email, "REGISTER");

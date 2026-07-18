@@ -8,6 +8,7 @@ import seedAdmin from "./scripts/seedAdmin.js";
 
 import authRoutes from "./routes/auth.route.js";
 import collectiveRoutes from "./routes/collective.route.js";
+import farmerGroupRoutes from "./routes/farmerGroup.route.js";
 import commonRoutes from "./routes/common.route.js";
 import userRoutes from "./routes/user.route.js";
 
@@ -37,6 +38,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user/collective", collectiveRoutes);
 app.use("/api/data", commonRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/collective/", collectiveRoutes);
+app.use("/api/farmers/", farmerGroupRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "FarmFresh backend is running" });
@@ -49,6 +52,13 @@ app.use((req, res) => {
 // Error Handling Middleware
 app.use((err, req, res, next) => {
   console.error(err);
+
+  if (err.name === "ZodError") {
+    return res.status(400).json({
+      success: false,
+      message: err.issues[0].message,
+    });
+  }
 
   res.status(err.statusCode || 500).json({
     success: err.success ?? false,

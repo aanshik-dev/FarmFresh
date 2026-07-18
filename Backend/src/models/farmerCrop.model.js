@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const farmerCropSchema = new mongoose.Schema(
   {
-    fid: {
+    farmer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "FarmerGroup",
       required: true,
@@ -16,6 +16,10 @@ const farmerCropSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       required: true,
+    },
+    plantedDate: {
+      type: Date,
+      default: null,
     },
     status: {
       type: String,

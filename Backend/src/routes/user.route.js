@@ -46,4 +46,11 @@ router.patch(
   UserController.deactivateCurrentUser,
 );
 
+router.patch(
+  "/me/change-password",
+  verifyToken,
+  authorizeRoles("FARMER_GROUP", "COLLECTIVE"),
+  UserController.changePassword,
+);
+
 export default router;
