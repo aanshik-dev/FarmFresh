@@ -5,8 +5,8 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ToastProvider } from "./components/ui";
 
-// Layout
 import AppShell from "./components/layout/AppShell";
+import FarmAssist from "./components/FarmAssist";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
@@ -353,6 +353,7 @@ function App() {
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            <FarmAssist />
           </BrowserRouter>
         </ToastProvider>
       </AuthProvider>
