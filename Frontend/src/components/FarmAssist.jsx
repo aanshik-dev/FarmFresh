@@ -5,6 +5,7 @@ import { getAIAdvice } from "../services/ai.service";
 import { useToast } from "./ui";
 import Loader from "./ui/Loader";
 import ReactMarkdown from "react-markdown";
+import { useAuth } from "../context/AuthContext";
 
 const FarmAssist = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,6 +16,7 @@ const FarmAssist = () => {
   ]);
   const messagesEndRef = useRef(null);
   const { toast } = useToast();
+  const { role } = useAuth();
 
   const markdownComponents = {
     p: ({node, ...props}) => <p className="mb-2 leading-relaxed last:mb-0" {...props} />,
@@ -41,12 +43,28 @@ const FarmAssist = () => {
     if (!input.trim()) return;
 
     const userMessage = input.trim();
+    
+    // Build chat history for the API
+    // Map our 'ai' role to Groq's expected 'assistant' role
+    const history = messages
+      .filter(msg => msg.role === "user" || msg.role === "ai")
+      .map(msg => ({
+        role: msg.role === "ai" ? "assistant" : "user",
+        content: msg.text,
+      }));
+    
+    // Add current user message
+    history.push({ role: "user", content: userMessage });
+
+    // Keep only the last 10 messages to avoid context limits
+    const trimmedHistory = history.slice(-10);
+
     setMessages((prev) => [...prev, { role: "user", text: userMessage }]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const data = await getAIAdvice(userMessage);
+      const data = await getAIAdvice(trimmedHistory);
       setMessages((prev) => [
         ...prev,
         { role: "ai", text: data.data.advice },
@@ -57,6 +75,10 @@ const FarmAssist = () => {
       setIsLoading(false);
     }
   };
+
+  if (role !== "FARMER_GROUP" && role !== "COLLECTIVE") {
+    return null;
+  }
 
   return (
     <>

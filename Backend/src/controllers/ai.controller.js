@@ -3,10 +3,10 @@ import throwErr from "../utils/throwErr.js";
 
 export const getCropAdvice = async (req, res, next) => {
   try {
-    const { prompt } = req.body;
+    const { messages } = req.body;
 
-    if (!prompt) {
-      return throwErr(400, "Prompt is required !!");
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return throwErr(400, "Messages history is required !!");
     }
 
     if (!process.env.GROQ_API_KEY) {
@@ -25,11 +25,13 @@ CRITICAL INSTRUCTIONS:
 - Use simple bullet points. Keep it short and easy to read for a farmer on a mobile device.
 - Do not give unsafe or non-agricultural advice.`;
 
+    const groqMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages
+    ];
+
     const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt },
-      ],
+      messages: groqMessages,
       model: "llama-3.1-8b-instant", // Fast and free-tier friendly model on Groq
       temperature: 0.7,
       max_tokens: 1024,

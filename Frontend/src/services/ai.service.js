@@ -1,6 +1,6 @@
 import api from "./axios";
 
-export const getAIAdvice = async (prompt) => {
-  const response = await api.post("/ai/advise", { prompt });
+export const getAIAdvice = async (messages) => {
+  const response = await api.post("/ai/advise", { messages });
   return response.data;
 };
