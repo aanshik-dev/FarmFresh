@@ -11,6 +11,7 @@ import collectiveRoutes from "./routes/collective.route.js";
 import farmerGroupRoutes from "./routes/farmerGroup.route.js";
 import commonRoutes from "./routes/common.route.js";
 import userRoutes from "./routes/user.route.js";
+import aiRoutes from "./routes/ai.route.js";
 
 await dbConnect();
 await seedCounters();
@@ -40,6 +41,7 @@ app.use("/api/data", commonRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/collective/", collectiveRoutes);
 app.use("/api/farmers/", farmerGroupRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "FarmFresh backend is running" });
