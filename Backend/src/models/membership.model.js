@@ -12,10 +12,6 @@ const membershipSchema = new mongoose.Schema(
       ref: "Collective",
       required: true,
     },
-    approvalDate: {
-      type: Date,
-      default: null,
-    },
     zone: {
       type: String,
       trim: true,
@@ -35,11 +31,6 @@ const membershipSchema = new mongoose.Schema(
       type: Number,
       min: 1,
       default: 0,
-    },
-    status: {
-      type: String,
-      enum: ["REQUESTED", "APPROVED", "REJECTED"],
-      default: "REQUESTED",
     },
   },
   { timestamps: true },

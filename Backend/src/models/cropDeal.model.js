@@ -18,6 +18,17 @@ const cropDealSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    status: {
+      type: String,
+      enum: ["REQUESTED", "APPROVED", "REJECTED", "CANCELLED", "ABANDONED"],
+      default: "REQUESTED",
+    },
+    approvalDate: {
+      type: Date,
+      default: null,
+    },
+
+    // This section is for tracking the status of crop
     expectedQuantity: {
       type: Number,
       min: 0,
@@ -44,30 +55,17 @@ const cropDealSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
     queryStatus: {
       type: String,
       enum: ["OPEN", "CLOSED"],
       default: "OPEN",
       required: true,
     },
-    status: {
-      type: String,
-      enum: ["ACTIVE", "INACTIVE"],
-      default: "ACTIVE",
-    },
-    approvalDate: {
-      type: Date,
-      default: null,
-    },
-    lastUpdated: {
-      type: Date,
-      default: Date.now,
-    },
-    status: {
-      type: String,
-      enum: ["REQUESTED", "APPROVED", "REJECTED"],
-      default: "REQUESTED",
-    },
+    ///////////////////////////////
   },
   { timestamps: true },
 );

@@ -23,10 +23,10 @@ const FarmAssist = () => {
     ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-2 space-y-1" {...props} />,
     ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-2 space-y-1" {...props} />,
     li: ({node, ...props}) => <li className="mb-0.5" {...props} />,
-    h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-2 mt-3" {...props} />,
-    h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-2 mt-3" {...props} />,
-    h3: ({node, ...props}) => <h3 className="text-base font-bold mb-1 mt-2" {...props} />,
-    strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
+    h1: ({node, ...props}) => <h1 className="text-xl font-bold mb-2 mt-3 text-slate-900 dark:text-white" {...props} />,
+    h2: ({node, ...props}) => <h2 className="text-lg font-bold mb-2 mt-3 text-slate-900 dark:text-white" {...props} />,
+    h3: ({node, ...props}) => <h3 className="text-base font-bold mb-1 mt-2 text-slate-900 dark:text-white" {...props} />,
+    strong: ({node, ...props}) => <strong className="font-semibold text-slate-900 dark:text-white" {...props} />,
     em: ({node, ...props}) => <em className="italic" {...props} />,
   };
 
@@ -85,7 +85,7 @@ const FarmAssist = () => {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-105 z-50"
+        className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-105 z-50"
         title="FarmAssist AI"
       >
         <Icon icon={isOpen ? "material-symbols:close" : "ph:plant-fill"} className="w-7 h-7" />
@@ -102,7 +102,7 @@ const FarmAssist = () => {
             className="fixed bottom-40 right-6 md:bottom-28 md:right-8 w-80 md:w-96 h-[500px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden"
           >
             {/* Header */}
-            <div className="bg-emerald-600 text-white px-4 py-3 flex items-center justify-between shadow-md">
+            <div className="bg-emerald-600 dark:bg-slate-800 text-white px-4 py-3 flex items-center justify-between shadow-md border-b dark:border-slate-700">
               <div className="flex items-center gap-2">
                 <Icon icon="mdi:robot-outline" className="w-6 h-6" />
                 <h3 className="font-semibold text-base">FarmAssist AI</h3>
@@ -113,7 +113,7 @@ const FarmAssist = () => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-slate-50 dark:bg-slate-950">
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 bg-slate-50 dark:bg-slate-950 no-scrollbar">
               {messages.map((msg, index) => (
                 <div
                   key={index}
@@ -135,7 +135,7 @@ const FarmAssist = () => {
                   <div className="scale-75 origin-left">
                     <Loader size="sm" />
                   </div>
-                  <span className="text-xs text-slate-500">Thinking...</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Thinking...</span>
                 </div>
               )}
               <div ref={messagesEndRef} />

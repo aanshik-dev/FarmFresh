@@ -1,7 +1,9 @@
 import Crop from "../../models/crop.model.js";
+import CropDeal from "../../models/cropDeal.model.js";
 import FarmerCrop from "../../models/farmerCrop.model.js";
+import Membership from "../../models/membership.model.js";
 import throwErr from "../../utils/throwErr.js";
-
+import mongoose from "mongoose";
 const addCropData = async (code, yld, farmerId) => {
   const crop = await Crop.findOne({ code });
   if (!crop) {
@@ -66,4 +68,50 @@ const getCropData = async (farmerId) => {
   };
 };
 
-export { addCropData, editCropData, getCropData };
+const deleteCropData = async (farmerId, cropId) => {
+  if (!farmerId) {
+    throwErr(404, "Farmer not found !!");
+  }
+  if (!cropId) {
+    throwErr(404, "Crop not found !!");
+  }
+  const farmerCrop = await FarmerCrop.findOne({
+    _id: cropId,
+    farmer: farmerId,
+  });
+  if (!farmerCrop) {
+    return throwErr(404, "You do not grow this Crop!!");
+  }
+
+  const farmerMember = await Membership.find({
+    farmer: farmerId,
+  });
+
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      const membershipIds = farmerMember.map((fm) => fm._id);
+      if (membershipIds.length > 0) {
+        await CropDeal.updateMany(
+          { membership: { $in: membershipIds }, crop: cropId },
+          { $set: { status: "ABANDONED" } },
+          { session },
+        );
+      }
+      farmerCrop.status = "INACTIVE";
+      await farmerCrop.save({ session });
+    });
+  } catch (err) {
+    return err;
+  } finally {
+    session.endSession();
+  }
+
+  return {
+    success: true,
+    message: "Crop deleted successfully !!",
+  };
+};
+
+export { addCropData, editCropData, getCropData, deleteCropData };
