@@ -18,7 +18,8 @@ export const farmerCropAddSchema = z.object({
       required_error: "Yield is required !!",
       invalid_type_error: "Yield must be a number !!",
     })
-    .positive("Yield must be greater than 0 !!"),
+    .positive("Yield must be greater than 0 !!")
+    .optional(),
 });
 
 export const editCropSchema = z.object({
@@ -73,10 +74,4 @@ export const editFarmerCropSchema = z.object({
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid Date Format !!")
       .optional(),
   ),
-  status: z
-    .enum(["ACTIVE", "INACTIVE"], {
-      required_error: "Status is required !!",
-      invalid_type_error: "Invalid Status !!",
-    })
-    .optional(),
 });

@@ -55,7 +55,7 @@ const FarmerDashboard = () => {
       {/* Welcome */}
       <div className="mb-6">
         <h1 className={`text-2xl sm:text-3xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
-          Welcome back, {user?.name?.split(" ")[0]}! 🌱
+          Welcome back, {user?.name?.split(" ")[0]}!
         </h1>
         <p className={`mt-1 text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
           {user?.groupName || "Your farmer group"} · {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}

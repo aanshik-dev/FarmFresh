@@ -4,10 +4,11 @@ import FarmerCrop from "../../models/farmerCrop.model.js";
 import Membership from "../../models/membership.model.js";
 import throwErr from "../../utils/throwErr.js";
 import mongoose from "mongoose";
+
 const addCropData = async (code, yld, farmerId) => {
   const crop = await Crop.findOne({ code });
   if (!crop) {
-    return throwErr(404, `No Crop found with code ${code}`);
+    throwErr(404, `No Crop found with code ${code}`);
   }
   const existingCrop = await FarmerCrop.findOne({
     farmer: farmerId,
@@ -15,7 +16,17 @@ const addCropData = async (code, yld, farmerId) => {
   });
 
   if (existingCrop) {
-    return throwErr(400, `${crop.name} is already added !!`);
+    if (existingCrop.status === "ACTIVE") {
+      throwErr(400, `${crop.name} is already added !!`);
+    } else {
+      existingCrop.status = "ACTIVE";
+      await existingCrop.save();
+      return {
+        success: true,
+        message: "Crop added successfully !!",
+        crop: existingCrop,
+      };
+    }
   }
 
   const farmerCrop = new FarmerCrop({
@@ -24,6 +35,7 @@ const addCropData = async (code, yld, farmerId) => {
     yield: yld,
   });
   await farmerCrop.save();
+
   return {
     success: true,
     message: "Crop added successfully !!",
@@ -31,13 +43,16 @@ const addCropData = async (code, yld, farmerId) => {
   };
 };
 
-const editCropData = async (id, yld, plantedDate, status, farmerId) => {
+const editCropData = async (id, yld, plantedDate, farmerId) => {
   const farmerCrop = await FarmerCrop.findOne({
     _id: id,
     farmer: farmerId,
-  });
+  }).populate("crop");
   if (!farmerCrop) {
-    return throwErr(404, "Crop not found !!");
+    throwErr(404, "Crop not found !!");
+  }
+  if (farmerCrop.status !== "ACTIVE") {
+    throwErr(403, `You no longer grow this crop (${farmerCrop.crop.name}) !!`);
   }
   if (yld !== undefined) {
     farmerCrop.yield = yld;
@@ -45,9 +60,7 @@ const editCropData = async (id, yld, plantedDate, status, farmerId) => {
   if (plantedDate !== undefined) {
     farmerCrop.plantedDate = plantedDate;
   }
-  if (status !== undefined) {
-    farmerCrop.status = status;
-  }
+
   await farmerCrop.save();
   return {
     success: true,
@@ -78,9 +91,15 @@ const deleteCropData = async (farmerId, cropId) => {
   const farmerCrop = await FarmerCrop.findOne({
     _id: cropId,
     farmer: farmerId,
-  });
+  }).populate("crop");
   if (!farmerCrop) {
     return throwErr(404, "You do not grow this Crop!!");
+  }
+  if (farmerCrop.status !== "ACTIVE") {
+    return throwErr(
+      403,
+      `You no longer grow this crop (${farmerCrop.crop.name}) !!`,
+    );
   }
 
   const farmerMember = await Membership.find({
@@ -94,8 +113,21 @@ const deleteCropData = async (farmerId, cropId) => {
       const membershipIds = farmerMember.map((fm) => fm._id);
       if (membershipIds.length > 0) {
         await CropDeal.updateMany(
-          { membership: { $in: membershipIds }, crop: cropId },
-          { $set: { status: "ABANDONED" } },
+          {
+            membership: { $in: membershipIds },
+            crop: cropId,
+            status: "REQUESTED",
+          },
+          { $set: { status: "CANCELLED" } },
+          { session },
+        );
+        await CropDeal.updateMany(
+          {
+            membership: { $in: membershipIds },
+            crop: cropId,
+            status: "APPROVED",
+          },
+          { $set: { status: "F_TERMINATE" } },
           { session },
         );
       }
@@ -103,7 +135,7 @@ const deleteCropData = async (farmerId, cropId) => {
       await farmerCrop.save({ session });
     });
   } catch (err) {
-    return err;
+    throw err;
   } finally {
     session.endSession();
   }

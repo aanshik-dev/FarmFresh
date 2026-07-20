@@ -15,8 +15,38 @@ import {
 } from "../../utils/InterfaceData";
 import ProfileBanner from "../common/ProfileBanner";
 
+// Quotes for dynamic greeting
+const QUOTES = {
+  morning: [
+    { text: "Dew on the leaves, hope in the soil", icon: "ph:sun-dim-fill" },
+    { text: "A fresh sunrise, a fresh harvest", icon: "ph:sun-horizon-fill" },
+    { text: "The early bird catches the best yields", icon: "ph:bird-fill" },
+    { text: "Fields are waking up, time to grow", icon: "ph:plant-fill" }
+  ],
+  noon: [
+    { text: "Sun is high, crops are growing", icon: "ph:sun-fill" },
+    { text: "Midday hustle for a golden harvest", icon: "ph:clock-fill" },
+    { text: "Bright noon, bright future", icon: "ph:sparkle-fill" }
+  ],
+  afternoon: [
+    { text: "The sun softens, the roots deepen", icon: "ph:tree-fill" },
+    { text: "Steady work brings steady growth", icon: "ph:spade-fill" },
+    { text: "Golden light on green fields", icon: "ph:leaf-fill" }
+  ],
+  evening: [
+    { text: "The sun sets, the earth rests", icon: "ph:moon-stars-fill" },
+    { text: "Another day of growth complete", icon: "ph:check-circle-fill" },
+    { text: "Golden hour over golden fields", icon: "ph:camera-fill" }
+  ],
+  night: [
+    { text: "Quiet night, growing roots", icon: "ph:moon-fill" },
+    { text: "Under the stars, the soil heals", icon: "ph:star-fill" },
+    { text: "Rest well, the crops sleep too", icon: "ph:cloud-moon-fill" }
+  ]
+};
+
 // Top Header
-const TopHeader = ({ onToggleSidebar, sidebarOpen }) => {
+const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed }) => {
   const { isDark, toggleTheme } = useTheme();
   const { user, logout, role } = useAuth();
   const navigate = useNavigate();
@@ -29,9 +59,19 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen }) => {
         ? farmerNotifications.filter((n) => !n.read).length
         : 0;
 
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const [quote, setQuote] = useState({ text: "", icon: "ph:plant-fill" });
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    let timeOfDay = "night";
+    if (hour >= 4 && hour < 11) timeOfDay = "morning";
+    else if (hour >= 11 && hour < 14) timeOfDay = "noon";
+    else if (hour >= 14 && hour < 17) timeOfDay = "afternoon";
+    else if (hour >= 17 && hour < 21) timeOfDay = "evening";
+
+    const options = QUOTES[timeOfDay];
+    setQuote(options[Math.floor(Math.random() * options.length)]);
+  }, []);
 
   const roleBadge = {
     FARMER_GROUP: {
@@ -76,58 +116,85 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen }) => {
           : "bg-white/90 border-slate-200 backdrop-blur-md"
       }`}
     >
-      {/* Sidebar toggle (mobile) */}
-      <button
-        onClick={onToggleSidebar}
-        className={`md:hidden flex items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-colors cursor-pointer ${
-          isDark
-            ? "hover:bg-slate-800 text-slate-400 hover:text-white"
-            : "hover:bg-slate-100 text-slate-500 hover:text-slate-900"
-        }`}
-      >
-        <Icon
-          icon={
-            sidebarOpen
-              ? "material-symbols:close-rounded"
-              : "material-symbols:menu-rounded"
-          }
-          className="w-5 h-5"
-        />
-      </button>
-
-      {/* Logo */}
-      <div
-        className="flex items-center gap-2 cursor-pointer shrink-0"
-        onClick={() => navigate("/")}
+      {/* Desktop Left Area (Matches Sidebar Width) */}
+      <motion.div
+        animate={{ width: sidebarCollapsed ? 68 : 240 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="hidden md:flex items-center h-full shrink-0 overflow-hidden border-r border-transparent -ml-4 pl-4"
       >
         <div
-          className={`p-1.5 rounded-lg ${isDark ? "bg-emerald-800/70 text-emerald-300" : "bg-emerald-100 text-emerald-600"}`}
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => navigate("/")}
         >
-          <Icon icon="ph:plant-fill" className="w-5 h-5" />
+          <div
+            className={`p-1.5 rounded-lg shrink-0 ${isDark ? "bg-emerald-800/70 text-emerald-300" : "bg-emerald-100 text-emerald-600"}`}
+          >
+            <Icon icon="ph:plant-fill" className="w-5 h-5" />
+          </div>
+          <AnimatePresence>
+            {!sidebarCollapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                className={`font-bold text-sm quantico uppercase tracking-widest whitespace-nowrap overflow-hidden ${isDark ? "text-white" : "text-slate-900"}`}
+              >
+                FarmFresh
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
-        <span
-          className={`font-bold text-sm quantico uppercase tracking-widest hidden sm:block ${isDark ? "text-white" : "text-slate-900"}`}
+      </motion.div>
+
+      {/* Mobile Toggle & Logo */}
+      <div className="flex md:hidden items-center gap-2 shrink-0">
+        <button
+          onClick={onToggleSidebar}
+          className={`flex items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-colors cursor-pointer ${
+            isDark
+              ? "hover:bg-slate-800 text-slate-400 hover:text-white"
+              : "hover:bg-slate-100 text-slate-500 hover:text-slate-900"
+          }`}
         >
-          FarmFresh
-        </span>
+          <Icon
+            icon={
+              sidebarOpen
+                ? "material-symbols:close-rounded"
+                : "material-symbols:menu-rounded"
+            }
+            className="w-5 h-5"
+          />
+        </button>
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => navigate("/")}
+        >
+          <div
+            className={`p-1.5 rounded-lg ${isDark ? "bg-emerald-800/70 text-emerald-300" : "bg-emerald-100 text-emerald-600"}`}
+          >
+            <Icon icon="ph:plant-fill" className="w-5 h-5" />
+          </div>
+        </div>
       </div>
 
       {/* Center greeting */}
-      <div className="flex-1 flex items-center justify-center min-w-0">
-        <p
-          className={`text-sm font-medium truncate hidden md:block ${isDark ? "text-slate-300" : "text-slate-600"}`}
-        >
-          🌱 {greeting},{" "}
-          <span
-            className={
-              isDark
-                ? "text-white font-semibold"
-                : "text-slate-900 font-semibold"
-            }
-          >
-            {user?.name?.split(" ")[0]}!
-          </span>
-        </p>
+      <div className="flex-1 flex items-center justify-start min-w-0 md:pl-6">
+        <div className={`hidden sm:flex items-center gap-2 text-sm font-medium truncate ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+          <Icon icon={quote.icon} className={`w-4 h-4 shrink-0 ${isDark ? "text-amber-400" : "text-amber-500"}`} />
+          <p className="truncate">
+            <span
+              className={
+                isDark
+                  ? "text-white font-semibold"
+                  : "text-slate-900 font-semibold"
+              }
+            >
+              {user?.name?.split(" ")[0]}
+            </span>
+            <span className="mx-2 opacity-40">•</span>
+            <span className="italic">{quote.text}</span>
+          </p>
+        </div>
       </div>
 
       {/* Right controls */}
@@ -640,6 +707,7 @@ const AppShell = () => {
       <TopHeader
         onToggleSidebar={handleToggleSidebar}
         sidebarOpen={sidebarOpen}
+        sidebarCollapsed={sidebarCollapsed}
       />
       <Sidebar
         isOpen={sidebarOpen}

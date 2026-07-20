@@ -20,7 +20,7 @@ const cropDealSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["REQUESTED", "APPROVED", "REJECTED", "CANCELLED", "ABANDONED"],
+      enum: ["REQUESTED", "APPROVED", "REJECTED", "CANCELLED", "ABANDONED", "F_TERMINATE", "C_TERMINATE"],
       default: "REQUESTED",
     },
     approvalDate: {

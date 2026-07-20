@@ -1,5 +1,8 @@
+import mongoose from "mongoose";
 import Crop from "../../models/crop.model.js";
 import CollectedCrop from "../../models/collectedCrops.model.js";
+import CropDeal from "../../models/cropDeal.model.js";
+import Membership from "../../models/membership.model.js";
 import throwErr from "../../utils/throwErr.js";
 
 // Adds collective crops
@@ -14,7 +17,17 @@ const addCropData = async (code, price, collectiveId) => {
   });
 
   if (existingCrop) {
-    return throwErr(400, `${crop.name} is already added !!`);
+    if (existingCrop.status === "ACTIVE") {
+      throwErr(400, `${crop.name} is already added !!`);
+    } else {
+      existingCrop.status = "ACTIVE";
+      await existingCrop.save();
+      return {
+        success: true,
+        message: "Crop added successfully !!",
+        crop: existingCrop,
+      };
+    }
   }
 
   const collectedCrop = new CollectedCrop({
@@ -32,13 +45,19 @@ const addCropData = async (code, price, collectiveId) => {
 };
 
 // Edit collective Crops
-const editCropData = async (id, price, quantity, status, collectiveId) => {
+const editCropData = async (id, price, quantity, collectiveId) => {
   const collectCrop = await CollectedCrop.findOne({
     _id: id,
     collective: collectiveId,
-  });
+  }).populate("crop");
   if (!collectCrop) {
     return throwErr(404, "Crop not found");
+  }
+  if (collectCrop.status !== "ACTIVE") {
+    return throwErr(
+      403,
+      `You no longer collect this crop (${collectCrop.crop.name}) !!`,
+    );
   }
   if (quantity !== undefined) {
     collectCrop.quantity = quantity;
@@ -46,9 +65,7 @@ const editCropData = async (id, price, quantity, status, collectiveId) => {
   if (price !== undefined) {
     collectCrop.price = price;
   }
-  if (status) {
-    collectCrop.status = status;
-  }
+
   await collectCrop.save();
   return {
     success: true,
@@ -100,4 +117,67 @@ const getCropData = async (collectiveId) => {
   };
 };
 
-export { addCropData, editCropData, getCropData };
+const deleteCropData = async (collectiveId, cropId) => {
+  if (!collectiveId) {
+    return throwErr(404, "Collective not found !!");
+  }
+  if (!cropId) {
+    return throwErr(404, "Crop not found !!");
+  }
+  const collectCrop = await CollectedCrop.findOne({
+    _id: cropId,
+    collective: collectiveId,
+  }).populate("crop");
+  if (!collectCrop) {
+    return throwErr(404, "You do not collect this Crop!!");
+  }
+  if (collectCrop.status !== "ACTIVE") {
+    throwErr(
+      403,
+      `You no longer collect this crop (${collectCrop.crop.name}) !!`,
+    );
+  }
+  const memberships = await Membership.find({ collective: collectiveId });
+
+  const session = await mongoose.startSession();
+
+  try {
+    await session.withTransaction(async () => {
+      const membershipIds = memberships.map((m) => m._id);
+
+      if (membershipIds.length > 0) {
+        await CropDeal.updateMany(
+          {
+            membership: { $in: membershipIds },
+            crop: cropId,
+            status: "REQUESTED",
+          },
+          { $set: { status: "REJECTED" } },
+          { session },
+        );
+        await CropDeal.updateMany(
+          {
+            membership: { $in: membershipIds },
+            crop: cropId,
+            status: "APPROVED",
+          },
+          { $set: { status: "C_TERMINATE" } },
+          { session },
+        );
+      }
+      collectCrop.status = "INACTIVE";
+      await collectCrop.save({ session });
+    });
+  } catch (error) {
+    throw error;
+  } finally {
+    session.endSession();
+  }
+
+  return {
+    success: true,
+    message: "Crop deleted successfully !!",
+  };
+};
+
+export { addCropData, editCropData, getCropData, deleteCropData };

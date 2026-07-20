@@ -1,6 +1,3 @@
-import Collective from "../models/collective.model.js";
-import FarmerGroup from "../models/farmerGroup.model.js";
-import Membership from "../models/membership.model.js";
 import {
   farmerCropAddSchema,
   editFarmerCropSchema,
@@ -9,7 +6,8 @@ import {
   addCropData,
   editCropData,
   getCropData,
-} from "../services/farmer/crop.services.js";
+  deleteCropData,
+} from "../services/farmer/crop.service.js";
 
 import memberService from "../services/farmer/membership.service.js";
 
@@ -26,11 +24,9 @@ const addCrop = async (req, res, next) => {
 
 const editCrop = async (req, res, next) => {
   try {
-    const { id, yld, plantedDate, status } = editFarmerCropSchema.parse(
-      req.body,
-    );
+    const { id, yld, plantedDate } = editFarmerCropSchema.parse(req.body);
     const { id: farmerId } = req.user;
-    const response = await editCropData(id, yld, plantedDate, status, farmerId);
+    const response = await editCropData(id, yld, plantedDate, farmerId);
     res.status(200).json(response);
   } catch (err) {
     next(err);
@@ -47,11 +43,22 @@ const getCrops = async (req, res, next) => {
   }
 };
 
+const deleteCrop = async (req, res, next) => {
+  try {
+    const { cropId } = req.body;
+    const { id: farmerId } = req.user;
+    const response = await deleteCropData(farmerId, cropId);
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const sendRequest = async (req, res, next) => {
   try {
     const { collectiveId, crops } = req.body;
     const { id: farmerId } = req.user;
-    const response = await memberService.sendMembershipRequest(
+    const response = await memberService.sendMemberRequest(
       farmerId,
       collectiveId,
       crops,
@@ -62,4 +69,32 @@ const sendRequest = async (req, res, next) => {
   }
 };
 
-export { sendRequest, addCrop, editCrop, getCrops };
+const cancelRequest = async (req, res, next) => {
+  try {
+    const { dealIds } = req.body;
+    const response = await memberService.cancelMemberRequest(dealIds);
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMemberships = async (req, res, next) => {
+  try {
+    const { id: farmerId } = req.user;
+    const response = await memberService.getMemberData(farmerId);
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {
+  sendRequest,
+  cancelRequest,
+  addCrop,
+  editCrop,
+  getCrops,
+  deleteCrop,
+  getMemberships,
+};

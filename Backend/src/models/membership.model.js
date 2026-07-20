@@ -13,8 +13,8 @@ const membershipSchema = new mongoose.Schema(
       required: true,
     },
     zone: {
-      type: String,
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Zone",
       default: null,
     },
     route: {
@@ -30,7 +30,7 @@ const membershipSchema = new mongoose.Schema(
     estTime: {
       type: Number,
       min: 1,
-      default: 0,
+      default: 1,
     },
   },
   { timestamps: true },

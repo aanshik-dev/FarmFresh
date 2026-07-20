@@ -30,13 +30,13 @@ const loginUser = async (email, password, role) => {
   const accessToken = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: "30m" },
+    { expiresIn: "1d" },
   );
 
   const refreshToken = jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: "48h" },
+    { expiresIn: "7d" },
   );
 
   await User.updateOne({ _id: user._id }, { $set: { lastLogin: Date.now() } });

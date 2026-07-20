@@ -20,7 +20,7 @@ const refreshAccessToken = async (refreshToken) => {
   const accessToken = jwt.sign(
     { id: decoded.id, role: decoded.role },
     process.env.JWT_SECRET,
-    { expiresIn: "30m" },
+    { expiresIn: "1d" },
   );
 
   return {
