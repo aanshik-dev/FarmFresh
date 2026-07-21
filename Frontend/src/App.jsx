@@ -27,6 +27,7 @@ import CropManagement from "./pages/farmer/CropManagement";
 import CollectiveBrowse from "./pages/farmer/CollectiveBrowse";
 import FarmerSchedules from "./pages/farmer/FarmerSchedules";
 import FarmerNotifications from "./pages/farmer/FarmerNotifications";
+import FarmerAnnouncements from "./pages/farmer/FarmerAnnouncements";
 
 // Collective pages
 import CollectiveDashboard from "./pages/collective/CollectiveDashboard";
@@ -186,6 +187,14 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
                       <FarmerNotifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="farmer/announcements"
+                  element={
+                    <ProtectedRoute allowedRoles={["FARMER_GROUP"]}>
+                      <FarmerAnnouncements />
                     </ProtectedRoute>
                   }
                 />

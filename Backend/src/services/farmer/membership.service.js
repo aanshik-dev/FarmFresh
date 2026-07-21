@@ -10,6 +10,7 @@ import FarmerGroup from "../../models/farmerGroup.model.js";
 import isProfileComplete from "../general.service.js";
 
 const validRequest = async (farmerId, collectiveID, crops) => {
+  // validation
   if (!farmerId) {
     throwErr(404, "Farmer Group not found");
   }
@@ -22,14 +23,18 @@ const validRequest = async (farmerId, collectiveID, crops) => {
 };
 
 const sendMemberRequest = async (farmerId, collectiveID, crops) => {
+  // validation
   await validRequest(farmerId, collectiveID, crops);
 
+  // is profile complete
   if (!(await isProfileComplete(farmerId, "FARMER_GROUP"))) {
     throwErr(
       403,
       "Please complete your profile before joining a collective !!",
     );
   }
+
+  // checking collective and if ACTIVE
   const collective = await Collective.findById(collectiveID);
   if (!collective) {
     throwErr(404, "Collective not found");
@@ -39,6 +44,7 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
     throwErr(400, "Collective is currently inactive !!");
   }
 
+  // Searching for the crops
   const farmerCrops = await FarmerCrop.find({
     _id: { $in: crops },
     farmer: farmerId,
@@ -48,6 +54,7 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
     throwErr(403, "Some crops are invalid !!");
   }
 
+  // Collective dealing crop
   const collectedCrops = await CollectedCrop.find({
     collective: collectiveID,
     status: "ACTIVE",
@@ -55,6 +62,7 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
 
   const collectiveCropCodes = new Set(collectedCrops.map((cc) => cc.crop.code));
 
+  // Checking is both deal in same crops
   for (const fCrop of farmerCrops) {
     const cropCode = fCrop.crop.code;
     const cropName = fCrop.crop.name;
@@ -68,18 +76,19 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
     }
   }
 
+  // Checking if membership already exists
   let membership = await Membership.findOne({
     farmer: farmerId,
     collective: collectiveID,
   });
 
   if (membership) {
+    // Check if already a member
     const existingDeals = await CropDeal.find({
       membership: membership._id,
       crop: { $in: crops },
       status: { $in: ["REQUESTED", "APPROVED"] },
     });
-
     if (existingDeals.length > 0) {
       throwErr(
         409,
@@ -92,14 +101,23 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
   try {
     await session.withTransaction(async () => {
       if (!membership) {
+        // create membership if not exist
         membership = new Membership({
           farmer: farmerId,
           collective: collectiveID,
+          status: "PENDING",
         });
+        await membership.save({ session });
+      } else if (
+        membership.status === "REJECTED" ||
+        membership.status === "INACTIVE"
+      ) {
+        // else just update previous
+        membership.status = "PENDING";
         await membership.save({ session });
       }
 
-      // Upsert all crop deals
+      // create deals for each crop
       const bulkOps = crops.map((cropId) => ({
         updateOne: {
           filter: { membership: membership._id, crop: cropId },
@@ -125,6 +143,7 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
 };
 
 const getMemberData = async (farmerId) => {
+  // Validation
   if (!farmerId) {
     throwErr(404, "Farmer Group Id is required !!");
   }
@@ -133,12 +152,14 @@ const getMemberData = async (farmerId) => {
     throwErr(404, "Farmer Group not found !!");
   }
 
+  // memberships whose farmer is part of
   const memberships = await Membership.find({
     farmer: farmerId,
   })
     .populate("collective")
     .lean();
 
+  // empty response
   const memberData = {
     requests: {},
     approved: {},
@@ -147,6 +168,7 @@ const getMemberData = async (farmerId) => {
     terminated: {},
   };
 
+  // If no memberships, return empty data
   if (!memberships || memberships.length === 0) {
     return {
       success: true,
@@ -154,16 +176,25 @@ const getMemberData = async (farmerId) => {
       memberData,
     };
   }
+
   const membershipIds = memberships.map((m) => m._id);
+  // get all deals of all memberships
   const deals = await CropDeal.find({
     membership: { $in: membershipIds },
-  }).lean();
+  })
+    .populate({
+      path: "crop",
+      populate: { path: "crop", select: "name code category season image" },
+    })
+    .lean();
 
   const membershipMap = {};
+  // Creating array of memberships
   for (const m of memberships) {
     membershipMap[m._id.toString()] = m;
   }
 
+  // iterating over all deals
   for (const deal of deals) {
     const member = membershipMap[deal.membership.toString()];
     if (!member || !member.collective) continue;
@@ -207,6 +238,7 @@ const getMemberData = async (farmerId) => {
 };
 
 const cancelMemberRequest = async (dealIds) => {
+  // validation
   if (!dealIds || dealIds.length === 0) {
     throwErr(400, "request Id is required to cancel the request !!");
   }
@@ -249,4 +281,31 @@ const cancelMemberRequest = async (dealIds) => {
   };
 };
 
-export default { sendMemberRequest, getMemberData, cancelMemberRequest };
+// ── TERMINATE an approved deal
+const terminateDeal = async (farmerId, dealId, reason = "") => {
+  if (!dealId) throwErr(400, "Deal Id is required !!");
+
+  const deal = await CropDeal.findById(dealId).populate({
+    path: "membership",
+    match: { farmer: farmerId },
+  });
+
+  if (!deal || !deal.membership)
+    throwErr(404, "Deal not found or does not belong to your farmer group !!");
+
+  if (deal.status !== "APPROVED")
+    throwErr(400, "Only APPROVED deals can be terminated !!");
+
+  deal.status = "F_TERMINATE";
+  if (reason) deal.terminationReason = reason;
+  await deal.save();
+
+  return { success: true, message: "Deal terminated successfully !!" };
+};
+
+export default {
+  sendMemberRequest,
+  getMemberData,
+  cancelMemberRequest,
+  terminateDeal,
+};

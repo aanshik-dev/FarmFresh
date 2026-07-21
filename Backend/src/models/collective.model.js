@@ -81,13 +81,11 @@ const collectiveSchema = new mongoose.Schema(
     coord: {
       lat: {
         type: Number,
-        default: "",
-        trim: true,
+        default: 0,
       },
       long: {
         type: Number,
-        default: "",
-        trim: true,
+        default: 0,
       },
     },
     ratingAvg: {

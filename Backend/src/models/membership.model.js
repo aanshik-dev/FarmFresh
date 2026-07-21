@@ -29,8 +29,23 @@ const membershipSchema = new mongoose.Schema(
     },
     estTime: {
       type: Number,
-      min: 1,
-      default: 1,
+      min: 0,
+      default: 0,
+    },
+    balance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    status: {
+      type: String,
+      enum: ["PENDING", "ACTIVE", "REJECTED", "INACTIVE"],
+      default: "PENDING",
     },
   },
   { timestamps: true },

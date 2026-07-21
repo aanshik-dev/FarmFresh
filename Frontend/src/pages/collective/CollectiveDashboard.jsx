@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { monthlyHarvest, cropDistribution, zoneBreakdown, decayTrend, pickupSchedules, membershipRequests, collectiveNotifications } from "../../utils/InterfaceData";
-import StatusBadge from "../../components/common/StatusBadge";
+import { monthlyHarvest, cropDistribution, zoneBreakdown, decayTrend } from "../../utils/InterfaceData";
+import { useToast } from "../../components/ui";
+import { collectiveDashboardAPI } from "../../services/api";
 
 const COLORS = ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b", "#ef4444", "#06b6d4"];
 
@@ -17,7 +18,7 @@ const StatCard = ({ label, value, icon, sub, color = "emerald" }) => {
     blue: "from-blue-500 to-indigo-600 shadow-blue-500/20",
     amber: "from-amber-500 to-orange-500 shadow-amber-500/20",
     violet: "from-violet-500 to-purple-600 shadow-violet-500/20",
-  }[color];
+  }[color] || "from-emerald-500 to-teal-600 shadow-emerald-500/20";
   return (
     <motion.div whileHover={{ y: -2 }} className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
       <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-gradient-to-br ${c} shadow-lg mb-4`}>
@@ -34,14 +35,44 @@ const CollectiveDashboard = () => {
   const { isDark } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const upcoming = pickupSchedules.filter(s => s.status === "scheduled").length;
-  const pending = membershipRequests.filter(m => m.status === "pending").length;
-  const unread = collectiveNotifications.filter(n => !n.read).length;
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalCrops: 0,
+    activeZones: 0,
+    activeDrivers: 0,
+    upcomingPickups: 0,
+    activeMembers: 0,
+  });
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await collectiveDashboardAPI.get();
+      setStats(res.data.stats || {});
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const chartTheme = isDark
     ? { text: "#94a3b8", grid: "#1e293b", tooltip: { contentStyle: { background: "#0f172a", border: "1px solid #1e293b", borderRadius: 12, color: "#f1f5f9" } } }
     : { text: "#64748b", grid: "#f1f5f9", tooltip: { contentStyle: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, color: "#1e293b" } } };
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center p-5 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+        <Icon icon="svg-spinners:12-dots-scale-rotate" className={`w-12 h-12 ${isDark ? "text-emerald-400" : "text-emerald-500"}`} />
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen p-5 sm:p-7 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
@@ -63,127 +94,81 @@ const CollectiveDashboard = () => {
         </div>
       </div>
 
-      {/* Alerts */}
-      {(pending > 0 || unread > 0) && (
-        <div className="flex flex-wrap gap-3 mb-6">
-          {pending > 0 && (
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer text-sm ${isDark ? "bg-amber-500/10 border-amber-500/25 text-amber-400" : "bg-amber-50 border-amber-200 text-amber-700"}`} onClick={() => navigate("/dashboard/collective/farmers")}>
-              <Icon icon="ph:user-plus-fill" className="w-4 h-4" />
-              <span>{pending} membership request{pending > 1 ? "s" : ""} pending review</span>
-              <Icon icon="ph:arrow-right-bold" className="w-3.5 h-3.5" />
-            </div>
-          )}
-          {unread > 0 && (
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer text-sm ${isDark ? "bg-blue-500/10 border-blue-500/25 text-blue-400" : "bg-blue-50 border-blue-200 text-blue-700"}`} onClick={() => navigate("/dashboard/collective/notifications")}>
-              <Icon icon="ph:bell-fill" className="w-4 h-4" />
-              <span>{unread} new notification{unread > 1 ? "s" : ""}</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
-        <StatCard label="Farmer Groups" value="14" icon="ph:users-three-fill" sub="+2 this month" color="emerald" />
-        <StatCard label="Active Pickups" value={upcoming} icon="ph:truck-fill" sub="scheduled" color="blue" />
-        <StatCard label="Crops Managed" value="9" icon="ph:leaf-fill" sub="4 categories" color="amber" />
-        <StatCard label="Total Harvest (YTD)" value="18.4t" icon="ph:scales-fill" sub="+12% vs 2025" color="violet" />
+      {/* Overview Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard label="Farmer Groups" value={stats.activeMembers || 0} icon="ph:users-three-fill" color="emerald" />
+        <StatCard label="Crops Managed" value={stats.totalCrops || 0} icon="ph:plant-fill" color="blue" />
+        <StatCard label="Active Zones" value={stats.activeZones || 0} icon="ph:map-trifold-fill" color="amber" />
+        <StatCard label="Active Pickups" value={stats.upcomingPickups || 0} icon="ph:truck-fill" color="violet" />
       </div>
 
-      {/* Charts row 1 */}
-      <div className="grid lg:grid-cols-3 gap-5 mb-5">
-        {/* Monthly harvest line chart */}
-        <div className={`lg:col-span-2 rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
-          <h2 className={`font-semibold mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>Monthly Harvest (kg)</h2>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={monthlyHarvest}>
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: chartTheme.text }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: chartTheme.text }} axisLine={false} tickLine={false} />
-              <Tooltip {...chartTheme.tooltip} />
-              <Line type="monotone" dataKey="kg" stroke="#10b981" strokeWidth={2.5} dot={{ fill: "#10b981", r: 3 }} activeDot={{ r: 5 }} />
-            </LineChart>
-          </ResponsiveContainer>
+      {/* Analytics Grid */}
+      <div className="grid lg:grid-cols-2 gap-5 mb-5">
+        {/* Collection Trend */}
+        <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
+          <h2 className={`font-semibold mb-6 ${isDark ? "text-white" : "text-slate-900"}`}>Collection Trend (Mock)</h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyHarvest}>
+                <XAxis dataKey="month" stroke={chartTheme.text} fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke={chartTheme.text} fontSize={12} tickLine={false} axisLine={false} tickFormatter={v => `${v}k`} />
+                <Tooltip {...chartTheme.tooltip} cursor={{ stroke: chartTheme.grid, strokeWidth: 2 }} />
+                <Line type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6, stroke: "#10b981", strokeWidth: 2, fill: isDark ? "#0f172a" : "#fff" }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Crop distribution donut */}
+        {/* Crop Distribution */}
         <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
-          <h2 className={`font-semibold mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>Crop Distribution</h2>
-          <ResponsiveContainer width="100%" height={180}>
-            <PieChart>
-              <Pie data={cropDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
-                {cropDistribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip {...chartTheme.tooltip} formatter={(v) => `${v}%`} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-            {cropDistribution.slice(0, 4).map((c, i) => (
-              <div key={c.name} className="flex items-center gap-1 text-xs">
-                <span className="w-2 h-2 rounded-full" style={{ background: COLORS[i] }} />
-                <span className={isDark ? "text-slate-400" : "text-slate-500"}>{c.name}</span>
-              </div>
-            ))}
+          <h2 className={`font-semibold mb-6 ${isDark ? "text-white" : "text-slate-900"}`}>Crop Distribution (Mock)</h2>
+          <div className="h-64 flex">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={cropDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
+                  {cropDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                </Pie>
+                <Tooltip {...chartTheme.tooltip} />
+                <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ fontSize: '12px', color: chartTheme.text }} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Charts row 2 */}
-      <div className="grid lg:grid-cols-2 gap-5 mb-5">
-        {/* Zone breakdown bar chart */}
+      <div className="grid lg:grid-cols-2 gap-5">
+        {/* Zone Performance */}
         <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
-          <h2 className={`font-semibold mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>Zone Breakdown (kg)</h2>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={zoneBreakdown} barSize={28}>
-              <XAxis dataKey="zone" tick={{ fontSize: 11, fill: chartTheme.text }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: chartTheme.text }} axisLine={false} tickLine={false} />
-              <Tooltip {...chartTheme.tooltip} />
-              <Bar dataKey="kg" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <h2 className={`font-semibold mb-6 ${isDark ? "text-white" : "text-slate-900"}`}>Zone Performance (Mock)</h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={zoneBreakdown} layout="vertical" margin={{ left: 20 }}>
+                <XAxis type="number" stroke={chartTheme.text} fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis dataKey="name" type="category" stroke={chartTheme.text} fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip {...chartTheme.tooltip} cursor={{ fill: chartTheme.grid }} />
+                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20}>
+                  {zoneBreakdown.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Decay trend */}
+        {/* Quality/Decay Analytics */}
         <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
-          <h2 className={`font-semibold mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>Post-Harvest Decay (%)</h2>
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={decayTrend}>
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: chartTheme.text }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: chartTheme.text }} axisLine={false} tickLine={false} />
-              <Tooltip {...chartTheme.tooltip} />
-              <Line type="monotone" dataKey="decay" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: "#ef4444", r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Recent pickups */}
-      <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>Recent Pickups</h2>
-          <button onClick={() => navigate("/dashboard/collective/history")} className="text-xs text-emerald-500 hover:text-emerald-400 cursor-pointer">View history →</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className={isDark ? "text-slate-500" : "text-slate-400"}>
-                {["Farmer Group", "Crop", "Qty", "Driver", "Date", "Status"].map(h => (
-                  <th key={h} className="text-left pb-3 pr-4 text-xs font-semibold uppercase tracking-wider">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-slate-100"}`}>
-              {pickupSchedules.slice(0, 4).map(s => (
-                <tr key={s.id} className={isDark ? "hover:bg-slate-800/30" : "hover:bg-slate-50"}>
-                  <td className={`py-3 pr-4 font-medium ${isDark ? "text-slate-200" : "text-slate-800"}`}>{s.farmerGroup.split(" ").slice(0, 2).join(" ")}</td>
-                  <td className={`py-3 pr-4 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{s.crop}</td>
-                  <td className={`py-3 pr-4 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{s.quantity} kg</td>
-                  <td className={`py-3 pr-4 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{s.driver.split(" ")[0]}</td>
-                  <td className={`py-3 pr-4 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{new Date(s.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}</td>
-                  <td className="py-3"><StatusBadge status={s.status} size="sm" /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <h2 className={`font-semibold mb-6 ${isDark ? "text-white" : "text-slate-900"}`}>Quality Preservation (Mock)</h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={decayTrend}>
+                <XAxis dataKey="time" stroke={chartTheme.text} fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke={chartTheme.text} fontSize={12} tickLine={false} axisLine={false} domain={[80, 100]} />
+                <Tooltip {...chartTheme.tooltip} cursor={{ stroke: chartTheme.grid, strokeWidth: 2 }} />
+                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                <Line type="monotone" name="Standard Method" dataKey="standard" stroke="#ef4444" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                <Line type="monotone" name="FarmFresh Logistics" dataKey="farmfresh" stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>

@@ -12,68 +12,79 @@ const cropDealSchema = new mongoose.Schema(
       ref: "FarmerCrop",
       required: true,
     },
-    agreedPrice: {
+    demandedPrice: {
       type: Number,
-      required: true,
       min: 0,
       default: 0,
     },
+    requestedQuantity: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    agreedPrice: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    rejectionReason: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    terminationReason: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     status: {
       type: String,
-      enum: ["REQUESTED", "APPROVED", "REJECTED", "CANCELLED", "ABANDONED", "F_TERMINATE", "C_TERMINATE"],
+      enum: [
+        "REQUESTED",
+        "APPROVED",
+        "REJECTED",
+        "CANCELLED",
+        "ABANDONED",
+        "F_TERMINATE",
+        "C_TERMINATE",
+      ],
       default: "REQUESTED",
     },
     approvalDate: {
       type: Date,
       default: null,
     },
-
-    // This section is for tracking the status of crop
+    latestStage: {
+      type: String,
+      enum: ["SOWING", "GROWING", "MATURE", "READY", "HARVESTED", "OTHER"],
+      default: "SOWING",
+    },
     expectedQuantity: {
       type: Number,
       min: 0,
       default: 0,
     },
-    expectedDate: {
+    collectedQuantity: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    expectedPickupDate: {
       type: Date,
       default: null,
     },
-    stage: {
+    queryPending: {
+      type: Boolean,
+      default: false,
+    },
+    paymentStatus: {
       type: String,
-      enum: ["SOWING", "PLANTING", "MATURE", "REAPING", "HARVEST", "OTHER"],
-      default: "OTHER",
-      required: true,
+      enum: ["PENDING", "PARTIAL", "PAID"],
+      default: "PENDING",
     },
-    message: {
-      type: String,
-      maxlength: 1000,
-      trim: true,
-      default: null,
-    },
-    imgUrl: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    lastUpdated: {
-      type: Date,
-      default: Date.now,
-    },
-    queryStatus: {
-      type: String,
-      enum: ["OPEN", "CLOSED"],
-      default: "OPEN",
-      required: true,
-    },
-    ///////////////////////////////
   },
   { timestamps: true },
 );
-
-cropDealSchema.pre("save", function (next) {
-  this.lastUpdated = new Date();
-  next();
-});
 
 const CropDeal = mongoose.model("CropDeal", cropDealSchema);
 export default CropDeal;

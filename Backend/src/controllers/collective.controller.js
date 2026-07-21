@@ -12,6 +12,7 @@ import {
   editCropSchema,
 } from "../validations/crop.validation.js";
 
+// ── Crop CRUD ─────────────────────────────────────────────────────────────────
 const addCrop = async (req, res, next) => {
   try {
     const { code, price } = addCropSchema.parse(req.body);
@@ -38,7 +39,6 @@ const getCrops = async (req, res, next) => {
   try {
     const { id: collectiveId } = req.user;
     const result = await getCropData(collectiveId);
-
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -56,6 +56,7 @@ const deleteCrop = async (req, res, next) => {
   }
 };
 
+// ── Membership ────────────────────────────────────────────────────────────────
 const getMemberships = async (req, res, next) => {
   try {
     const { id: collectiveId } = req.user;
@@ -66,6 +67,10 @@ const getMemberships = async (req, res, next) => {
   }
 };
 
+/**
+ * Accept membership request(s)
+ * Body: { farmerId: string, crops: [{ dealId: string, agreedPrice: number }] }
+ */
 const acceptRequest = async (req, res, next) => {
   try {
     const { farmerId, crops } = req.body;
@@ -81,10 +86,29 @@ const acceptRequest = async (req, res, next) => {
   }
 };
 
+/**
+ * Reject membership request(s)
+ * Body: { dealIds: string[] }
+ */
 const rejectRequest = async (req, res, next) => {
   try {
-    const { dealIds } = req.body;
-    const result = await memberService.rejectMemberRequest(dealIds);
+    const { dealIds, reason } = req.body;
+    const result = await memberService.rejectMemberRequest(dealIds, reason);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Terminate an approved deal (collective side)
+ * Body: { dealId: string, reason?: string }
+ */
+const terminateDeal = async (req, res, next) => {
+  try {
+    const { dealId, reason } = req.body;
+    const { id: collectiveId } = req.user;
+    const result = await memberService.terminateDeal(collectiveId, dealId, reason);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -99,4 +123,5 @@ export {
   getMemberships,
   acceptRequest,
   rejectRequest,
+  terminateDeal,
 };

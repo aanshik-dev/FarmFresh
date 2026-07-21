@@ -10,6 +10,7 @@ export const farmerSidebarLinks = [
   { path: "/dashboard/farmer/crops",      label: "My Crops",       icon: "ph:plant-fill" },
   { path: "/dashboard/farmer/collectives",label: "Collectives",    icon: "ph:buildings-fill" },
   { path: "/dashboard/farmer/schedules",  label: "Schedules",      icon: "ph:calendar-fill" },
+  { path: "/dashboard/farmer/announcements", label: "Announcements", icon: "ph:megaphone-fill" },
   { path: "/dashboard/farmer/notifications", label: "Notifications", icon: "ph:bell-fill", badge: true },
   { path: "/dashboard/farmer/profile",    label: "Profile",        icon: "ph:user-circle-fill" },
   { path: "/dashboard/farmer/settings",   label: "Settings",       icon: "ph:gear-six-fill" },

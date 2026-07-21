@@ -40,14 +40,14 @@ export const ToastProvider = ({ children }) => {
     [dismiss]
   );
 
-  const toast = {
+  const toast = React.useMemo(() => ({
     show,
     success: (msg, opts) => show(msg, { ...opts, type: "success" }),
     error:   (msg, opts) => show(msg, { ...opts, type: "error" }),
     warning: (msg, opts) => show(msg, { ...opts, type: "warning" }),
     info:    (msg, opts) => show(msg, { ...opts, type: "info" }),
     dismiss,
-  };
+  }), [show, dismiss]);
 
   return (
     <ToastContext.Provider value={{ toast }}>

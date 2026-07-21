@@ -46,7 +46,7 @@ const QUOTES = {
 };
 
 // Top Header
-const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed }) => {
+const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse }) => {
   const { isDark, toggleTheme } = useTheme();
   const { user, logout, role } = useAuth();
   const navigate = useNavigate();
@@ -116,41 +116,28 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed }) => {
           : "bg-white/90 border-slate-200 backdrop-blur-md"
       }`}
     >
-      {/* Desktop Left Area (Matches Sidebar Width) */}
-      <motion.div
-        animate={{ width: sidebarCollapsed ? 68 : 240 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="hidden md:flex items-center h-full shrink-0 overflow-hidden border-r border-transparent -ml-4 pl-4"
-      >
-        <div
-          className="flex items-center gap-2 cursor-pointer"
-          onClick={() => navigate("/")}
+      {/* Brand Section: Hamburger + Plant Icon + FarmFresh Logo */}
+      <div className="flex items-center gap-2.5 shrink-0">
+        {/* Desktop Collapse Button */}
+        <button
+          onClick={onCollapse}
+          className={`hidden md:flex items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-colors cursor-pointer ${
+            isDark
+              ? "hover:bg-slate-800 text-slate-400 hover:text-white"
+              : "hover:bg-slate-100 text-slate-500 hover:text-slate-900"
+          }`}
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <div
-            className={`p-1.5 rounded-lg shrink-0 ${isDark ? "bg-emerald-800/70 text-emerald-300" : "bg-emerald-100 text-emerald-600"}`}
-          >
-            <Icon icon="ph:plant-fill" className="w-5 h-5" />
-          </div>
-          <AnimatePresence>
-            {!sidebarCollapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className={`font-bold text-sm quantico uppercase tracking-widest whitespace-nowrap overflow-hidden ${isDark ? "text-white" : "text-slate-900"}`}
-              >
-                FarmFresh
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
+          <Icon
+            icon={sidebarCollapsed ? "material-symbols:menu-rounded" : "material-symbols:menu-open-rounded"}
+            className="w-5 h-5"
+          />
+        </button>
 
-      {/* Mobile Toggle & Logo */}
-      <div className="flex md:hidden items-center gap-2 shrink-0">
+        {/* Mobile Toggle Button */}
         <button
           onClick={onToggleSidebar}
-          className={`flex items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-colors cursor-pointer ${
+          className={`flex md:hidden items-center justify-center w-9 h-9 rounded-xl shrink-0 transition-colors cursor-pointer ${
             isDark
               ? "hover:bg-slate-800 text-slate-400 hover:text-white"
               : "hover:bg-slate-100 text-slate-500 hover:text-slate-900"
@@ -165,20 +152,33 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed }) => {
             className="w-5 h-5"
           />
         </button>
+
+        {/* FarmFresh Logo */}
         <div
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => navigate("/")}
         >
           <div
-            className={`p-1.5 rounded-lg ${isDark ? "bg-emerald-800/70 text-emerald-300" : "bg-emerald-100 text-emerald-600"}`}
+            className={`p-1.5 rounded-lg shrink-0 ${
+              isDark
+                ? "bg-emerald-800/70 text-emerald-300"
+                : "bg-emerald-100 text-emerald-600"
+            }`}
           >
             <Icon icon="ph:plant-fill" className="w-5 h-5" />
           </div>
+          <span
+            className={`font-bold text-sm quantico uppercase tracking-widest whitespace-nowrap ${
+              isDark ? "text-white" : "text-slate-900"
+            }`}
+          >
+            FarmFresh
+          </span>
         </div>
       </div>
 
       {/* Center greeting */}
-      <div className="flex-1 flex items-center justify-start min-w-0 md:pl-6">
+      <div className="flex-1 flex items-center justify-start min-w-0 md:pl-2">
         <div className={`hidden sm:flex items-center gap-2 text-sm font-medium truncate ${isDark ? "text-slate-300" : "text-slate-600"}`}>
           <Icon icon={quote.icon} className={`w-4 h-4 shrink-0 ${isDark ? "text-amber-400" : "text-amber-500"}`} />
           <p className="truncate">
@@ -461,25 +461,10 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
         </nav>
       </div>
 
-      {/* Bottom: collapse toggle + logout */}
+      {/* Bottom: logout */}
       <div
         className={`border-t py-3 px-2 flex flex-col gap-1 ${isDark ? "border-slate-800/80" : "border-slate-200"}`}
       >
-        {/* Collapse toggle */}
-        <button
-          onClick={onCollapse}
-          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors cursor-pointer ${
-            isCollapsed ? "justify-center" : ""
-          } ${isDark ? "text-slate-500 hover:bg-slate-800 hover:text-slate-300" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"}`}
-          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <Icon
-            icon={isCollapsed ? "ph:sidebar-simple-fill" : "ph:sidebar-fill"}
-            className="w-5 h-5 shrink-0"
-          />
-          {!isCollapsed && <span className="text-sm">Collapse</span>}
-        </button>
-
         {/* Logout */}
         <button
           onClick={handleLogout}
@@ -704,11 +689,12 @@ const AppShell = () => {
 
   return (
     <div className={`min-h-screen ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
-      <TopHeader
-        onToggleSidebar={handleToggleSidebar}
-        sidebarOpen={sidebarOpen}
-        sidebarCollapsed={sidebarCollapsed}
-      />
+        <TopHeader
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          sidebarOpen={sidebarOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
       <Sidebar
         isOpen={sidebarOpen}
         isCollapsed={sidebarCollapsed}

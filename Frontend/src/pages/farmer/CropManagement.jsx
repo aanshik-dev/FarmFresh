@@ -1,279 +1,352 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useTheme } from "../../context/ThemeContext";
-import { farmerCropsData, CROPS_MASTER } from "../../utils/InterfaceData";
-import StatusBadge from "../../components/common/StatusBadge";
+import { useToast } from "../../components/ui";
 import EmptyState from "../../components/common/EmptyState";
-import ConfirmModal from "../../components/common/ConfirmModal";
-import { Button, useToast } from "../../components/ui";
-
-const STATUS_CYCLE = ["growing", "ready", "harvested", "out_of_season"];
-
-const CropCard = ({ crop, onUpdate, onToggleSeason, isDark }) => {
-  const [expanded, setExpanded] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [updateText, setUpdateText] = useState("");
-  const [updateStatus, setUpdateStatus] = useState(crop.status);
-  const [imagePreview, setImagePreview] = useState(null);
-  const { toast } = useToast();
-
-  const handleImageChange = (e) => {
-    const f = e.target.files[0];
-    if (f) setImagePreview(URL.createObjectURL(f));
-  };
-
-  const handleSaveUpdate = () => {
-    onUpdate(crop.id, { lastUpdateText: updateText, status: updateStatus });
-    toast.success("Crop status updated!", { title: "Updated" });
-    setShowUpdateModal(false);
-    setUpdateText("");
-  };
-
-  return (
-    <>
-      <motion.div
-        layout
-        whileHover={{ y: -2 }}
-        className={`rounded-2xl border overflow-hidden transition-all ${isDark ? "bg-slate-900/60 border-slate-800 hover:border-slate-700" : "bg-white border-slate-200 hover:shadow-md"}`}
-      >
-        {/* Card header */}
-        <div className={`px-5 py-4 flex items-center justify-between gap-3 ${crop.status === "out_of_season" ? "opacity-50" : ""}`}>
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isDark ? "bg-emerald-500/15" : "bg-emerald-50"}`}>
-              <Icon icon="ph:plant-fill" className="w-6 h-6 text-emerald-500" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className={`font-semibold truncate ${isDark ? "text-white" : "text-slate-900"}`}>{crop.name}</h3>
-                <StatusBadge status={crop.status} />
-              </div>
-              <p className={`text-xs mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Season: {crop.season}</p>
-            </div>
-          </div>
-          <button onClick={() => setExpanded(p => !p)} className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${isDark ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}>
-            <Icon icon={expanded ? "ph:caret-up-bold" : "ph:caret-down-bold"} className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Progress bar */}
-        {crop.status !== "out_of_season" && (
-          <div className="px-5 pb-4">
-            <div className="flex justify-between text-xs mb-1.5">
-              <span className={isDark ? "text-slate-400" : "text-slate-500"}>Growth Progress</span>
-              <span className={`font-medium ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>{crop.growthPercent}%</span>
-            </div>
-            <div className={`h-2 rounded-full ${isDark ? "bg-slate-700" : "bg-slate-200"}`}>
-              <motion.div
-                className={`h-full rounded-full ${crop.status === "ready" ? "bg-amber-500" : "bg-emerald-500"}`}
-                initial={{ width: 0 }}
-                animate={{ width: `${crop.growthPercent}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Expanded details */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className={`border-t overflow-hidden ${isDark ? "border-slate-800" : "border-slate-100"}`}
-            >
-              <div className="px-5 py-4 space-y-3">
-                {/* Details */}
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  {[
-                    { label: "Planted", value: crop.plantedDate ? new Date(crop.plantedDate).toLocaleDateString("en-IN") : "—" },
-                    { label: "Expected Harvest", value: crop.expectedHarvest ? new Date(crop.expectedHarvest).toLocaleDateString("en-IN") : "—" },
-                    { label: "Collective", value: crop.collective || "Not linked" },
-                    { label: "Last Updated", value: crop.lastUpdated },
-                  ].map(d => (
-                    <div key={d.label} className={`rounded-lg px-3 py-2 ${isDark ? "bg-slate-800/50" : "bg-slate-50"}`}>
-                      <p className={`${isDark ? "text-slate-500" : "text-slate-400"}`}>{d.label}</p>
-                      <p className={`font-medium mt-0.5 ${isDark ? "text-slate-200" : "text-slate-800"}`}>{d.value}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Last update note */}
-                {crop.lastUpdateText && (
-                  <div className={`rounded-lg p-3 text-xs ${isDark ? "bg-slate-800/40 text-slate-400" : "bg-slate-50 text-slate-500"}`}>
-                    <Icon icon="ph:chat-circle-text-fill" className="w-3.5 h-3.5 inline mr-1" />
-                    {crop.lastUpdateText}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex gap-2 flex-wrap">
-                  <button
-                    onClick={() => setShowUpdateModal(true)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium bg-gradient-to-r from-emerald-500 to-emerald-600 text-white cursor-pointer"
-                  >
-                    <Icon icon="ph:pencil-fill" className="w-3.5 h-3.5" />
-                    Update Status
-                  </button>
-                  <button
-                    onClick={() => onToggleSeason(crop.id)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium border cursor-pointer transition-all ${
-                      crop.status === "out_of_season"
-                        ? "border-emerald-500 text-emerald-500 hover:bg-emerald-500/10"
-                        : isDark ? "border-slate-700 text-slate-400 hover:border-slate-500" : "border-slate-200 text-slate-500 hover:border-slate-300"
-                    }`}
-                  >
-                    <Icon icon={crop.status === "out_of_season" ? "ph:sun-fill" : "ph:moon-fill"} className="w-3.5 h-3.5" />
-                    {crop.status === "out_of_season" ? "Mark In Season" : "Out of Season"}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Update modal */}
-      <AnimatePresence>
-        {showUpdateModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowUpdateModal(false)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 16 }}
-              className={`relative w-full max-w-md rounded-2xl border p-6 shadow-2xl z-10 ${isDark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"}`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`font-bold text-lg ${isDark ? "text-white" : "text-slate-900"}`}>Update — {crop.name}</h3>
-                <button onClick={() => setShowUpdateModal(false)} className={`w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer ${isDark ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-500"}`}>
-                  <Icon icon="material-symbols:close-rounded" className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Status selector */}
-              <div className="mb-4">
-                <p className={`text-sm font-medium mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Growth Status</p>
-                <div className="flex flex-wrap gap-2">
-                  {STATUS_CYCLE.filter(s => s !== "out_of_season").map(s => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setUpdateStatus(s)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition-all ${
-                        updateStatus === s ? "bg-emerald-500 border-emerald-500 text-white" : isDark ? "border-slate-700 text-slate-400 hover:border-slate-500" : "border-slate-200 text-slate-500 hover:border-slate-300"
-                      }`}
-                    >
-                      {s.replace("_", " ")}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Update text */}
-              <div className="mb-4">
-                <p className={`text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Update Note</p>
-                <textarea
-                  value={updateText}
-                  onChange={e => setUpdateText(e.target.value)}
-                  placeholder="Describe the current crop condition, any issues, expected timeline…"
-                  rows={3}
-                  className={`w-full rounded-xl border text-sm p-3 outline-none resize-none transition-all focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 ${isDark ? "bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500" : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"}`}
-                />
-              </div>
-
-              {/* Image upload */}
-              <div className="mb-5">
-                <p className={`text-sm font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Attach Photo (optional)</p>
-                <label className={`flex items-center gap-2 px-3 py-2 rounded-xl border border-dashed cursor-pointer text-sm ${isDark ? "border-slate-700 text-slate-500 hover:border-emerald-500/50" : "border-slate-300 text-slate-400 hover:border-emerald-400"}`}>
-                  <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                  <Icon icon="ph:image-fill" className="w-4 h-4" />
-                  {imagePreview ? "Photo attached ✓" : "Upload field photo"}
-                </label>
-                {imagePreview && <img src={imagePreview} alt="" className="mt-2 w-full h-32 object-cover rounded-xl" />}
-              </div>
-
-              <div className="flex gap-2">
-                <button onClick={() => setShowUpdateModal(false)} className={`flex-1 py-2.5 rounded-xl text-sm border cursor-pointer ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}>Cancel</button>
-                <button onClick={handleSaveUpdate} className="flex-1 py-2.5 rounded-xl text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold cursor-pointer hover:from-emerald-400 hover:to-emerald-500">Save Update</button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-};
+import CropSelect from "../../components/common/CropSelect";
+import { farmerCropAPI, commonAPI } from "../../services/api";
 
 const CropManagement = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
-  const [crops, setCrops] = useState(farmerCropsData);
-  const [filter, setFilter] = useState("all");
+  
+  const [crops, setCrops] = useState([]);
+  const [masterCrops, setMasterCrops] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Navigation State
+  const [view, setView] = useState("list"); // "list" | "form"
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  
+  // form state
+  const [form, setForm] = useState({ code: "", yld: "", plantedDate: "" });
 
-  const handleUpdate = (id, data) => {
-    setCrops(prev => prev.map(c => c.id === id ? { ...c, ...data, lastUpdated: "Just now" } : c));
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [cropsRes, masterRes] = await Promise.all([
+        farmerCropAPI.get(),
+        commonAPI.getCrops()
+      ]);
+      setCrops(cropsRes.data.crops || []);
+      setMasterCrops(masterRes.data.crops || []);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to load crops");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const openAdd = () => {
+    setEditingId(null);
+    setForm({ code: "", yld: "", plantedDate: "" });
+    setView("form");
   };
 
-  const handleToggleSeason = (id) => {
-    setCrops(prev => prev.map(c => c.id === id ? { ...c, status: c.status === "out_of_season" ? "growing" : "out_of_season" } : c));
-    toast.info("Crop season status updated.");
+  const openEdit = (crop) => {
+    setEditingId(crop._id);
+    const pd = crop.plantedDate ? new Date(crop.plantedDate).toISOString().split('T')[0] : "";
+    setForm({ 
+      code: crop.crop?.code || "", 
+      yld: crop.yield || "", 
+      plantedDate: pd 
+    });
+    setView("form");
   };
 
-  const filters = [
-    { id: "all", label: "All Crops" },
-    { id: "growing", label: "Growing" },
-    { id: "ready", label: "Ready" },
-    { id: "out_of_season", label: "Out of Season" },
-  ];
+  const handleSave = async () => {
+    if (!form.code || !form.yld) {
+      toast.error("Crop and estimated yield are required");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (editingId) {
+        await farmerCropAPI.edit({ 
+          id: editingId, 
+          yld: Number(form.yld), 
+          plantedDate: form.plantedDate || undefined 
+        });
+        toast.success("Crop updated successfully!");
+      } else {
+        await farmerCropAPI.add({ 
+          code: form.code, 
+          yld: Number(form.yld) 
+        });
+        toast.success("Crop added successfully!");
+      }
+      setView("list");
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to save crop");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  const filtered = filter === "all" ? crops : crops.filter(c => c.status === filter);
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Stop growing ${name}? This will remove it from your active list.`)) return;
+    try {
+      await farmerCropAPI.delete({ cropId: id });
+      toast.success("Crop removed");
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to remove crop");
+    }
+  };
+
+  const activeCrops = crops.filter(c => c.status === "ACTIVE");
+  const totalYield = activeCrops.reduce((sum, c) => sum + (c.yield || 0), 0);
+
+  // Animation variants
+  const listVariants = {
+    initial: { x: -50, opacity: 0 },
+    enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
+    exit: { x: -50, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }
+  };
+
+  const formVariants = {
+    initial: { x: 50, opacity: 0 },
+    enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
+    exit: { x: 50, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }
+  };
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <h1 className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>My Crops</h1>
-          <p className={`text-sm mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{crops.length} crops registered</p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-medium cursor-pointer shadow-lg shadow-emerald-500/20">
-          <Icon icon="ph:plus-bold" className="w-4 h-4" />
-          Add Crop
-        </button>
-      </div>
+    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+      <AnimatePresence mode="wait">
+        {view === "list" ? (
+          <motion.div key="list" variants={listVariants} initial="initial" animate="enter" exit="exit">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
+                  My Crops
+                </h1>
+                <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  Manage your currently growing crops and estimated yields
+                </p>
+              </div>
+              <button 
+                onClick={openAdd}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold cursor-pointer shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300"
+              >
+                <Icon icon="ph:plus-bold" className="w-4 h-4" />
+                Add Crop
+              </button>
+            </div>
 
-      {/* Filters */}
-      <div className={`flex gap-1 p-1 rounded-xl mb-6 w-fit ${isDark ? "bg-slate-800/70" : "bg-slate-100"}`}>
-        {filters.map(f => (
-          <button
-            key={f.id}
-            onClick={() => setFilter(f.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-              filter === f.id
-                ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow"
-                : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {f.label}
-            <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${filter === f.id ? "bg-white/20" : isDark ? "bg-slate-700" : "bg-slate-200"}`}>
-              {f.id === "all" ? crops.length : crops.filter(c => c.status === f.id).length}
-            </span>
-          </button>
-        ))}
-      </div>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+              {[
+                { label: "Active Crops", value: activeCrops.length, icon: "ph:plant-fill", gradient: "from-emerald-500/20 to-emerald-500/5", color: "text-emerald-500" },
+                { label: "Total Estimated Yield", value: `${totalYield} kg`, icon: "ph:scales-fill", gradient: "from-blue-500/20 to-blue-500/5", color: "text-blue-500" }
+              ].map((s, i) => (
+                <motion.div 
+                  key={s.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl ${isDark ? "bg-slate-900/50 border-slate-800/60 shadow-2xl shadow-black/20" : "bg-white/80 border-slate-200 shadow-xl shadow-slate-200/50"}`}
+                >
+                  <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full bg-gradient-to-br ${s.gradient} blur-2xl pointer-events-none`} />
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDark ? "bg-slate-800/80" : "bg-slate-100/80"} ${s.color}`}>
+                      <Icon icon={s.icon} className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <p className={`text-sm font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>{s.label}</p>
+                      <p className="text-3xl font-bold tracking-tight mt-1">{s.value}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-      {/* Crop grid */}
-      {filtered.length === 0 ? (
-        <EmptyState icon="ph:plant-fill" title="No crops in this category" description="Add crops from the button above or change the filter." size="md" />
-      ) : (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filtered.map(crop => (
-            <CropCard key={crop.id} crop={crop} onUpdate={handleUpdate} onToggleSeason={handleToggleSeason} isDark={isDark} />
-          ))}
-        </div>
-      )}
+            {/* Grid of Crops */}
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <Icon icon="svg-spinners:12-dots-scale-rotate" className={`w-10 h-10 ${isDark ? "text-emerald-400" : "text-emerald-500"}`} />
+              </div>
+            ) : activeCrops.length === 0 ? (
+              <EmptyState 
+                icon="ph:plant-fill" 
+                title="No crops planted yet" 
+                description="Add a crop to let collectives know what you're growing." 
+                action={
+                  <button onClick={openAdd} className="px-4 py-2 mt-4 rounded-xl bg-emerald-500 text-white text-sm font-semibold cursor-pointer">
+                    Add First Crop
+                  </button>
+                }
+              />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {activeCrops.map((crop, i) => (
+                  <motion.div
+                    key={crop._id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    className={`group relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl transition-all duration-300 ${
+                      isDark 
+                        ? "bg-slate-900/40 border-slate-800/60 hover:bg-slate-800/60 hover:border-emerald-500/30 shadow-2xl shadow-black/20" 
+                        : "bg-white/80 border-slate-200 hover:border-emerald-400/50 hover:shadow-xl shadow-slate-200/50"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/20 text-white`}>
+                          <Icon icon="ph:plant-fill" className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg">{crop.crop?.name}</h3>
+                          <p className={`text-xs font-medium uppercase tracking-wider ${isDark ? "text-emerald-400/70" : "text-emerald-600/80"}`}>
+                            {crop.crop?.code} · {crop.crop?.season}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`grid grid-cols-2 gap-3 mb-5 p-3 rounded-xl ${isDark ? "bg-slate-950/50" : "bg-slate-50"}`}>
+                      <div>
+                        <p className={`text-xs mb-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Est. Yield</p>
+                        <p className="font-semibold">{crop.yield} kg</p>
+                      </div>
+                      <div>
+                        <p className={`text-xs mb-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Planted</p>
+                        <p className="font-semibold">
+                          {crop.plantedDate ? new Date(crop.plantedDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' }) : "Not set"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => openEdit(crop)}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all ${
+                          isDark 
+                            ? "border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600" 
+                            : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+                        }`}
+                      >
+                        <Icon icon="ph:pencil-fill" className="w-4 h-4" />
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(crop._id, crop.crop?.name)}
+                        className={`px-4 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all ${
+                          isDark 
+                            ? "border-red-900/30 text-red-400 hover:bg-red-900/50 hover:border-red-800/50" 
+                            : "border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200"
+                        }`}
+                      >
+                        <Icon icon="ph:trash-fill" className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div key="form" variants={formVariants} initial="initial" animate="enter" exit="exit" className="max-w-4xl mx-auto">
+            <button 
+              onClick={() => setView("list")}
+              className={`mb-6 flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors ${
+                isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-500 hover:text-emerald-600"
+              }`}
+            >
+              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" />
+              Back to Crops
+            </button>
+
+            <div className={`rounded-2xl border p-6 sm:p-8 backdrop-blur-xl ${
+              isDark ? "bg-slate-900/50 border-slate-800/60 shadow-2xl shadow-black/20" : "bg-white/80 border-slate-200 shadow-xl shadow-slate-200/50"
+            }`}>
+              <h2 className="text-2xl font-bold mb-2">
+                {editingId ? "Edit Crop Details" : "Register New Crop"}
+              </h2>
+              <p className={`text-sm mb-6 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                {editingId ? "Update your estimated yield and planting date." : "Tell collectives what you plan to grow."}
+              </p>
+
+              <div className="space-y-5">
+                {/* Select Crop */}
+                <div>
+                  <label className={`text-xs font-semibold block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Crop (Master List) *</label>
+                  <CropSelect
+                    crops={masterCrops}
+                    value={form.code}
+                    onChange={(code) => setForm((p) => ({ ...p, code }))}
+                    disabled={!!editingId}
+                    placeholder="Select a crop from directory..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Yield */}
+                  <div>
+                    <label className={`text-xs font-semibold block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Estimated Yield (kg) *</label>
+                    <div className="relative">
+                      <Icon icon="ph:scales-fill" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+                      <input
+                        type="number"
+                        value={form.yld}
+                        onChange={(e) => setForm((p) => ({ ...p, yld: e.target.value }))}
+                        placeholder="e.g. 500"
+                        className={`w-full pl-10 rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${
+                          isDark 
+                            ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" 
+                            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Planted Date (Edit only) */}
+                  {editingId && (
+                    <div>
+                      <label className={`text-xs font-semibold block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Planted Date</label>
+                      <input
+                        type="date"
+                        value={form.plantedDate}
+                        onChange={(e) => setForm((p) => ({ ...p, plantedDate: e.target.value }))}
+                        className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${
+                          isDark 
+                            ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" 
+                            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-4 pt-5 border-t border-slate-200 dark:border-slate-800">
+                  <button
+                    onClick={() => setView("list")}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-colors ${
+                      isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white cursor-pointer flex items-center justify-center gap-2 hover:from-emerald-400 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0"
+                  >
+                    {saving ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" /> : <Icon icon="ph:check-bold" className="w-4 h-4" />}
+                    {editingId ? "Save Changes" : "Save Crop"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

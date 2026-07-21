@@ -36,11 +36,10 @@ app.use(passport.initialize());
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/user/collective", collectiveRoutes);
 app.use("/api/data", commonRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/collective/", collectiveRoutes);
-app.use("/api/farmers/", farmerGroupRoutes);
+app.use("/api/collective", collectiveRoutes);
+app.use("/api/farmer", farmerGroupRoutes);
 app.use("/api/ai", aiRoutes);
 
 app.get("/", (req, res) => {

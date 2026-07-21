@@ -89,6 +89,21 @@ const getMemberships = async (req, res, next) => {
   }
 };
 
+/**
+ * Terminate an approved deal (farmer side)
+ * Body: { dealId: string, reason?: string }
+ */
+const terminateDeal = async (req, res, next) => {
+  try {
+    const { dealId, reason } = req.body;
+    const { id: farmerId } = req.user;
+    const response = await memberService.terminateDeal(farmerId, dealId, reason);
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   sendRequest,
   cancelRequest,
@@ -97,4 +112,5 @@ export {
   getCrops,
   deleteCrop,
   getMemberships,
+  terminateDeal,
 };

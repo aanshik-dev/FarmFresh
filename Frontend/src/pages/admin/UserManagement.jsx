@@ -63,7 +63,7 @@ const UserManagement = () => {
               <motion.tr key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className={isDark ? "hover:bg-slate-800/30" : "hover:bg-slate-50"}>
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
-                    {u.photo ? <img src={u.photo} alt="" className="w-9 h-9 rounded-xl object-cover" /> : <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold ${isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600"}`}>{u.name.charAt(0)}</div>}
+                    {u.photo ? <img src={u.photo} alt="" className="w-9 h-9 rounded-xl object-cover" /> : <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold ${isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 text-slate-600"}`}>{(u.name || "?").charAt(0)}</div>}
                     <div>
                       <p className={`font-medium ${isDark ? "text-white" : "text-slate-900"}`}>{u.name.length > 22 ? u.name.substring(0, 22) + "…" : u.name}</p>
                       <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>{u.subName}</p>

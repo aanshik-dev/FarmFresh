@@ -80,14 +80,12 @@ const farmerGroupSchema = new mongoose.Schema(
     },
     coord: {
       lat: {
-        type: String,
-        default: "",
-        trim: true,
+        type: Number,
+        default: 0,
       },
       long: {
-        type: String,
-        default: "",
-        trim: true,
+        type: Number,
+        default: 0,
       },
     },
   },

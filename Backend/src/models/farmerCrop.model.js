@@ -31,7 +31,7 @@ const farmerCropSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-farmerCropSchema.index({ fid: 1, crop: 1 }, { unique: true });
+farmerCropSchema.index({ farmer: 1, crop: 1 }, { unique: true });
 
 const FarmerCrop = mongoose.model("FarmerCrop", farmerCropSchema);
 export default FarmerCrop;
