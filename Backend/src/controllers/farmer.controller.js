@@ -13,9 +13,9 @@ import memberService from "../services/farmer/membership.service.js";
 
 const addCrop = async (req, res, next) => {
   try {
-    const { code, yld } = farmerCropAddSchema.parse(req.body);
+    const { code, yld, plantedDate } = farmerCropAddSchema.parse(req.body);
     const { id: farmerId } = req.user;
-    const response = await addCropData(code, yld, farmerId);
+    const response = await addCropData(code, yld, plantedDate, farmerId);
     res.status(201).json(response);
   } catch (err) {
     next(err);

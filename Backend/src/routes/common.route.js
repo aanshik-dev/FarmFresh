@@ -2,6 +2,8 @@ import express from "express";
 import Crop from "../models/crop.model.js";
 import Collective from "../models/collective.model.js";
 import CollectedCrop from "../models/collectedCrops.model.js";
+import Membership from "../models/membership.model.js";
+import Zone from "../models/zone.model.js";
 import { haversineDistance } from "../utils/haversine.js";
 
 const router = express.Router();
@@ -48,25 +50,52 @@ router.get("/collectives", async (req, res, next) => {
         });
     }
 
-    // For each collective, attach what crops they deal in
+    // For each collective, attach what crops they deal in (with prices)
     const collectiveIds = result.map((c) => c._id);
     const collectedCrops = await CollectedCrop.find({
       collective: { $in: collectiveIds },
       status: "ACTIVE",
     })
-      .populate("crop", "name code category")
+      .populate("crop", "name code category season image")
       .lean();
 
     const cropsByCollective = {};
     for (const cc of collectedCrops) {
       const key = cc.collective.toString();
       if (!cropsByCollective[key]) cropsByCollective[key] = [];
-      cropsByCollective[key].push(cc.crop);
+      cropsByCollective[key].push({
+        ...cc.crop,
+        price: cc.price || 0,
+        quantity: cc.quantity || 0,
+      });
+    }
+
+    // Aggregate farmer group count and zone count per collective
+    const [memberCounts, zoneCounts] = await Promise.all([
+      Membership.aggregate([
+        { $match: { collective: { $in: collectiveIds }, status: { $in: ["ACTIVE", "PENDING"] } } },
+        { $group: { _id: "$collective", count: { $sum: 1 } } },
+      ]),
+      Zone.aggregate([
+        { $match: { collective: { $in: collectiveIds }, status: "ACTIVE" } },
+        { $group: { _id: "$collective", count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const memberCountMap = {};
+    for (const m of memberCounts) {
+      memberCountMap[m._id.toString()] = m.count;
+    }
+    const zoneCountMap = {};
+    for (const z of zoneCounts) {
+      zoneCountMap[z._id.toString()] = z.count;
     }
 
     const enriched = result.map((c) => ({
       ...c,
       crops: cropsByCollective[c._id.toString()] || [],
+      farmerGroupsCount: memberCountMap[c._id.toString()] || 0,
+      zonesCount: zoneCountMap[c._id.toString()] || 0,
     }));
 
     res.status(200).json({

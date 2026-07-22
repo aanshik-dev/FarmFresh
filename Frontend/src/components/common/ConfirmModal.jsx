@@ -24,7 +24,9 @@ const ConfirmModal = ({
   confirmLabel = "Confirm",
   variant = "danger",
   loading = false,
+  disableConfirm = false,
   icon,
+  children,
 }) => {
   const { isDark } = useTheme();
 
@@ -81,6 +83,7 @@ const ConfirmModal = ({
                   {description}
                 </p>
               )}
+              {children && <div className="mt-2 w-full text-left">{children}</div>}
             </div>
 
             <div className="flex gap-3 mt-6">
@@ -97,12 +100,12 @@ const ConfirmModal = ({
               </button>
               <button
                 onClick={onConfirm}
-                disabled={loading}
+                disabled={loading || disableConfirm}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all cursor-pointer flex items-center justify-center gap-2 ${
                   variant === "danger"
                     ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 shadow-lg shadow-red-500/20"
                     : "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-lg shadow-emerald-500/20"
-                } ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+                } ${loading || disableConfirm ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 {loading && (
                   <Icon icon="svg-spinners:ring-resize" className="w-4 h-4" />

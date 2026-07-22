@@ -22,9 +22,22 @@ const validRequest = async (farmerId, collectiveID, crops) => {
   }
 };
 
-const sendMemberRequest = async (farmerId, collectiveID, crops) => {
+// Normalise crops input: accepts either ["id1", "id2"] or [{ cropId: "id1", demandedPrice: 50 }]
+const normaliseCrops = (crops) => {
+  return crops.map((c) => {
+    if (typeof c === "string") return { cropId: c, demandedPrice: 0 };
+    return { cropId: c.cropId || c.crop, demandedPrice: Number(c.demandedPrice) || 0 };
+  });
+};
+
+const sendMemberRequest = async (farmerId, collectiveID, rawCrops) => {
   // validation
-  await validRequest(farmerId, collectiveID, crops);
+  await validRequest(farmerId, collectiveID, rawCrops);
+
+  // Normalise crops to [{ cropId, demandedPrice }]
+  const cropEntries = normaliseCrops(rawCrops);
+  const cropIds = cropEntries.map((c) => c.cropId);
+  const priceMap = new Map(cropEntries.map((c) => [c.cropId, c.demandedPrice]));
 
   // is profile complete
   if (!(await isProfileComplete(farmerId, "FARMER_GROUP"))) {
@@ -46,11 +59,11 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
 
   // Searching for the crops
   const farmerCrops = await FarmerCrop.find({
-    _id: { $in: crops },
+    _id: { $in: cropIds },
     farmer: farmerId,
   }).populate("crop");
 
-  if (farmerCrops.length !== crops.length) {
+  if (farmerCrops.length !== cropIds.length) {
     throwErr(403, "Some crops are invalid !!");
   }
 
@@ -86,7 +99,7 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
     // Check if already a member
     const existingDeals = await CropDeal.find({
       membership: membership._id,
-      crop: { $in: crops },
+      crop: { $in: cropIds },
       status: { $in: ["REQUESTED", "APPROVED"] },
     });
     if (existingDeals.length > 0) {
@@ -117,13 +130,14 @@ const sendMemberRequest = async (farmerId, collectiveID, crops) => {
         await membership.save({ session });
       }
 
-      // create deals for each crop
-      const bulkOps = crops.map((cropId) => ({
+      // create deals for each crop (with demandedPrice)
+      const bulkOps = cropIds.map((cropId) => ({
         updateOne: {
           filter: { membership: membership._id, crop: cropId },
           update: {
             $set: {
               status: "REQUESTED",
+              demandedPrice: priceMap.get(cropId) || 0,
             },
           },
           upsert: true,

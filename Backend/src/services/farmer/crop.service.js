@@ -6,7 +6,7 @@ import Collective from "../../models/collective.model.js";
 import throwErr from "../../utils/throwErr.js";
 import mongoose from "mongoose";
 
-const addCropData = async (code, yld, farmerId) => {
+const addCropData = async (code, yld, plantedDate, farmerId) => {
   const crop = await Crop.findOne({ code });
   if (!crop) {
     throwErr(404, `No Crop found with code ${code}`);
@@ -21,6 +21,12 @@ const addCropData = async (code, yld, farmerId) => {
       throwErr(400, `${crop.name} is already added !!`);
     } else {
       existingCrop.status = "ACTIVE";
+      if (yld !== undefined) {
+        existingCrop.yield = yld;
+      }
+      if (plantedDate !== undefined) {
+        existingCrop.plantedDate = plantedDate;
+      }
       await existingCrop.save();
       return {
         success: true,
@@ -35,6 +41,9 @@ const addCropData = async (code, yld, farmerId) => {
     crop: crop._id,
     yield: yld,
   });
+  if (plantedDate != undefined) {
+    farmerCrop.plantedDate = plantedDate;
+  }
   await farmerCrop.save();
 
   return {

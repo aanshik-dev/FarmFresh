@@ -20,6 +20,13 @@ export const farmerCropAddSchema = z.object({
     })
     .positive("Yield must be greater than 0 !!")
     .optional(),
+  plantedDate: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid Date Format !!")
+      .optional(),
+  ),
 });
 
 export const editCropSchema = z.object({
