@@ -7,7 +7,6 @@ import isProfileComplete from "../general.service.js";
 
 // ── GET all memberships for a collective
 const getMemberships = async (collectiveID) => {
-  // validate collective
   if (!collectiveID) throwErr(400, "Collective Id is required !!");
 
   const collective = await Collective.findById(collectiveID);

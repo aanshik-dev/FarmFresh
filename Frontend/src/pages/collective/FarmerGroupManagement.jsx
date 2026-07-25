@@ -386,7 +386,7 @@ const FarmerGroupManagement = () => {
                         No zones available. Create zones first in Zone Management.
                       </p>
                     ) : (
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {zones.map(z => (
                           <button
                             key={z._id}

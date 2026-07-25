@@ -142,7 +142,7 @@ const PickupScheduler = () => {
             </div>
 
             {/* Tabs */}
-            <div className={`flex gap-2 p-1.5 rounded-xl mb-8 w-fit backdrop-blur-md ${isDark ? "bg-slate-900/60 border border-slate-800" : "bg-white border border-slate-200 shadow-sm"}`}>
+            <div className={`flex gap-2 p-1.5 rounded-xl mb-8 max-w-full overflow-x-auto scrollbar-none backdrop-blur-md ${isDark ? "bg-slate-900/60 border border-slate-800" : "bg-white border border-slate-200 shadow-sm"}`}>
               {[
                 { id: "upcoming", label: "Upcoming" },
                 { id: "past", label: "Past" },

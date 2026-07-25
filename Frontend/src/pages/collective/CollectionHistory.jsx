@@ -317,7 +317,7 @@ const CollectionHistory = () => {
                       {/* Pickup card header */}
                       <button
                         onClick={() => toggleExpand(s._id)}
-                        className={`w-full flex items-center justify-between p-5 text-left transition-colors cursor-pointer ${isDark ? "hover:bg-slate-800/40" : "hover:bg-slate-50"}`}
+                        className={`w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 text-left transition-colors cursor-pointer ${isDark ? "hover:bg-slate-800/40" : "hover:bg-slate-50"}`}
                       >
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${isDark ? "bg-slate-800" : "bg-emerald-50"}`}>
@@ -335,7 +335,7 @@ const CollectionHistory = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-5 shrink-0">
+                        <div className="flex items-center justify-between sm:justify-end gap-5 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200 dark:border-slate-800">
                           <div className="text-right">
                             <p className={`font-bold text-xl text-emerald-500`}>₹{(s.totalAmount || 0).toLocaleString("en-IN")}</p>
                             <p className={`text-xs font-semibold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}>Total</p>

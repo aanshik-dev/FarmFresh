@@ -139,7 +139,7 @@ const CropCard = ({ crop, isDark, onEdit, onDelete, onSelect, isSelected, index 
 };
 
 // ── DetailPanel ───────────────────────────────────────────────────────────────
-const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh }) => {
+const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => {
   const { toast } = useToast();
   const deal = crop?.dealCrop;
   const collective = deal?.membership?.collective ?? deal?.collective ?? null;
@@ -204,6 +204,11 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh }) => {
 
       {/* Hero header — gradient + blurred bg image */}
       <div className={`relative overflow-hidden bg-gradient-to-br ${meta.gradient}`} style={{ minHeight: '120px' }}>
+        {onClose && (
+          <button onClick={onClose} className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/40 text-white hover:bg-black/60 flex items-center justify-center cursor-pointer transition-colors" title="Close details">
+            <Icon icon="ph:x-bold" className="w-4 h-4" />
+          </button>
+        )}
         {/* Blurred background image */}
         {crop?.crop?.image && (
           <div className="absolute inset-0">
@@ -468,16 +473,20 @@ const FILTER_TABS = [
 // ── Main page ─────────────────────────────────────────────────────────────────
 const CropManagement = () => {
   const { isDark } = useTheme();
-  const { toast }  = useToast();
-  const [crops, setCrops]           = useState([]);
+  const { toast } = useToast();
+
+  const [crops, setCrops] = useState([]);
   const [masterCrops, setMasterCrops] = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [activeTab, setActiveTab]   = useState('all');
-  const [view, setView]             = useState('list');
-  const [editingId, setEditingId]   = useState(null);
-  const [saving, setSaving]         = useState(false);
-  const [form, setForm]             = useState({ code: '', yld: '', plantedDate: '' });
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+
+  const [view, setView] = useState('list');
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ code: '', yld: '', plantedDate: '' });
+
   const [selectedCrop, setSelectedCrop] = useState(null);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [cropToDelete, setCropToDelete] = useState(null);
   const [isDeleting, setIsDeleting]     = useState(false);
   const [deleteChecked, setDeleteChecked] = useState(false);
@@ -495,7 +504,6 @@ const CropManagement = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Keep selectedCrop fresh after data reload
   useEffect(() => {
     if (selectedCrop) {
       const updated = crops.find(c => c._id === selectedCrop._id);
@@ -558,7 +566,7 @@ const CropManagement = () => {
   };
 
   const lV = { initial: { x: -40, opacity: 0 }, enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }, exit: { x: -40, opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } } };
-  const fV = { initial: { x:  40, opacity: 0 }, enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }, exit: { x:  40, opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } } };
+  const fV = { initial: { x: 40, opacity: 0 },  enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }, exit: { x: 40, opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } } };
 
   const STAT_CARDS = [
     { label: 'Active Crops', value: activeCrops.length,                                              icon: 'ph:plant-fill'         },
@@ -597,7 +605,7 @@ const CropManagement = () => {
 
             {/* ── Toolbar: filter tabs + Add Crop ── */}
             <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-              <div className={`flex gap-1 p-1 rounded-xl ${isDark ? 'bg-slate-900/60 border border-slate-800' : 'bg-white border border-slate-200'}`}>
+              <div className={`flex gap-1 p-1 rounded-xl overflow-x-auto max-w-full scrollbar-none ${isDark ? 'bg-slate-900/60 border border-slate-800' : 'bg-white border border-slate-200'}`}>
                 {FILTER_TABS.map((tab) => (
                   <button key={tab.key} onClick={() => setActiveTab(tab.key)}
                     className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-200 ${
@@ -631,30 +639,28 @@ const CropManagement = () => {
                 action={activeTab === 'all' ? (<button onClick={openAdd} className="px-4 py-2 mt-4 rounded-xl bg-emerald-500 text-white text-sm font-semibold cursor-pointer">Add First Crop</button>) : null}
               />
             ) : (
-              /* 
-                 Container height is dictated automatically by the Right panel (min viewport height).
-                 Left panel is absolutely positioned to match this exact height, so it only scrolls internally 
-                 if it exceeds the Right panel's height. 
-              */
               <div className="relative flex justify-end min-h-[calc(100vh-120px)] w-full">
-                {/* Left — absolute bounds match the container height automatically */}
-                <div className="absolute top-0 left-0 bottom-0 right-[calc(38%+1.25rem)] overflow-y-auto pr-1"
+                {/* Left Cards Grid — Desktop absolute positioning within parent min-h; Mobile normal relative flow */}
+                <div className="w-full lg:w-auto lg:absolute lg:top-0 lg:left-0 lg:bottom-0 lg:right-[calc(38%+1.25rem)] lg:overflow-y-auto lg:pr-1"
                   style={{ scrollbarWidth: 'thin', scrollbarColor: isDark ? '#334155 transparent' : '#cbd5e1 transparent' }}>
                   <AnimatePresence mode="wait">
                     <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}
                       className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
                       {displayedCrops.map((crop, i) => (
                         <CropCard key={crop._id} crop={crop} isDark={isDark} index={i} onEdit={openEdit} onDelete={handleDelete}
-                          onSelect={(c) => setSelectedCrop(c)}
+                          onSelect={(c) => {
+                            setSelectedCrop(c);
+                            setMobileDrawerOpen(true);
+                          }}
                           isSelected={selectedCrop?._id === crop._id} />
                       ))}
                     </motion.div>
                   </AnimatePresence>
                 </div>
 
-                {/* Right — static block, dictates the height of the parent relative container */}
+                {/* Right Panel — Desktop fixed side panel */}
                 {selectedCrop && (
-                  <div className="w-[38%] shrink-0">
+                  <div className="hidden lg:block lg:w-[38%] lg:shrink-0">
                     <AnimatePresence mode="wait">
                       <motion.div key={selectedCrop._id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }} transition={{ duration: 0.2 }}>
                         <DetailPanel crop={selectedCrop} isDark={isDark} onEdit={openEdit} onDelete={handleDelete} onRefresh={fetchData} />
@@ -662,6 +668,22 @@ const CropManagement = () => {
                     </AnimatePresence>
                   </div>
                 )}
+
+                {/* Mobile Drawer — Bottom sheet on mobile screens (< lg) */}
+                <AnimatePresence>
+                  {mobileDrawerOpen && selectedCrop && (
+                    <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileDrawerOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                      <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-t-3xl shadow-2xl">
+                        <DetailPanel crop={selectedCrop} isDark={isDark}
+                          onEdit={(c) => { setMobileDrawerOpen(false); openEdit(c); }}
+                          onDelete={(c) => { setMobileDrawerOpen(false); handleDelete(c); }}
+                          onRefresh={fetchData}
+                          onClose={() => setMobileDrawerOpen(false)} />
+                      </motion.div>
+                    </div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </motion.div>

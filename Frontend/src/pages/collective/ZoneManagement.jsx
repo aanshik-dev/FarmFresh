@@ -155,7 +155,15 @@ const ZoneManagement = () => {
                       initial={{ opacity: 0, x: -16 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.05 }}
-                      onClick={() => setSelected(selected?._id === z._id ? null : z)}
+                      onClick={() => {
+                        const isNew = selected?._id !== z._id;
+                        setSelected(isNew ? z : null);
+                        if (isNew && window.innerWidth < 1024) {
+                          setTimeout(() => {
+                            document.getElementById('zone-detail-panel')?.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
+                        }
+                      }}
                       className={`relative rounded-2xl border p-5 cursor-pointer backdrop-blur-xl transition-all duration-300 overflow-hidden ${
                         selected?._id === z._id
                           ? isDark ? "border-emerald-500/40 bg-emerald-500/10 shadow-lg shadow-emerald-500/10" : "border-emerald-400 bg-emerald-50 shadow-lg shadow-emerald-500/10"
@@ -210,8 +218,7 @@ const ZoneManagement = () => {
                   ))}
                 </div>
 
-                {/* Zone detail panel */}
-                <div className={`rounded-2xl border p-6 sm:p-8 h-fit sticky top-6 backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800/60 shadow-2xl shadow-black/20" : "bg-white/80 border-slate-200 shadow-xl shadow-slate-200/50"}`}>
+                <div id="zone-detail-panel" className={`rounded-2xl border p-6 sm:p-8 h-fit lg:sticky lg:top-6 backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800/60 shadow-2xl shadow-black/20" : "bg-white/80 border-slate-200 shadow-xl shadow-slate-200/50"}`}>
                   {selected ? (
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                       <div className="flex items-center gap-4 mb-6">

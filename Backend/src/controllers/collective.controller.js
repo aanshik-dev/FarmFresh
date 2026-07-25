@@ -12,7 +12,7 @@ import {
   editCropSchema,
 } from "../validations/crop.validation.js";
 
-// ── Crop CRUD ─────────────────────────────────────────────────────────────────
+// ── Crop CRUD
 const addCrop = async (req, res, next) => {
   try {
     const { code, price } = addCropSchema.parse(req.body);
@@ -56,7 +56,7 @@ const deleteCrop = async (req, res, next) => {
   }
 };
 
-// ── Membership ────────────────────────────────────────────────────────────────
+// ── Membership
 const getMemberships = async (req, res, next) => {
   try {
     const { id: collectiveId } = req.user;

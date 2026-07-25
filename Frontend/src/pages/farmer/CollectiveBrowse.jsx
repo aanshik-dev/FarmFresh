@@ -97,17 +97,11 @@ const DetailPanel = ({ coll, isDark, myCrops, memberData, onRequest, requesting 
   const collCropPriceByCode = {};
   for (const c of (coll.crops || [])) { collCropPriceByCode[c.code] = c.price || 0; }
 
-  // Farmer's deals with this collective
-  const myDeals = [];
-  for (const cat of ['requests', 'approved', 'rejected', 'cancelled', 'terminated']) {
-    const list = memberData?.[cat] || [];
-    for (const entry of list) {
-      if (entry._id === coll._id) {
-        myDeals.push(...(entry.deals || []));
-      }
-    }
-  }
-  // Active/requested deal crop IDs (farmerCrop._id)
+  const myDeals = (memberData?.approved || [])
+    .concat(memberData?.requests || [])
+    .filter(m => m.collective?._id === coll._id || m.collective === coll._id)
+    .flatMap(m => m.deals || []);
+
   const activeDealCropIds = new Set(
     myDeals.filter(d => d.status === 'REQUESTED' || d.status === 'APPROVED').map(d => d.crop?._id?.toString())
   );
@@ -133,6 +127,11 @@ const DetailPanel = ({ coll, isDark, myCrops, memberData, onRequest, requesting 
     <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800 shadow-2xl shadow-black/40' : 'bg-white border-slate-200 shadow-2xl shadow-slate-200/50'}`}>
       {/* Hero */}
       <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 to-teal-700" style={{ minHeight: '130px' }}>
+        {onClose && (
+          <button onClick={onClose} className="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/40 text-white hover:bg-black/60 flex items-center justify-center cursor-pointer transition-colors" title="Close details">
+            <Icon icon="ph:x-bold" className="w-4 h-4" />
+          </button>
+        )}
         {coll.profile && (
           <div className="absolute inset-0">
             <img src={coll.profile} alt="" className="w-full h-full object-cover scale-110" />
@@ -424,6 +423,7 @@ const CollectiveBrowse = () => {
   const [myCrops, setMyCrops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [requesting, setRequesting] = useState(false);
 
   // Filters
@@ -661,21 +661,24 @@ const CollectiveBrowse = () => {
       ) : (
         <div className="relative flex justify-end min-h-[calc(100vh-120px)] w-full">
           {/* Left — Scrollable list */}
-          <div className="absolute top-0 left-0 bottom-0 right-[calc(42%+1.25rem)] overflow-y-auto pr-1"
+          <div className="w-full lg:w-auto lg:absolute lg:top-0 lg:left-0 lg:bottom-0 lg:right-[calc(42%+1.25rem)] lg:overflow-y-auto lg:pr-1"
             style={{ scrollbarWidth: 'thin', scrollbarColor: isDark ? '#334155 transparent' : '#cbd5e1 transparent' }}>
             <div className="space-y-1 pb-4">
               {filtered.map((coll) => (
                 <CollRow key={coll._id} coll={coll} isDark={isDark}
                   isSelected={selected?._id === coll._id}
-                  onClick={() => setSelected(coll)}
+                  onClick={() => {
+                    setSelected(coll);
+                    setMobileDrawerOpen(true);
+                  }}
                   partnerStatus={getPartnerStatus(coll._id)} />
               ))}
             </div>
           </div>
 
-          {/* Right — Detail panel */}
+          {/* Right — Detail panel (Desktop) */}
           {selected && (
-            <div className="w-[42%] shrink-0">
+            <div className="hidden lg:block lg:w-[42%] lg:shrink-0">
               <AnimatePresence mode="wait">
                 <motion.div key={selected._id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }} transition={{ duration: 0.2 }}>
                   <DetailPanel coll={selected} isDark={isDark} myCrops={myCrops} memberData={memberData} onRequest={handleRequest} requesting={requesting} />
@@ -683,6 +686,18 @@ const CollectiveBrowse = () => {
               </AnimatePresence>
             </div>
           )}
+
+          {/* Mobile Drawer (Mobile < lg) */}
+          <AnimatePresence>
+            {mobileDrawerOpen && selected && (
+              <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileDrawerOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+                <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-t-3xl shadow-2xl">
+                  <DetailPanel coll={selected} isDark={isDark} myCrops={myCrops} memberData={memberData} onRequest={handleRequest} requesting={requesting} onClose={() => setMobileDrawerOpen(false)} />
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

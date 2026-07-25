@@ -208,7 +208,7 @@ const CropInventory = () => {
                             <StatusBadge status={(crop.quantity || 0) < 100 ? "low_stock" : "in_stock"} size="sm" />
                           </td>
                           <td className="px-6 py-5">
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 opacity-100 transition-opacity">
                               <button 
                                 onClick={() => openEdit(crop)} 
                                 className={`p-2 rounded-xl cursor-pointer transition-colors ${isDark ? "hover:bg-slate-700 text-slate-300" : "hover:bg-white hover:shadow-sm text-slate-600"}`}
