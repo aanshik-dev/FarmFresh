@@ -80,13 +80,15 @@ const getCropData = async (collectiveId) => {
     collective: collectiveId,
   }).populate("crop");
 
-  const totalCrops = collectedCrops.length;
-  const totalQuantity = collectedCrops.reduce(
-    (acc, crop) => acc + crop.quantity,
+  const activeCrops = collectedCrops.filter((c) => c.status === "ACTIVE");
+
+  const totalCrops = activeCrops.length;
+  const totalQuantity = activeCrops.reduce(
+    (acc, crop) => acc + (crop.quantity || 0),
     0,
   );
-  const totalAmount = collectedCrops.reduce(
-    (acc, crop) => acc + crop.price * crop.quantity,
+  const totalAmount = activeCrops.reduce(
+    (acc, crop) => acc + (crop.price || 0) * (crop.quantity || 0),
     0,
   );
 

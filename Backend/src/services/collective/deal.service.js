@@ -1,39 +1,62 @@
 import CropDeal from "../../models/cropDeal.model.js";
-import CropStatusUpdate from "../../models/cropStatusUpdate.model.js";
 import Membership from "../../models/membership.model.js";
 import Notification from "../../models/notification.model.js";
 import throwErr from "../../utils/throwErr.js";
 
 // ── Request crop status from farmer (collective asks) ─────────────────────────
 const requestCropStatus = async (collectiveId, dealId) => {
-  const deal = await CropDeal.findById(dealId).populate({
-    path: "membership",
-    match: { collective: collectiveId },
-  });
+  const deal = await CropDeal.findById(dealId)
+    .populate({
+      path: "membership",
+      match: { collective: collectiveId },
+      populate: { path: "collective", select: "name profile" },
+    })
+    .populate({
+      path: "crop",
+      populate: { path: "crop" },
+    });
 
   if (!deal || !deal.membership)
     throwErr(404, "Deal not found or does not belong to your collective !!");
   if (deal.status !== "APPROVED")
     throwErr(400, "Can only query status for APPROVED deals !!");
-  if (deal.queryPending)
-    throwErr(409, "A status query is already pending for this deal !!");
+  if (deal.growth.queryStatus === "OPEN") {
+    throwErr(400, "A status query is already open for this deal !!");
+  }
 
-  deal.queryPending = true;
+  // Prevent spamming queries (e.g. at least 10 days since last update)
+  const lastUpdate = deal.updates && deal.updates.length > 0 
+    ? deal.updates[deal.updates.length - 1].createdAt 
+    : deal.createdAt;
+  if (lastUpdate) {
+    const daysDiff = (Date.now() - new Date(lastUpdate).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysDiff < 10) {
+      const daysLeft = Math.ceil(10 - daysDiff);
+      throwErr(400, `Status can only be requested if last update is at least 10 days old. Please wait ${daysLeft} more day(s).`);
+    }
+  }
+
+  deal.growth.queryStatus = "OPEN";
   await deal.save();
 
-  // Notify farmer
+  // Notify farmer group with detailed title and body
   const farmerId = deal.membership.farmer;
+  const cropObj = deal.crop?.crop || deal.crop || {};
+  const cropName = cropObj.name || "Crop";
+  const cropCode = cropObj.code || "";
+  const collectiveName = deal.membership.collective?.name || "Your Collective";
+
   await Notification.create({
     recipient: farmerId,
     recipientRole: "FARMER_GROUP",
     type: "STATUS_UPDATE",
-    title: "Crop Status Requested",
-    body: "Your collective has requested a crop status update. Please update the current stage.",
-    data: { dealId: deal._id },
+    title: `Status Update Requested: ${cropName}`,
+    body: `${collectiveName} has requested a status update for ${cropName}${cropCode ? ` (${cropCode})` : ""} (Agreed Rate: ₹${deal.agreedPrice || 0}/kg). Please update the current growth stage.`,
+    data: { dealId: deal._id, cropName, cropCode, agreedPrice: deal.agreedPrice },
     sender: collectiveId,
   });
 
-  return { success: true, message: "Status query sent to farmer group !!" };
+  return { success: true, message: `Status query sent to farmer group for ${cropName} !!` };
 };
 
 // ── Set expected pickup date (collective) ─────────────────────────────────────
@@ -50,7 +73,8 @@ const setExpectedPickupDate = async (collectiveId, dealId, expectedPickupDate) =
   if (deal.status !== "APPROVED")
     throwErr(400, "Can only set pickup date for APPROVED deals !!");
 
-  deal.expectedPickupDate = new Date(expectedPickupDate);
+  if (!deal.schedule) deal.schedule = {};
+  deal.schedule.expectedPickupDate = new Date(expectedPickupDate);
   await deal.save();
 
   // Notify farmer
@@ -59,30 +83,28 @@ const setExpectedPickupDate = async (collectiveId, dealId, expectedPickupDate) =
     recipientRole: "FARMER_GROUP",
     type: "PICKUP",
     title: "Expected Pickup Date Set",
-    body: `Your collective has set an expected pickup date: ${new Date(expectedPickupDate).toLocaleDateString("en-IN")}.`,
+    body: `Collective has set the expected pickup date to ${new Date(expectedPickupDate).toLocaleDateString("en-IN")}.`,
     data: { dealId: deal._id, expectedPickupDate },
     sender: collectiveId,
   });
 
-  return { success: true, message: "Expected pickup date set !!", deal };
+  return { success: true, message: "Expected pickup date updated successfully !!" };
 };
 
-// ── Get status history for a deal (collective view) ───────────────────────────
-const getStatusHistory = async (collectiveId, dealId) => {
-  const deal = await CropDeal.findById(dealId).populate({
-    path: "membership",
-    match: { collective: collectiveId },
-  });
+// ── Get status update history for a deal ─────────────────────────────────────
+const getDealStatusHistory = async (dealId) => {
+  const deal = await CropDeal.findById(dealId).lean();
+  if (!deal) throwErr(404, "Deal not found !!");
 
-  if (!deal || !deal.membership)
-    throwErr(404, "Deal not found or does not belong to your collective !!");
+  const history = (deal.updates || []).sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
 
-  const history = await CropStatusUpdate.find({ cropDeal: dealId })
-    .sort({ createdAt: -1 })
-    .populate("updatedBy", "name phone")
-    .lean();
-
-  return { success: true, message: "Status history fetched !!", deal, history };
+  return { success: true, history };
 };
 
-export default { requestCropStatus, setExpectedPickupDate, getStatusHistory };
+export default {
+  requestCropStatus,
+  setExpectedPickupDate,
+  getDealStatusHistory,
+};

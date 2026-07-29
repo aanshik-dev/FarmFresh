@@ -39,7 +39,7 @@ const addCropData = async (code, yld, plantedDate, farmerId) => {
   const farmerCrop = new FarmerCrop({
     farmer: farmerId,
     crop: crop._id,
-    yield: yld,
+    yield: yld !== undefined ? yld : 0,
   });
   if (plantedDate != undefined) {
     farmerCrop.plantedDate = plantedDate;

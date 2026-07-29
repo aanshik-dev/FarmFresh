@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 import mongoose from "mongoose";
 import Zone from "./src/models/zone.model.js";
-
+import FarmerCrop from "./src/models/farmerCrop.model.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: resolve(__dirname, ".env") });
@@ -20,13 +20,17 @@ async function connectDB() {
   }
 }
 
-import { getCropData } from "./src/services/farmer/crop.service.js";
+// import { getCropData } from "./src/services/farmer/crop.service.js";
 import members from "./src/services/collective/membership.service.js";
+import { getCropData } from "./src/services/collective/crop.service.js";
+// import member from "./src/services/
 
 async function run() {
   // const result = await getCropData("6a5751bb3407f2cbaf0ed03e");
 
   const result = await members.getMemberships("6a5752123407f2cbaf0ed040");
+
+  // const result = await getCropData("6a5752123407f2cbaf0ed040");
 
   return result;
 }

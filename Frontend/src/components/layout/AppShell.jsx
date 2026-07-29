@@ -10,9 +10,11 @@ import {
   adminSidebarLinks,
 } from "../../utils/InterfaceData";
 import {
-  farmerNotifications,
-  collectiveNotifications,
-} from "../../utils/InterfaceData";
+  farmerNotifAPI,
+  farmerCropAPI,
+  collectiveNotifAPI,
+  collectiveMemberAPI,
+} from "../../services/api";
 import ProfileBanner from "../common/ProfileBanner";
 
 // Quotes for dynamic greeting
@@ -46,18 +48,11 @@ const QUOTES = {
 };
 
 // Top Header
-const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse }) => {
+const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse, unreadNotifCount }) => {
   const { isDark, toggleTheme } = useTheme();
   const { user, logout, role } = useAuth();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
-
-  const notifCount =
-    role === "COLLECTIVE"
-      ? collectiveNotifications.filter((n) => !n.read).length
-      : role === "FARMER_GROUP"
-        ? farmerNotifications.filter((n) => !n.read).length
-        : 0;
 
   const [quote, setQuote] = useState({ text: "", icon: "ph:plant-fill" });
 
@@ -214,7 +209,7 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse 
           />
         </button>
 
-        {/* Notifications */}
+        {/* Notifications Icon with Live Sync Badge */}
         {notifPath && (
           <button
             onClick={() => navigate(notifPath)}
@@ -223,11 +218,12 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse 
                 ? "hover:bg-slate-800 text-slate-400 hover:text-white"
                 : "hover:bg-slate-100 text-slate-500 hover:text-slate-900"
             }`}
+            title="Notifications"
           >
             <Icon icon="ph:bell-fill" className="w-4.5 h-4.5" />
-            {notifCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                {notifCount}
+            {unreadNotifCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center shadow-md">
+                {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
               </span>
             )}
           </button>
@@ -289,7 +285,6 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse 
                     : "bg-white border-slate-200 shadow-slate-300/40"
                 }`}
               >
-                {/* User info row */}
                 <div
                   className={`px-4 py-3 border-b mb-1 ${isDark ? "border-slate-700/60" : "border-slate-100"}`}
                 >
@@ -376,10 +371,8 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse 
   );
 };
 
-// ──────────────────────────────────────────────────
-// Sidebar
-// ──────────────────────────────────────────────────
-const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role, unreadNotifCount, actionNeededCropsCount, pendingFarmerRequestsCount }) => {
   const { isDark } = useTheme();
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -394,7 +387,7 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
 
   const handleNav = (path) => {
     navigate(path);
-    onClose?.(); // close on mobile
+    onClose?.();
   };
 
   const handleLogout = () => {
@@ -402,7 +395,39 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
     navigate("/");
   };
 
-  // Desktop sidebar (always mounted, just changes width)
+  const renderBadges = (linkPath) => {
+    const isNotif = linkPath.includes("/notifications");
+    const isCrops = linkPath.includes("/crops");
+    const isFarmerGroups = linkPath.includes("/farmer-groups") || linkPath.includes("/farmers");
+
+    if (isNotif && unreadNotifCount > 0) {
+      return (
+        <span className="ml-auto text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-red-500 text-white shrink-0 shadow-sm">
+          {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+        </span>
+      );
+    }
+
+    if (isCrops && actionNeededCropsCount > 0) {
+      return (
+        <span className="ml-auto text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-amber-500 text-white shrink-0 shadow-sm">
+          Action
+        </span>
+      );
+    }
+
+    if (isFarmerGroups && pendingFarmerRequestsCount > 0) {
+      return (
+        <span className="ml-auto text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-500 text-white shrink-0 shadow-sm">
+          {pendingFarmerRequestsCount}
+        </span>
+      );
+    }
+
+    return null;
+  };
+
+  // Desktop sidebar
   const DesktopSidebar = () => (
     <motion.aside
       animate={{ width: isCollapsed ? 68 : 240 }}
@@ -414,12 +439,13 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
       }`}
     >
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden py-3 no-scrollbar">
-        {/* Nav links */}
         <nav className="flex flex-col gap-0.5 px-2">
           {links.map((link) => {
             const isActive =
               location.pathname === link.path ||
               location.pathname.startsWith(link.path + "/");
+            const isFarmerGroups = link.path.includes("/farmer-groups") || link.path.includes("/farmers");
+
             return (
               <button
                 key={link.path}
@@ -439,16 +465,28 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
                   }
                 `}
               >
-                <Icon icon={link.icon} className="w-5 h-5 shrink-0" />
+                <div className="relative shrink-0">
+                  <Icon icon={link.icon} className="w-5 h-5" />
+                  {isCollapsed && (link.path.includes("/notifications") && unreadNotifCount > 0) && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" />
+                  )}
+                  {isCollapsed && (link.path.includes("/crops") && actionNeededCropsCount > 0) && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" />
+                  )}
+                  {isCollapsed && (isFarmerGroups && pendingFarmerRequestsCount > 0) && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" />
+                  )}
+                </div>
                 {!isCollapsed && (
                   <motion.span
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-sm font-medium whitespace-nowrap"
+                    className="text-sm font-medium whitespace-nowrap flex-1 text-left"
                   >
                     {link.label}
                   </motion.span>
                 )}
+                {!isCollapsed && renderBadges(link.path)}
                 {isActive && (
                   <motion.span
                     layoutId="sidebar-active"
@@ -461,11 +499,9 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
         </nav>
       </div>
 
-      {/* Bottom: logout */}
       <div
         className={`border-t py-3 px-2 flex flex-col gap-1 ${isDark ? "border-slate-800/80" : "border-slate-200"}`}
       >
-        {/* Logout */}
         <button
           onClick={handleLogout}
           className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors cursor-pointer text-red-400 hover:bg-red-500/10 ${
@@ -474,10 +510,9 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
           title={isCollapsed ? "Log out" : undefined}
         >
           <Icon icon="ph:sign-out-fill" className="w-5 h-5 shrink-0" />
-          {!isCollapsed && <span className="text-sm">Log Out</span>}
+          {!isCollapsed && <span className="text-sm font-medium">Log Out</span>}
         </button>
 
-        {/* Developer info */}
         {!isCollapsed && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -501,27 +536,24 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
             onClick={onClose}
+            className="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-sm"
           />
-          {/* Drawer */}
           <motion.aside
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`fixed left-0 top-0 bottom-0 w-72 z-50 flex flex-col border-r shadow-2xl md:hidden ${
+            className={`fixed left-0 top-0 bottom-0 z-50 w-72 flex flex-col md:hidden border-r ${
               isDark
                 ? "bg-slate-950 border-slate-800"
                 : "bg-white border-slate-200"
             }`}
           >
-            {/* Mobile header */}
             <div
               className={`flex items-center justify-between px-4 py-4 border-b ${isDark ? "border-slate-800" : "border-slate-200"}`}
             >
@@ -548,7 +580,6 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
               </button>
             </div>
 
-            {/* Nav */}
             <nav className="flex flex-col gap-1 px-3 py-3 flex-1 overflow-y-auto no-scrollbar">
               {links.map((link) => {
                 const isActive = location.pathname === link.path;
@@ -567,13 +598,13 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
                     }`}
                   >
                     <Icon icon={link.icon} className="w-5 h-5 shrink-0" />
-                    <span className="text-sm font-medium">{link.label}</span>
+                    <span className="text-sm font-medium flex-1 text-left">{link.label}</span>
+                    {renderBadges(link.path)}
                   </button>
                 );
               })}
             </nav>
 
-            {/* Mobile logout */}
             <div
               className={`border-t px-3 py-3 ${isDark ? "border-slate-800" : "border-slate-200"}`}
             >
@@ -584,11 +615,6 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
                 <Icon icon="ph:sign-out-fill" className="w-5 h-5" />
                 <span className="text-sm font-medium">Log Out</span>
               </button>
-              <p
-                className={`text-[10px] text-center mt-2 ${isDark ? "text-slate-600" : "text-slate-400"}`}
-              >
-                FarmFresh v1.0 • Kedarnath Valley
-              </p>
             </div>
           </motion.aside>
         </>
@@ -604,10 +630,8 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role }) => {
   );
 };
 
-// ──────────────────────────────────────────────────
-// Mobile Icon Rail (always visible on mobile)
-// ──────────────────────────────────────────────────
-const MobileIconRail = ({ role }) => {
+// ── Mobile Icon Rail ──────────────────────────────────────────────────────────
+const MobileIconRail = ({ role, unreadNotifCount, actionNeededCropsCount, pendingFarmerRequestsCount }) => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -618,7 +642,7 @@ const MobileIconRail = ({ role }) => {
       : role === "COLLECTIVE"
         ? collectiveSidebarLinks
         : adminSidebarLinks
-  ).slice(0, 5); // show top 5 on mobile rail
+  ).slice(0, 5);
 
   return (
     <nav
@@ -630,11 +654,15 @@ const MobileIconRail = ({ role }) => {
     >
       {links.map((link) => {
         const isActive = location.pathname === link.path;
+        const isNotif = link.path.includes("/notifications");
+        const isCrops = link.path.includes("/crops");
+        const isFarmerGroups = link.path.includes("/farmer-groups") || link.path.includes("/farmers");
+
         return (
           <button
             key={link.path}
             onClick={() => navigate(link.path)}
-            className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-colors cursor-pointer ${
+            className={`relative flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-colors cursor-pointer ${
               isActive
                 ? isDark
                   ? "text-emerald-400"
@@ -644,7 +672,18 @@ const MobileIconRail = ({ role }) => {
                   : "text-slate-400"
             }`}
           >
-            <Icon icon={link.icon} className="w-5 h-5" />
+            <div className="relative">
+              <Icon icon={link.icon} className="w-5 h-5" />
+              {isNotif && unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 shadow-sm" />
+              )}
+              {isCrops && actionNeededCropsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" />
+              )}
+              {isFarmerGroups && pendingFarmerRequestsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm" />
+              )}
+            </div>
             <span className="text-[9px] font-medium">
               {link.label.split(" ")[0]}
             </span>
@@ -655,23 +694,65 @@ const MobileIconRail = ({ role }) => {
   );
 };
 
-// ──────────────────────────────────────────────────
-// AppShell — the main authenticated layout
-// ──────────────────────────────────────────────────
+// ── AppShell ──────────────────────────────────────────────────────────────────
 const AppShell = () => {
   const { isDark } = useTheme();
-  const { role, isAuthenticated } = useAuth();
+  const { role, isAuthenticated, fetchAndSyncUser } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(false);
 
-  const { fetchAndSyncUser } = useAuth();
+  // Live Sync Badge counts
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
+  const [actionNeededCropsCount, setActionNeededCropsCount] = useState(0);
+  const [pendingFarmerRequestsCount, setPendingFarmerRequestsCount] = useState(0);
 
-  // Fetch full user profile once when the shell mounts
+  const syncBadges = useCallback(async () => {
+    if (role === "FARMER_GROUP") {
+      try {
+        const [notifRes, cropRes] = await Promise.all([
+          farmerNotifAPI.get(),
+          farmerCropAPI.get(),
+        ]);
+        const notifs = notifRes.data?.notifications || [];
+        setUnreadNotifCount(notifs.filter((n) => !n.isRead).length);
+
+        const crops = cropRes.data?.crops || cropRes.data?.data?.cropData || [];
+        const openQueries = crops.filter((c) => c.dealCrop?.queryStatus === "OPEN").length;
+        setActionNeededCropsCount(openQueries);
+      } catch {
+        // Silently handle
+      }
+    } else if (role === "COLLECTIVE") {
+      try {
+        const [notifRes, memberRes] = await Promise.all([
+          collectiveNotifAPI.get(),
+          collectiveMemberAPI.get(),
+        ]);
+        const notifs = notifRes.data?.notifications || [];
+        setUnreadNotifCount(notifs.filter((n) => !n.isRead).length);
+
+        const mData = memberRes.data?.memberData || {};
+        const pendingReqs = Array.isArray(mData.requests) ? mData.requests.length : 0;
+        setPendingFarmerRequestsCount(pendingReqs);
+      } catch {
+        // Silently handle
+      }
+    }
+  }, [role]);
+
   useEffect(() => {
     fetchAndSyncUser();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      syncBadges();
+      const interval = setInterval(syncBadges, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, syncBadges]);
 
   const handleToggleSidebar = useCallback(() => setSidebarOpen((p) => !p), []);
   const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -689,33 +770,39 @@ const AppShell = () => {
 
   return (
     <div className={`min-h-screen ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
-        <TopHeader
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          sidebarOpen={sidebarOpen}
-          sidebarCollapsed={sidebarCollapsed}
-          onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
+      <TopHeader
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        sidebarOpen={sidebarOpen}
+        sidebarCollapsed={sidebarCollapsed}
+        onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        unreadNotifCount={unreadNotifCount}
+      />
       <Sidebar
         isOpen={sidebarOpen}
         isCollapsed={sidebarCollapsed}
         onCollapse={handleCollapseSidebar}
         onClose={handleCloseSidebar}
         role={role}
+        unreadNotifCount={unreadNotifCount}
+        actionNeededCropsCount={actionNeededCropsCount}
+        pendingFarmerRequestsCount={pendingFarmerRequestsCount}
       />
 
-      {/* Main content — shifts right of sidebar on desktop */}
       <main
         className={`pb-20 md:pb-0 transition-all duration-300 min-h-screen pt-16`}
         style={{ marginLeft: `${sidebarWidth}px` }}
       >
         <ProfileBanner onVisibilityChange={setBannerVisible} />
-        {/* Remove sidebar margin on mobile — handled by the overlay drawer */}
         <style>{`@media (max-width: 767px) { main { margin-left: 0 !important; } }`}</style>
         <Outlet />
       </main>
 
-      {/* Mobile bottom navigation rail */}
-      <MobileIconRail role={role} />
+      <MobileIconRail
+        role={role}
+        unreadNotifCount={unreadNotifCount}
+        actionNeededCropsCount={actionNeededCropsCount}
+        pendingFarmerRequestsCount={pendingFarmerRequestsCount}
+      />
     </div>
   );
 };

@@ -8,7 +8,7 @@ import FarmerCrop from "../../models/farmerCrop.model.js";
 import CollectedCrop from "../../models/collectedCrops.model.js";
 import FarmerGroup from "../../models/farmerGroup.model.js";
 import isProfileComplete from "../general.service.js";
-
+import Notification from "../../models/notification.model.js";
 const validRequest = async (farmerId, collectiveID, crops) => {
   // validation
   if (!farmerId) {
@@ -30,7 +30,7 @@ const normaliseCrops = (crops) => {
   });
 };
 
-const sendMemberRequest = async (farmerId, collectiveID, rawCrops) => {
+const sendMemberRequest = async (farmerId, collectiveID, rawCrops, note) => {
   // validation
   await validRequest(farmerId, collectiveID, rawCrops);
 
@@ -119,6 +119,7 @@ const sendMemberRequest = async (farmerId, collectiveID, rawCrops) => {
           farmer: farmerId,
           collective: collectiveID,
           status: "PENDING",
+          note: note?.trim() || "",
         });
         await membership.save({ session });
       } else if (
@@ -127,7 +128,14 @@ const sendMemberRequest = async (farmerId, collectiveID, rawCrops) => {
       ) {
         // else just update previous
         membership.status = "PENDING";
+        membership.note = note?.trim() || "";
         await membership.save({ session });
+      } else {
+        // if already pending or active, just update the note if provided
+        if (note !== undefined) {
+          membership.note = note.trim();
+          await membership.save({ session });
+        }
       }
 
       // create deals for each crop (with demandedPrice)
@@ -149,6 +157,20 @@ const sendMemberRequest = async (farmerId, collectiveID, rawCrops) => {
   } finally {
     await session.endSession();
   }
+
+  // Notify collective
+  const farmer = await FarmerGroup.findById(farmerId).select("name groupName").lean();
+  const farmerName = farmer?.name || farmer?.groupName || "A farmer group";
+
+  await Notification.create({
+    recipient: collectiveID,
+    recipientRole: "COLLECTIVE",
+    type: "REQUEST",
+    title: "New Membership Request",
+    body: `${farmerName} has sent a new membership request for ${cropIds.length} crop(s).`,
+    data: { farmerId, requestCount: cropIds.length },
+    sender: farmerId,
+  });
 
   return {
     success: true,

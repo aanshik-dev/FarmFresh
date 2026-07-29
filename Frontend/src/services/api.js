@@ -48,8 +48,15 @@ export const commonAPI = {
 export const farmerCropAPI = {
   add: (data) => api.post("/farmer/me/crops", data),
   get: () => api.get("/farmer/me/crops"),
-  edit: (data) => api.patch("/farmer/me/crops", data),
-  delete: (data) => api.delete("/farmer/me/crops", { data }),
+  edit: (idOrData, data) =>
+    api.patch(
+      "/farmer/me/crops",
+      typeof idOrData === "string" ? { id: idOrData, ...data } : idOrData,
+    ),
+  delete: (idOrData) =>
+    api.delete("/farmer/me/crops", {
+      data: typeof idOrData === "string" ? { cropId: idOrData } : idOrData,
+    }),
 };
 
 // ── Farmer Memberships ────────────────────────────────────────────────────────

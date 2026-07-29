@@ -47,6 +47,16 @@ const membershipSchema = new mongoose.Schema(
       enum: ["PENDING", "ACTIVE", "REJECTED", "INACTIVE"],
       default: "PENDING",
     },
+    note: {
+      type: String,
+      trim: true,
+      maxlength: 1000,
+      default: "",
+    },
+    memberSince: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );

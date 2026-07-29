@@ -14,16 +14,21 @@ const isProfileComplete = async (id, role) => {
   if (!user) {
     return throwErr(404, "User not found !!");
   }
-  const fields = [
+  const requiredFields = [
     user.name,
     user.phone,
-    user.address.district,
-    user.address.state,
-    user.address.pinCode,
-    user.coord.lat,
-    user.coord.long,
+    user.address?.district,
+    user.address?.state,
+    user.address?.pinCode,
   ];
-  if (fields.some((field) => !field)) {
+
+  // Check if any required string field is empty or undefined
+  if (requiredFields.some((field) => !field || field.toString().trim() === "")) {
+    return false;
+  }
+
+  // Check coordinates only if they are undefined/null, but allow 0
+  if (user.coord?.lat == null || user.coord?.long == null) {
     return false;
   }
   return true;

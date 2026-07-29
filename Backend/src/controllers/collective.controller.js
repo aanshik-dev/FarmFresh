@@ -73,13 +73,8 @@ const getMemberships = async (req, res, next) => {
  */
 const acceptRequest = async (req, res, next) => {
   try {
-    const { farmerId, crops } = req.body;
     const { id: collectiveId } = req.user;
-    const result = await memberService.acceptMembershipRequest(
-      collectiveId,
-      farmerId,
-      crops,
-    );
+    const result = await memberService.acceptMembershipRequest(collectiveId, req.body);
     res.status(200).json(result);
   } catch (error) {
     next(error);
@@ -92,8 +87,8 @@ const acceptRequest = async (req, res, next) => {
  */
 const rejectRequest = async (req, res, next) => {
   try {
-    const { dealIds, reason } = req.body;
-    const result = await memberService.rejectMemberRequest(dealIds, reason);
+    const { id: collectiveId } = req.user;
+    const result = await memberService.rejectMemberRequest(collectiveId, req.body);
     res.status(200).json(result);
   } catch (error) {
     next(error);

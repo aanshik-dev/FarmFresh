@@ -19,7 +19,16 @@ const SEASON_META = {
   Perennial: { gradient: 'from-violet-400 to-purple-500', chip: 'bg-violet-400/15 text-violet-500', icon: 'bg-violet-400/20'  },
 };
 const DEFAULT_META = { gradient: 'from-emerald-400 to-teal-500', chip: 'bg-emerald-400/15 text-emerald-500', icon: 'bg-emerald-400/20' };
-const STAGE_LABEL  = { SOWING: 'Sowing', GROWTH: 'Growth', FLOWERING: 'Flowering', HARVEST_READY: 'Harvest Ready', HARVESTED: 'Harvested', OTHER: 'Other' };
+
+const STAGE_LABEL = {
+  SOWING: 'Sowing',
+  GROWING: 'Growing',
+  MATURE: 'Mature',
+  READY: 'Harvest Ready',
+  HARVESTED: 'Harvested',
+  OTHER: 'Other'
+};
+
 const getSeasonMeta  = (s) => SEASON_META[s] || DEFAULT_META;
 const getCategoryIcon = (c) => CATEGORY_ICON[c] || 'ph:plant-fill';
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not set';
@@ -46,6 +55,7 @@ const CropCard = ({ crop, isDark, onEdit, onDelete, onSelect, isSelected, index 
   const deal = crop.dealCrop;
   const collective = deal?.membership?.collective ?? deal?.collective ?? null;
   const isLinked = !!deal;
+  const isActionNeeded = deal?.queryStatus === "OPEN";
   const meta = getSeasonMeta(crop.crop?.season);
 
   return (
@@ -69,7 +79,15 @@ const CropCard = ({ crop, isDark, onEdit, onDelete, onSelect, isSelected, index 
           <CropImg image={crop.crop?.image} category={crop.crop?.category} season={crop.crop?.season}
             cls="w-14 h-14 rounded-2xl" iconCls="w-7 h-7" />
           <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-sm leading-snug truncate">{crop.crop?.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-sm leading-snug truncate">{crop.crop?.name}</h3>
+              {isActionNeeded && (
+                <span className="shrink-0 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-red-500 text-white flex items-center gap-0.5 shadow-sm">
+                  <Icon icon="ph:warning-circle-fill" className="w-3 h-3" />
+                  Action Needed
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap gap-1 mt-1.5">
               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>{crop.crop?.code}</span>
               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>{crop.crop?.category}</span>
@@ -144,17 +162,22 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
   const deal = crop?.dealCrop;
   const collective = deal?.membership?.collective ?? deal?.collective ?? null;
   const isLinked = !!deal;
+  const isQueryOpen = deal?.growth?.queryStatus === "OPEN";
   const meta = getSeasonMeta(crop?.crop?.season);
   const [panelTab, setPanelTab] = useState('overview');
   const [statusHistory, setStatusHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [updateForm, setUpdateForm] = useState({ stage: 'OTHER', note: '', imgUrl: '' });
+  const [updateForm, setUpdateForm] = useState({ stage: 'SOWING', note: '', imgUrl: '' });
   const [submitting, setSubmitting] = useState(false);
   const [unlinking, setUnlinking] = useState(false);
   const [showUnlinkModal, setShowUnlinkModal] = useState(false);
   const [unlinkChecked, setUnlinkChecked] = useState(false);
 
-  useEffect(() => { setPanelTab('overview'); }, [crop?._id]);
+  useEffect(() => {
+    // If status query is open, default to send update tab
+    if (isQueryOpen) setPanelTab('update');
+    else setPanelTab('overview');
+  }, [crop?._id, isQueryOpen]);
 
   const loadHistory = useCallback(async () => {
     if (!deal?._id) return;
@@ -169,9 +192,9 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
     if (!deal?._id) return;
     setSubmitting(true);
     try {
-      await farmerDealAPI.updateStatus(deal._id, { stage: updateForm.stage, note: updateForm.note || undefined, imgUrl: updateForm.imgUrl || undefined });
+      await farmerDealAPI.updateStatus(deal._id, { stage: updateForm.stage, message: updateForm.note || undefined, imgUrl: updateForm.imgUrl || undefined });
       toast.success('Status update sent!');
-      setUpdateForm({ stage: 'OTHER', note: '', imgUrl: '' });
+      setUpdateForm({ stage: 'SOWING', note: '', imgUrl: '' });
       onRefresh();
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to send update'); }
     finally { setSubmitting(false); }
@@ -194,7 +217,7 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
   const PANEL_TABS = [
     { key: 'overview', label: 'Overview', icon: 'ph:info-bold' },
     ...(isLinked ? [
-      { key: 'update',  label: 'Send Update', icon: 'ph:paper-plane-tilt-bold' },
+      { key: 'update',  label: 'Send Update', icon: 'ph:paper-plane-tilt-bold', badge: isQueryOpen },
       { key: 'history', label: 'History',     icon: 'ph:clock-counter-clockwise-bold' },
     ] : []),
   ];
@@ -209,7 +232,6 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
             <Icon icon="ph:x-bold" className="w-4 h-4" />
           </button>
         )}
-        {/* Blurred background image */}
         {crop?.crop?.image && (
           <div className="absolute inset-0">
             <img src={crop.crop.image} alt="" className="w-full h-full object-cover scale-110" />
@@ -219,7 +241,6 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
         {!crop?.crop?.image && <div className="absolute inset-0 bg-black/20" />}
         <div className="relative z-10 p-5 pb-4">
           <div className="flex items-end gap-4">
-            {/* Large image */}
             <div className="relative w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-white/20 ring-2 ring-white/30">
               {crop?.crop?.image
                 ? <img src={crop.crop.image} alt={crop?.crop?.name} className="w-full h-full object-cover"
@@ -247,15 +268,19 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
       <div className={`flex border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
         {PANEL_TABS.map((t) => (
           <button key={t.key} onClick={() => setPanelTab(t.key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold cursor-pointer transition-all border-b-2 ${
+            className={`relative flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold cursor-pointer transition-all border-b-2 ${
               panelTab === t.key ? 'border-emerald-500 text-emerald-500' : `border-transparent ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-700'}`
             }`}>
-            <Icon icon={t.icon} className="w-3.5 h-3.5" />{t.label}
+            <Icon icon={t.icon} className="w-3.5 h-3.5" />
+            {t.label}
+            {t.badge && (
+              <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+            )}
           </button>
         ))}
       </div>
 
-      {/* Body — no internal scroll, full height content */}
+      {/* Body */}
       <div className="p-4">
         <AnimatePresence mode="wait">
 
@@ -308,10 +333,9 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
                     {[
                       { label: 'Agreed Price', value: deal.agreedPrice ? `₹${deal.agreedPrice}/kg` : '—' },
                       { label: 'Deal Status',  value: deal.status ?? '—'                                  },
-                      { label: 'Stage',        value: STAGE_LABEL[deal.stage] ?? deal.stage ?? '—'        },
-                      { label: 'Query',        value: deal.queryStatus ?? '—'                              },
+                      { label: 'Growth Stage', value: STAGE_LABEL[deal.growth?.stage] ?? deal.growth?.stage ?? '—'        },
                       { label: 'Approved',     value: fmtDate(deal.approvalDate)                           },
-                      { label: 'Exp. Qty',     value: deal.expectedQuantity ? `${deal.expectedQuantity} kg` : '—' },
+                      { label: 'Exp. Qty',     value: deal.growth?.expectedQuantity ? `${deal.growth.expectedQuantity} kg` : '—' },
                     ].map(({ label, value }) => (
                       <div key={label}>
                         <p className={`text-[10px] font-semibold mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{label}</p>
@@ -319,12 +343,6 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
                       </div>
                     ))}
                   </div>
-                  {deal.message && (
-                    <div className={`mt-3 p-3 rounded-lg text-xs ${isDark ? 'bg-slate-700/50 text-slate-300' : 'bg-white border border-slate-200 text-slate-600'}`}>
-                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Message from Collective</p>
-                      {deal.message}
-                    </div>
-                  )}
                 </div>
 
                 {(deal.status === 'APPROVED' || deal.status === 'REQUESTED') && (
@@ -357,10 +375,19 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
 
           {panelTab === 'update' && (
             <motion.div key="update" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-3.5">
-              <div className={`rounded-xl p-3 border flex items-start gap-2 ${isDark ? 'bg-blue-950/30 border-blue-500/20' : 'bg-blue-50 border-blue-200'}`}>
-                <Icon icon="ph:info-fill" className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                <p className={`text-xs ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>Sending an update notifies the collective about your crop growth stage.</p>
-              </div>
+              {isQueryOpen ? (
+                <div className={`rounded-xl p-3 border flex items-start gap-2 ${isDark ? 'bg-amber-950/40 border-amber-500/30' : 'bg-amber-50 border-amber-300'}`}>
+                  <Icon icon="ph:bell-ringing-fill" className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                  <p className={`text-xs ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
+                    <strong>Action Required:</strong> Collective requested a crop status update. Please select current growth stage below.
+                  </p>
+                </div>
+              ) : (
+                <div className={`rounded-xl p-3 border flex items-start gap-2 ${isDark ? 'bg-blue-950/30 border-blue-500/20' : 'bg-blue-50 border-blue-200'}`}>
+                  <Icon icon="ph:info-fill" className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                  <p className={`text-xs ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>Sending an update notifies the collective about your crop growth stage.</p>
+                </div>
+              )}
               <div>
                 <label className={`text-xs font-semibold block mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Growth Stage *</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -422,7 +449,7 @@ const DetailPanel = ({ crop, isDark, onEdit, onDelete, onRefresh, onClose }) => 
                             <span className={`text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{STAGE_LABEL[h.stage] ?? h.stage}</span>
                             <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{fmtDT(h.updatedAt ?? h.createdAt)}</span>
                           </div>
-                          {h.note && <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{h.note}</p>}
+                          {(h.note || h.message) && <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{h.note || h.message}</p>}
                           {h.imgUrl && <img src={h.imgUrl} alt="update" className="mt-2 w-full rounded-lg object-cover max-h-32" />}
                         </div>
                       </div>
@@ -489,7 +516,6 @@ const CropManagement = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [cropToDelete, setCropToDelete] = useState(null);
   const [isDeleting, setIsDeleting]     = useState(false);
-  const [deleteChecked, setDeleteChecked] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -498,12 +524,16 @@ const CropManagement = () => {
       const cropData = cropsRes.data?.data?.cropData ?? cropsRes.data?.crops ?? [];
       setCrops(cropData);
       setMasterCrops(masterRes.data.crops || []);
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed to load crops'); }
-    finally { setLoading(false); }
-  }, []);
+    } catch {
+      toast.error('Failed to load crop data');
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Keep selected crop updated
   useEffect(() => {
     if (selectedCrop) {
       const updated = crops.find(c => c._id === selectedCrop._id);
@@ -511,175 +541,166 @@ const CropManagement = () => {
     }
   }, [crops]);
 
-  const activeCrops   = crops.filter(c => c.status === 'ACTIVE');
-  const linkedCrops   = activeCrops.filter(c => !!c.dealCrop);
-  const unlinkedCrops = activeCrops.filter(c => !c.dealCrop);
-  const inactiveCrops = crops.filter(c => c.status !== 'ACTIVE');
-  const totalYield    = activeCrops.reduce((s, c) => s + (c.yield || 0), 0);
-  const totalValue    = linkedCrops.reduce((s, c) => s + (c.yield || 0) * (c.dealCrop?.agreedPrice ?? 0), 0);
-
-  const tabCrops  = { all: activeCrops, linked: linkedCrops, unlinked: unlinkedCrops, inactive: inactiveCrops };
-  const tabCounts = { all: activeCrops.length, linked: linkedCrops.length, unlinked: unlinkedCrops.length, inactive: inactiveCrops.length };
-  const displayedCrops = tabCrops[activeTab] || [];
-
-  // Auto-select first crop when tab or crop list changes
-  useEffect(() => {
-    const list = tabCrops[activeTab] || [];
-    if (list.length === 0) { setSelectedCrop(null); return; }
-    const stillThere = list.find(c => c._id === selectedCrop?._id);
-    if (!stillThere) setSelectedCrop(list[0]);
-  }, [activeTab, crops]);
-
-  const openAdd  = () => { setEditingId(null); setForm({ code: '', yld: '', plantedDate: '' }); setView('form'); };
-  const openEdit = (crop) => {
-    setEditingId(crop._id);
-    const pd = crop.plantedDate ? new Date(crop.plantedDate).toISOString().split('T')[0] : '';
-    setForm({ code: crop.crop?.code || '', yld: crop.yield || '', plantedDate: pd });
+  const openAdd = () => {
+    setEditingId(null);
+    setForm({ code: '', yld: '', plantedDate: '' });
     setView('form');
   };
-  const handleSave = async () => {
-    if (!form.code || !form.yld) { toast.error('Crop and estimated yield are required'); return; }
+
+  const openEdit = (crop) => {
+    setEditingId(crop._id);
+    setForm({
+      code: crop.crop?.code || '',
+      yld: crop.yield !== undefined && crop.yield !== null ? String(crop.yield) : '',
+      plantedDate: crop.plantedDate ? crop.plantedDate.split('T')[0] : '',
+    });
+    setView('form');
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!editingId && !form.code) { toast.error('Please select a crop'); return; }
     setSaving(true);
     try {
-      if (editingId) { await farmerCropAPI.edit({ id: editingId, yld: Number(form.yld), plantedDate: form.plantedDate || undefined }); toast.success('Crop updated!'); }
-      else           { await farmerCropAPI.add({ code: form.code, yld: Number(form.yld), plantedDate: form.plantedDate || undefined }); toast.success('Crop added!'); }
-      setView('list'); fetchData();
-    } catch (err) { toast.error(err.response?.data?.message || 'Failed to save'); }
-    finally { setSaving(false); }
-  };
-  const handleDelete = (crop) => {
-    setCropToDelete(crop);
-    setDeleteChecked(false);
+      const payload = {
+        yield: form.yld !== '' ? Number(form.yld) : undefined,
+        yld: form.yld !== '' ? Number(form.yld) : undefined,
+        plantedDate: form.plantedDate || undefined,
+      };
+      if (editingId) {
+        await farmerCropAPI.edit(editingId, payload);
+        toast.success('Crop updated successfully!');
+      } else {
+        await farmerCropAPI.add({ code: form.code, ...payload });
+        toast.success('Crop added successfully!');
+      }
+      setView('list');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save crop');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const confirmDelete = async () => {
+  const handleDelete = async () => {
     if (!cropToDelete) return;
     setIsDeleting(true);
-    try { 
-      await farmerCropAPI.delete({ cropId: cropToDelete._id }); 
-      toast.success('Crop removed'); 
+    try {
+      await farmerCropAPI.delete(cropToDelete._id);
+      toast.success('Crop deleted successfully');
+      setCropToDelete(null);
       if (selectedCrop?._id === cropToDelete._id) setSelectedCrop(null);
-      fetchData(); 
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete crop');
+    } finally {
+      setIsDeleting(false);
     }
-    catch (err) { toast.error(err.response?.data?.message || 'Failed to remove'); }
-    finally { setIsDeleting(false); setCropToDelete(null); }
   };
 
-  const lV = { initial: { x: -40, opacity: 0 }, enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }, exit: { x: -40, opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } } };
-  const fV = { initial: { x: 40, opacity: 0 },  enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: 'easeOut' } }, exit: { x: 40, opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } } };
+  const filteredCrops = crops.filter(c => {
+    if (activeTab === 'inactive') return c.status === 'INACTIVE';
+    
+    // For all other tabs (linked, unlinked, all), exclude inactive crops
+    if (c.status === 'INACTIVE') return false;
 
-  const STAT_CARDS = [
-    { label: 'Active Crops', value: activeCrops.length,                                              icon: 'ph:plant-fill'         },
-    { label: 'Total Yield',  value: `${totalYield} kg`,                                              icon: 'ph:scales-fill'        },
-    { label: 'Est. Value',   value: totalValue > 0 ? `₹${(totalValue / 1000).toFixed(1)}k` : '₹0', icon: 'ph:currency-inr-fill' },
-  ];
+    if (activeTab === 'linked')   return !!c.dealCrop;
+    if (activeTab === 'unlinked') return !c.dealCrop;
+    
+    // 'all' active crops
+    return true;
+  });
+
+  // Auto-select first crop by default
+  useEffect(() => {
+    if (filteredCrops.length > 0) {
+      if (!selectedCrop || !filteredCrops.some(c => c._id === selectedCrop._id)) {
+        setSelectedCrop(filteredCrops[0]);
+      }
+    } else {
+      setSelectedCrop(null);
+    }
+  }, [filteredCrops, selectedCrop]);
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
       <AnimatePresence mode="wait">
         {view === 'list' ? (
-          <motion.div key="list" variants={lV} initial="initial" animate="enter" exit="exit">
+          <motion.div key="list" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
 
-            {/* ── Header: title + stat cards in one row ── */}
-            <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
+            {/* Top Bar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">My Crops</h1>
-                <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Manage your crops and track collective linkages</p>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 bg-clip-text text-transparent">
+                  My Crop Management
+                </h1>
+                <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Manage your planted crops and send growth updates to collectives
+                </p>
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                {STAT_CARDS.map((s, i) => (
-                  <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                    className={`relative overflow-hidden flex items-center gap-3 rounded-2xl border px-4 py-3 ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-white border-slate-200 shadow-sm'}`}>
-                    <div className="absolute -right-3 -top-3 w-14 h-14 rounded-full bg-emerald-500/10 blur-xl pointer-events-none" />
-                    <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-emerald-500 ${isDark ? 'bg-slate-800' : 'bg-emerald-50'}`}>
-                      <Icon icon={s.icon} className="w-4 h-4" />
-                    </div>
-                    <div className="relative">
-                      <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{s.label}</p>
-                      <p className={`text-lg font-bold leading-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>{s.value}</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
 
-            {/* ── Toolbar: filter tabs + Add Crop ── */}
-            <div className="flex items-center justify-between gap-3 mb-5 flex-wrap">
-              <div className={`flex gap-1 p-1 rounded-xl overflow-x-auto max-w-full scrollbar-none ${isDark ? 'bg-slate-900/60 border border-slate-800' : 'bg-white border border-slate-200'}`}>
-                {FILTER_TABS.map((tab) => (
-                  <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-200 ${
-                      activeTab === tab.key ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25'
-                        : isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800'
-                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
-                    }`}>
-                    <Icon icon={tab.icon} className="w-3.5 h-3.5" />
-                    {tab.label}
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      activeTab === tab.key ? 'bg-white/25 text-white' : isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600'
-                    }`}>{tabCounts[tab.key]}</span>
-                  </button>
-                ))}
-              </div>
               <button onClick={openAdd}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold cursor-pointer shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300">
-                <Icon icon="ph:plus-bold" className="w-4 h-4" />Add Crop
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-semibold cursor-pointer shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all">
+                <Icon icon="ph:plus-bold" className="w-4 h-4" />Add New Crop
               </button>
             </div>
 
-            {/* ── Content ── */}
+            {/* Filter Pills */}
+            <div className={`flex items-center gap-1.5 p-1.5 rounded-2xl border mb-6 w-fit backdrop-blur-md ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+              {FILTER_TABS.map(t => (
+                <button key={t.key} onClick={() => setActiveTab(t.key)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
+                    activeTab === t.key
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20'
+                      : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-900'
+                  }`}>
+                  <Icon icon={t.icon} className="w-3.5 h-3.5" />{t.label}
+                </button>
+              ))}
+            </div>
+
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <Icon icon="svg-spinners:12-dots-scale-rotate" className={`w-10 h-10 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
               </div>
-            ) : displayedCrops.length === 0 ? (
-              <EmptyState icon="ph:plant-fill"
-                title={activeTab === 'all' ? 'No crops yet' : activeTab === 'linked' ? 'No linked crops' : activeTab === 'unlinked' ? 'All crops are linked!' : 'No inactive crops'}
-                description={activeTab === 'all' ? 'Add a crop to let collectives know what you are growing.' : activeTab === 'linked' ? 'Browse collectives and send a membership request.' : activeTab === 'unlinked' ? 'All your crops are already linked.' : 'No crops have been deactivated yet.'}
-                action={activeTab === 'all' ? (<button onClick={openAdd} className="px-4 py-2 mt-4 rounded-xl bg-emerald-500 text-white text-sm font-semibold cursor-pointer">Add First Crop</button>) : null}
-              />
+            ) : filteredCrops.length === 0 ? (
+              <EmptyState icon="ph:plant-fill" title="No crops found" description="Add your first crop to start tracking growth and connecting with collectives." />
             ) : (
-              <div className="relative flex justify-end min-h-[calc(100vh-120px)] w-full">
-                {/* Left Cards Grid — Desktop absolute positioning within parent min-h; Mobile normal relative flow */}
+              <div className="relative flex justify-end min-h-[calc(100vh-200px)] w-full">
+                {/* Left — Crop Cards List */}
                 <div className="w-full lg:w-auto lg:absolute lg:top-0 lg:left-0 lg:bottom-0 lg:right-[calc(38%+1.25rem)] lg:overflow-y-auto lg:pr-1"
                   style={{ scrollbarWidth: 'thin', scrollbarColor: isDark ? '#334155 transparent' : '#cbd5e1 transparent' }}>
-                  <AnimatePresence mode="wait">
-                    <motion.div key={activeTab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}
-                      className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4">
-                      {displayedCrops.map((crop, i) => (
-                        <CropCard key={crop._id} crop={crop} isDark={isDark} index={i} onEdit={openEdit} onDelete={handleDelete}
-                          onSelect={(c) => {
-                            setSelectedCrop(c);
-                            setMobileDrawerOpen(true);
-                          }}
-                          isSelected={selectedCrop?._id === crop._id} />
-                      ))}
-                    </motion.div>
-                  </AnimatePresence>
+                  <div className="grid sm:grid-cols-2 gap-4 pb-4">
+                    {filteredCrops.map((crop, i) => (
+                      <CropCard key={crop._id} crop={crop} isDark={isDark} index={i}
+                        onEdit={openEdit} onDelete={setCropToDelete}
+                        onSelect={(c) => { setSelectedCrop(c); setMobileDrawerOpen(true); }}
+                        isSelected={selectedCrop?._id === crop._id} />
+                    ))}
+                  </div>
                 </div>
 
-                {/* Right Panel — Desktop fixed side panel */}
+                {/* Right — Detail Panel (Desktop) */}
                 {selectedCrop && (
                   <div className="hidden lg:block lg:w-[38%] lg:shrink-0">
                     <AnimatePresence mode="wait">
                       <motion.div key={selectedCrop._id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }} transition={{ duration: 0.2 }}>
-                        <DetailPanel crop={selectedCrop} isDark={isDark} onEdit={openEdit} onDelete={handleDelete} onRefresh={fetchData} />
+                        <DetailPanel crop={selectedCrop} isDark={isDark}
+                          onEdit={openEdit} onDelete={setCropToDelete} onRefresh={fetchData} />
                       </motion.div>
                     </AnimatePresence>
                   </div>
                 )}
 
-                {/* Mobile Drawer — Bottom sheet on mobile screens (< lg) */}
+                {/* Mobile Drawer */}
                 <AnimatePresence>
                   {mobileDrawerOpen && selectedCrop && (
                     <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end">
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileDrawerOpen(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
                       <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 300 }} className="relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-t-3xl shadow-2xl">
                         <DetailPanel crop={selectedCrop} isDark={isDark}
-                          onEdit={(c) => { setMobileDrawerOpen(false); openEdit(c); }}
-                          onDelete={(c) => { setMobileDrawerOpen(false); handleDelete(c); }}
-                          onRefresh={fetchData}
-                          onClose={() => setMobileDrawerOpen(false)} />
+                          onEdit={openEdit} onDelete={setCropToDelete} onRefresh={fetchData} onClose={() => setMobileDrawerOpen(false)} />
                       </motion.div>
                     </div>
                   )}
@@ -688,76 +709,51 @@ const CropManagement = () => {
             )}
           </motion.div>
         ) : (
-          <motion.div key="form" variants={fV} initial="initial" animate="enter" exit="exit" className="max-w-3xl mx-auto">
-            <button onClick={() => setView('list')} className={`mb-6 flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors ${isDark ? 'text-slate-400 hover:text-emerald-400' : 'text-slate-500 hover:text-emerald-600'}`}>
-              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" />Back to Crops
+          /* Form View */
+          <motion.div key="form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="max-w-2xl mx-auto">
+            <button onClick={() => setView('list')} className={`mb-6 flex items-center gap-2 text-sm font-semibold cursor-pointer transition-colors ${isDark ? 'text-slate-400 hover:text-emerald-400' : 'text-slate-500 hover:text-emerald-600'}`}>
+              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" />Back to Crop List
             </button>
-            <div className={`rounded-2xl border p-6 sm:p-8 ${isDark ? 'bg-slate-900/50 border-slate-800/60 shadow-2xl shadow-black/20' : 'bg-white/80 border-slate-200 shadow-xl shadow-slate-200/50'}`}>
+
+            <div className={`rounded-3xl border p-6 sm:p-8 backdrop-blur-xl shadow-2xl ${isDark ? 'bg-slate-900/80 border-slate-800 shadow-black/40' : 'bg-white/90 border-slate-200 shadow-slate-200/50'}`}>
               <h2 className="text-2xl font-bold mb-2">{editingId ? 'Edit Crop Details' : 'Register New Crop'}</h2>
-              <p className={`text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{editingId ? 'Update your estimated yield and planting date.' : 'Tell collectives what you plan to grow.'}</p>
-              <div className="space-y-5">
+              <p className={`text-xs sm:text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {editingId ? 'Update your crop yield and planting date.' : 'Select a crop from directory and enter planting info.'}
+              </p>
+
+              <form onSubmit={handleSave} className="space-y-5">
+                {!editingId && (
+                  <div>
+                    <label className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Select Crop *</label>
+                    <CropSelect crops={masterCrops} value={form.code} onChange={(code) => setForm(p => ({ ...p, code }))} placeholder="Choose crop..." />
+                  </div>
+                )}
                 <div>
-                  <label className={`text-xs font-semibold block mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Crop (Master List) *</label>
-                  <CropSelect crops={masterCrops} value={form.code} onChange={(code) => setForm(p => ({ ...p, code }))} disabled={!!editingId} placeholder="Select a crop from directory..." />
+                  <label className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Est. Yield (kg)</label>
+                  <input type="number" min="0" value={form.yld} onChange={(e) => setForm(p => ({ ...p, yld: e.target.value }))} placeholder="e.g. 500"
+                    className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${isDark ? 'bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500'}`} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className={`text-xs font-semibold block mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Estimated Yield (kg) *</label>
-                    <div className="relative">
-                      <Icon icon="ph:scales-fill" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                      <input type="number" value={form.yld} onChange={(e) => setForm(p => ({ ...p, yld: e.target.value }))} placeholder="e.g. 500"
-                        className={`w-full pl-10 rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${isDark ? 'bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'}`} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className={`text-xs font-semibold block mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Planted Date</label>
-                    <input type="date" value={form.plantedDate} onChange={(e) => setForm(p => ({ ...p, plantedDate: e.target.value }))}
-                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${isDark ? 'bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'}`} />
-                  </div>
+                <div>
+                  <label className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Planted Date</label>
+                  <input type="date" value={form.plantedDate} onChange={(e) => setForm(p => ({ ...p, plantedDate: e.target.value }))}
+                    className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${isDark ? 'bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500'}`} />
                 </div>
-                <div className={`flex gap-4 pt-5 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                  <button onClick={() => setView('list')} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-colors ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Cancel</button>
-                  <button onClick={handleSave} disabled={saving}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white cursor-pointer flex items-center justify-center gap-2 hover:from-emerald-400 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0">
+                <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <button type="button" onClick={() => setView('list')} className={`flex-1 py-3 rounded-xl text-sm font-semibold border cursor-pointer transition-colors ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Cancel</button>
+                  <button type="submit" disabled={saving} className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 text-white cursor-pointer flex items-center justify-center gap-2 hover:from-emerald-400 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-60">
                     {saving ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" /> : <Icon icon="ph:check-bold" className="w-4 h-4" />}
                     {editingId ? 'Save Changes' : 'Save Crop'}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <ConfirmModal 
-        isOpen={!!cropToDelete}
-        onClose={() => setCropToDelete(null)}
-        onConfirm={confirmDelete}
-        title={`Delete ${cropToDelete?.crop?.name}?`}
-        description={
-          cropToDelete?.dealCrop 
-            ? `This crop is currently linked to ${cropToDelete.dealCrop.collective?.name || 'a collective'}. Deleting it will permanently terminate your membership deal. This action cannot be undone.`
-            : "Are you sure you want to delete this crop? This action cannot be undone."
-        }
-        confirmLabel={isDeleting ? "Deleting..." : "Delete Crop"}
-        variant="danger"
-        icon="ph:trash-fill"
-        disableConfirm={!!cropToDelete?.dealCrop && !deleteChecked}
-      >
-        {cropToDelete?.dealCrop && (
-          <label className="flex items-center gap-2 mt-2 cursor-pointer p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-            <input 
-              type="checkbox" 
-              checked={deleteChecked} 
-              onChange={(e) => setDeleteChecked(e.target.checked)} 
-              className="w-4 h-4 rounded border-slate-300 text-red-500 focus:ring-red-500"
-            />
-            <span className={`text-xs font-semibold ${isDark ? 'text-red-300' : 'text-red-700'}`}>
-              Terminate deal with {cropToDelete.dealCrop.collective?.name || 'the collective'}
-            </span>
-          </label>
-        )}
-      </ConfirmModal>
+      <ConfirmModal isOpen={!!cropToDelete} onClose={() => setCropToDelete(null)} onConfirm={handleDelete}
+        title="Delete Crop?" description={`Are you sure you want to delete ${cropToDelete?.crop?.name || 'this crop'}? This action cannot be undone.`}
+        confirmLabel={isDeleting ? 'Deleting...' : 'Delete Crop'} variant="danger" icon="ph:trash-bold" />
     </div>
   );
 };

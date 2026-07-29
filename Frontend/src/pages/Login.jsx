@@ -28,6 +28,9 @@ const Login = () => {
 
   const [role, setRole] = useState("FARMER_GROUP");
   const [email, setEmail] = useState("raman@ff.in");
+  useEffect(() => {
+    setEmail(role === "FARMER_GROUP" ? "raman@ff.in" : "garima@ff.in");
+  }, [role]);
   const [password, setPassword] = useState("password");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -304,7 +307,7 @@ const Login = () => {
 
                   {/* Role toggle and Admin button */}
                   <div className="mb-4 flex items-end gap-3">
-                  <div className="w-full">
+                    <div className="w-full">
                       <p
                         className={`text-xs font-medium mb-2 uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}
                       >
@@ -317,7 +320,6 @@ const Login = () => {
                         size="md"
                       />
                     </div>
-                    
                   </div>
 
                   {/* Form */}
@@ -340,13 +342,15 @@ const Login = () => {
                         />
                         <input
                           type="email"
-                          placeholder={role === "FARMER_GROUP" ? "farmer@farmfresh.com" : "collective@farmfresh.com"}
+                          placeholder={
+                            role === "FARMER_GROUP"
+                              ? "farmer@farmfresh.com"
+                              : "collective@farmfresh.com"
+                          }
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
-                          className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 outline-none transition-all focus:ring-2 ${
-                            "focus:ring-emerald-500/40 focus:border-emerald-500"
-                          } ${
+                          className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 outline-none transition-all focus:ring-2 ${"focus:ring-emerald-500/40 focus:border-emerald-500"} ${
                             isDark
                               ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
                               : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
@@ -373,9 +377,7 @@ const Login = () => {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 ${
-                            "focus:ring-emerald-500/40 focus:border-emerald-500"
-                          } ${
+                          className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 ${"focus:ring-emerald-500/40 focus:border-emerald-500"} ${
                             isDark
                               ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
                               : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
@@ -406,17 +408,13 @@ const Login = () => {
                           checked={Remember}
                           onChange={() => setRemember(!Remember)}
                         />
-                        <span>
-                          Remember me
-                        </span>
+                        <span>Remember me</span>
                       </label>
 
                       <button
                         type="button"
                         onClick={() => setShowForgotPanel(true)}
-                        className={`transition-colors text-sm cursor-pointer ${
-                          "text-emerald-400 hover:text-emerald-300"
-                        }`}
+                        className={`transition-colors text-sm cursor-pointer ${"text-emerald-400 hover:text-emerald-300"}`}
                       >
                         Forgot password?
                       </button>
@@ -426,9 +424,7 @@ const Login = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className={`w-full py-3 rounded-xl font-semibold text-sm text-white shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
-                        "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-emerald-500/20"
-                      }`}
+                      className={`w-full py-3 rounded-xl font-semibold text-sm text-white shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${"bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-emerald-500/20"}`}
                     >
                       {loading ? (
                         <>
@@ -449,37 +445,35 @@ const Login = () => {
 
                   {/* Social Login Separator */}
                   <div className="flex items-center my-4">
-                        <div
-                          className={`flex-grow border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}
-                        ></div>
-                        <span
-                          className={`px-3 text-xs uppercase ${isDark ? "text-slate-500" : "text-slate-400"}`}
-                        >
-                          Or continue with
-                        </span>
-                        <div
-                          className={`flex-grow border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}
-                        ></div>
-                      </div>
+                    <div
+                      className={`flex-grow border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}
+                    ></div>
+                    <span
+                      className={`px-3 text-xs uppercase ${isDark ? "text-slate-500" : "text-slate-400"}`}
+                    >
+                      Or continue with
+                    </span>
+                    <div
+                      className={`flex-grow border-t ${isDark ? "border-slate-700" : "border-slate-200"}`}
+                    ></div>
+                  </div>
 
-                      {/* Google Login Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google?role=${role}`;
-                        }}
-                        className={`w-full py-2.5 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                          isDark
-                            ? "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200"
-                            : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
-                        }`}
-                      >
-                        <Icon icon="logos:google-icon" className="w-4 h-4" />
-                        Sign in with Google |{" "}
-                        {role === "FARMER_GROUP"
-                          ? "Farmer Group"
-                          : "Collective"}
-                      </button>
+                  {/* Google Login Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google?role=${role}`;
+                    }}
+                    className={`w-full py-2.5 rounded-xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      isDark
+                        ? "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200"
+                        : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                    }`}
+                  >
+                    <Icon icon="logos:google-icon" className="w-4 h-4" />
+                    Sign in with Google |{" "}
+                    {role === "FARMER_GROUP" ? "Farmer Group" : "Collective"}
+                  </button>
 
                   <p
                     className={`text-center text-sm mt-5 ${isDark ? "text-slate-400" : "text-slate-500"}`}
@@ -487,9 +481,7 @@ const Login = () => {
                     Don't have an account?{" "}
                     <Link
                       to="/register"
-                      className={`${
-                        "text-emerald-500 hover:text-emerald-400"
-                      } font-semibold`}
+                      className={`${"text-emerald-500 hover:text-emerald-400"} font-semibold`}
                     >
                       Register
                     </Link>

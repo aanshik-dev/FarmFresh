@@ -66,7 +66,7 @@ const createSchedule = async (collectiveId, { driverId, zoneId, pickupDate, time
 
       // Update collected quantities on CropDeals
       for (const { cropDeal, collectedQuantity } of items) {
-        await CropDeal.findByIdAndUpdate(cropDeal, { $set: { collectedQuantity } }, { session });
+        await CropDeal.findByIdAndUpdate(cropDeal, { $set: { "schedule.collectedQuantity": collectedQuantity } }, { session });
       }
 
       // Update balance on Memberships
@@ -295,20 +295,15 @@ const getReadyDeals = async (collectiveId) => {
   // Filter out deals where FarmerCrop is inactive or null
   const activeDeals = deals.filter((d) => d.crop !== null);
 
-  // Filter to only those with latestStage === "READY" or a READY status update
-  const readyDeals = activeDeals.filter((d) => d.latestStage === "READY");
+  // Filter to only those with stage === "READY" or a READY status update
+  const readyDeals = activeDeals.filter((d) => d.growth?.stage === "READY");
 
-  // Fallback check against CropStatusUpdate if latestStage was not synced previously
+  // Fallback check against updates if stage was not synced previously
   if (readyDeals.length < activeDeals.length) {
-    const unreadyIds = activeDeals.filter((d) => d.latestStage !== "READY").map((d) => d._id);
-    const { default: CropStatusUpdate } = await import("../../models/cropStatusUpdate.model.js");
-    const readyUpdates = await CropStatusUpdate.find({
-      cropDeal: { $in: unreadyIds },
-      stage: "READY",
-    }).lean();
-
-    const readyDealIds = new Set(readyUpdates.map((u) => u.cropDeal.toString()));
-    const extraReady = activeDeals.filter((d) => readyDealIds.has(d._id.toString()));
+    const unreadyDeals = activeDeals.filter((d) => d.growth?.stage !== "READY");
+    const extraReady = unreadyDeals.filter((d) =>
+      (d.updates || []).some((u) => u.stage === "READY")
+    );
     return { success: true, message: "Ready deals fetched !!", deals: [...readyDeals, ...extraReady] };
   }
 

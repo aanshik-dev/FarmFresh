@@ -1,5 +1,4 @@
 import CropDeal from "../../models/cropDeal.model.js";
-import CropStatusUpdate from "../../models/cropStatusUpdate.model.js";
 import Membership from "../../models/membership.model.js";
 import Notification from "../../models/notification.model.js";
 import throwErr from "../../utils/throwErr.js";
@@ -18,23 +17,21 @@ const updateCropStatus = async (farmerId, dealId, { stage, message, imgUrl }) =>
   if (deal.status !== "APPROVED")
     throwErr(400, "Can only update status for APPROVED deals !!");
 
-  const isQueryResponse = deal.queryPending;
+  const isQueryResponse = deal.growth.queryStatus === "OPEN";
 
   // Create status update record
-  const update = await CropStatusUpdate.create({
-    cropDeal: dealId,
+  const update = {
     stage,
     message: message?.trim() || "",
-    imgUrl: imgUrl || "",
+    imgUrl,
     updatedBy: farmerId,
     isQueryResponse,
-  });
+  };
+  deal.updates.push(update);
 
-  // Clear the query flag if this is a response & update latestStage
-  deal.latestStage = stage;
-  if (isQueryResponse) {
-    deal.queryPending = false;
-  }
+  // Update crop deal stage and close query status
+  deal.growth.stage = stage;
+  deal.growth.queryStatus = "CLOSED";
   await deal.save();
 
   // Notify collective
@@ -62,9 +59,9 @@ const getStatusHistory = async (farmerId, dealId) => {
   if (!deal || !deal.membership)
     throwErr(404, "Deal not found or does not belong to you !!");
 
-  const history = await CropStatusUpdate.find({ cropDeal: dealId })
-    .sort({ createdAt: -1 })
-    .lean();
+  const history = (deal.updates || []).sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
 
   return { success: true, message: "Status history fetched !!", deal, history };
 };

@@ -3,6 +3,7 @@ import Crop from "../models/crop.model.js";
 import Collective from "../models/collective.model.js";
 import CollectedCrop from "../models/collectedCrops.model.js";
 import Membership from "../models/membership.model.js";
+import CropDeal from "../models/cropDeal.model.js";
 import Zone from "../models/zone.model.js";
 import { haversineDistance } from "../utils/haversine.js";
 
@@ -70,11 +71,36 @@ router.get("/collectives", async (req, res, next) => {
       });
     }
 
-    // Aggregate farmer group count and zone count per collective
+    // Aggregate unique partner farmer groups with APPROVED crop deals and active zone count per collective
     const [memberCounts, zoneCounts] = await Promise.all([
-      Membership.aggregate([
-        { $match: { collective: { $in: collectiveIds }, status: { $in: ["ACTIVE", "PENDING"] } } },
-        { $group: { _id: "$collective", count: { $sum: 1 } } },
+      CropDeal.aggregate([
+        { $match: { status: "APPROVED" } },
+        {
+          $lookup: {
+            from: "memberships",
+            localField: "membership",
+            foreignField: "_id",
+            as: "mem",
+          },
+        },
+        { $unwind: "$mem" },
+        {
+          $match: {
+            "mem.collective": { $in: collectiveIds },
+            "mem.status": "ACTIVE",
+          },
+        },
+        {
+          $group: {
+            _id: { collective: "$mem.collective", farmer: "$mem.farmer" },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.collective",
+            count: { $sum: 1 },
+          },
+        },
       ]),
       Zone.aggregate([
         { $match: { collective: { $in: collectiveIds }, status: "ACTIVE" } },

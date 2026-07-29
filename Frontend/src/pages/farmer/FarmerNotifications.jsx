@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../components/ui";
 import EmptyState from "../../components/common/EmptyState";
@@ -46,6 +47,7 @@ const timeAgo = (date) => {
 const FarmerNotifications = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [notifs, setNotifs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,12 +77,12 @@ const FarmerNotifications = () => {
   };
 
   const markRead = async (id, currentStatus) => {
-    if (currentStatus) return; // Already read
+    if (currentStatus) return;
     try {
       await farmerNotifAPI.markRead(id);
       setNotifs((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
     } catch (err) {
-      // Silently fail or toast
+      // Silently ignore
     }
   };
 
@@ -121,41 +123,74 @@ const FarmerNotifications = () => {
         />
       ) : (
         <div className="max-w-3xl space-y-4">
-          {notifs.map((n, i) => (
-            <motion.div
-              key={n._id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              onClick={() => markRead(n._id, n.isRead)}
-              className={`relative flex items-start gap-4 p-5 rounded-2xl border cursor-pointer transition-all duration-300 ${
-                !n.isRead
-                  ? isDark
-                    ? "bg-slate-900/80 border-emerald-500/30 shadow-lg shadow-emerald-500/5"
-                    : "bg-white border-emerald-300 shadow-lg shadow-emerald-500/5"
-                  : isDark
-                  ? "bg-slate-900/40 border-slate-800/60"
-                  : "bg-white/60 border-slate-200"
-              }`}
-            >
-              {!n.isRead && (
-                <div className="absolute top-5 right-5 w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-              )}
+          {notifs.map((n, i) => {
+            const isStatusReq = n.type === "STATUS_UPDATE";
+            const cropName = n.data?.cropName;
+            const cropCode = n.data?.cropCode;
+            const agreedPrice = n.data?.agreedPrice;
 
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${getNotifColor(n.type)}`}>
-                <Icon icon={getNotifIcon(n.type)} className="w-6 h-6" />
-              </div>
+            return (
+              <motion.div
+                key={n._id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                onClick={() => markRead(n._id, n.isRead)}
+                className={`relative flex items-start gap-4 p-5 rounded-2xl border cursor-pointer transition-all duration-300 ${
+                  !n.isRead
+                    ? isDark
+                      ? "bg-slate-900/80 border-emerald-500/30 shadow-lg shadow-emerald-500/5"
+                      : "bg-white border-emerald-300 shadow-lg shadow-emerald-500/5"
+                    : isDark
+                    ? "bg-slate-900/40 border-slate-800/60"
+                    : "bg-white/60 border-slate-200"
+                }`}
+              >
+                {!n.isRead && (
+                  <div className="absolute top-5 right-5 w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                )}
 
-              <div className="flex-1 min-w-0 pr-6">
-                <p className={`text-base font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{n.title}</p>
-                <p className={`text-sm mt-1 leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>{n.body}</p>
-                <p className={`text-xs mt-3 flex items-center gap-1.5 font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                  <Icon icon="ph:clock-fill" className="w-3.5 h-3.5" />
-                  {timeAgo(n.createdAt)}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${getNotifColor(n.type)}`}>
+                  <Icon icon={getNotifIcon(n.type)} className="w-6 h-6" />
+                </div>
+
+                <div className="flex-1 min-w-0 pr-6">
+                  <p className={`text-base font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{n.title}</p>
+                  <p className={`text-sm mt-1 leading-relaxed ${isDark ? "text-slate-300" : "text-slate-600"}`}>{n.body}</p>
+
+                  {/* Crop details card inside notification for STATUS_UPDATE */}
+                  {isStatusReq && cropName && (
+                    <div className={`mt-3 p-3 rounded-xl border flex items-center justify-between gap-3 ${
+                      isDark ? "bg-amber-500/10 border-amber-500/20" : "bg-amber-50 border-amber-200"
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <Icon icon="ph:plant-fill" className="w-4 h-4 text-amber-500" />
+                        <span className="text-xs font-bold text-amber-500">
+                          {cropName} {cropCode ? `(${cropCode})` : ""} {agreedPrice ? `· ₹${agreedPrice}/kg` : ""}
+                        </span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markRead(n._id, n.isRead);
+                          navigate("/dashboard/farmer/crops");
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-bold shadow-md hover:bg-amber-600 transition-all flex items-center gap-1 shrink-0"
+                      >
+                        <Icon icon="ph:pencil-simple-bold" className="w-3.5 h-3.5" />
+                        Update Crop Status
+                      </button>
+                    </div>
+                  )}
+
+                  <p className={`text-xs mt-3 flex items-center gap-1.5 font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                    <Icon icon="ph:clock-fill" className="w-3.5 h-3.5" />
+                    {timeAgo(n.createdAt)}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

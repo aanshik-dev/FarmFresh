@@ -188,18 +188,40 @@ const FarmerDashboard = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {notifications.slice(0, 3).map(n => {
+                {notifications.slice(0, 4).map(n => {
                   let icon = "ph:bell-fill";
+                  let iconColor = !n.isRead ? "text-emerald-400" : isDark ? "text-slate-500" : "text-slate-400";
                   if (n.type === "PAYMENT") icon = "ph:currency-inr-fill";
                   if (n.type === "PICKUP") icon = "ph:truck-fill";
                   if (n.type === "ANNOUNCEMENT") icon = "ph:megaphone-fill";
+                  if (n.type === "STATUS_UPDATE") {
+                    icon = "ph:plant-fill";
+                    iconColor = "text-amber-500";
+                  }
                   
                   return (
-                    <div key={n._id} className={`flex items-start gap-2.5 p-2.5 rounded-xl transition-all ${!n.isRead ? isDark ? "bg-emerald-500/8" : "bg-emerald-50" : isDark ? "bg-slate-800/30" : "bg-slate-50/50"}`}>
-                      <Icon icon={icon} className={`w-4 h-4 mt-0.5 shrink-0 ${!n.isRead ? "text-emerald-400" : isDark ? "text-slate-500" : "text-slate-400"}`} />
-                      <div>
-                        <p className={`text-xs font-medium ${isDark ? "text-slate-200" : "text-slate-800"}`}>{n.title}</p>
-                        <p className={`text-xs mt-0.5 line-clamp-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>{n.body}</p>
+                    <div
+                      key={n._id}
+                      onClick={() => navigate("/dashboard/farmer/notifications")}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all ${
+                        !n.isRead
+                          ? n.type === "STATUS_UPDATE"
+                            ? isDark ? "bg-amber-500/10 border border-amber-500/25" : "bg-amber-50 border border-amber-200"
+                            : isDark ? "bg-emerald-500/8" : "bg-emerald-50"
+                          : isDark ? "bg-slate-800/30" : "bg-slate-50/50"
+                      }`}
+                    >
+                      <Icon icon={icon} className={`w-4 h-4 mt-0.5 shrink-0 ${iconColor}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className={`text-xs font-bold truncate ${isDark ? "text-slate-200" : "text-slate-800"}`}>{n.title}</p>
+                          {n.type === "STATUS_UPDATE" && !n.isRead && (
+                            <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-500 text-white shrink-0">
+                              Action Req.
+                            </span>
+                          )}
+                        </div>
+                        <p className={`text-xs mt-0.5 line-clamp-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{n.body}</p>
                       </div>
                     </div>
                   );
