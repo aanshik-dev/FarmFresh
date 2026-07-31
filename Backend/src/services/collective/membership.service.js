@@ -77,6 +77,9 @@ const getMemberships = async (collectiveID) => {
           membership: {
             _id: member._id,
             zone: member.zone || null,
+            route: member.route || "",
+            distance: member.distance || 0,
+            estTime: member.estTime || 0,
             balance: member.balance || 0,
             note: member.note || "",
             memberSince: member.memberSince || null,
@@ -171,7 +174,7 @@ const rejectMemberRequest = async (collectiveId, { farmerId, dealIds, rejectedCr
 
 // ── ACCEPT / REVIEW membership requests (with partial accept/reject, price & zone)
 const acceptMembershipRequest = async (collectiveId, payload) => {
-  const { farmerId, crops = [], rejectedCrops = [], zoneId } = payload || {};
+  const { farmerId, crops = [], rejectedCrops = [], zoneId, route, distance, estTime } = payload || {};
 
   if (!(await isProfileComplete(collectiveId, "COLLECTIVE")))
     throwErr(
@@ -267,6 +270,9 @@ const acceptMembershipRequest = async (collectiveId, payload) => {
       }
 
       if (assignedZone) updateData.zone = assignedZone._id;
+      if (route) updateData.route = route;
+      if (distance !== undefined) updateData.distance = distance;
+      if (estTime !== undefined) updateData.estTime = estTime;
 
       await Membership.findByIdAndUpdate(membershipId, { $set: updateData }, { session });
     });

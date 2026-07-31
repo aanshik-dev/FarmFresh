@@ -25,9 +25,7 @@ const requestCropStatus = async (collectiveId, dealId) => {
   }
 
   // Prevent spamming queries (e.g. at least 10 days since last update)
-  const lastUpdate = deal.updates && deal.updates.length > 0 
-    ? deal.updates[deal.updates.length - 1].createdAt 
-    : deal.createdAt;
+  const lastUpdate = deal.growth?.lastUpdated || deal.createdAt;
   if (lastUpdate) {
     const daysDiff = (Date.now() - new Date(lastUpdate).getTime()) / (1000 * 60 * 60 * 24);
     if (daysDiff < 10) {

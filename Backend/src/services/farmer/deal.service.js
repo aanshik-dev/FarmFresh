@@ -32,6 +32,10 @@ const updateCropStatus = async (farmerId, dealId, { stage, message, imgUrl }) =>
   // Update crop deal stage and close query status
   deal.growth.stage = stage;
   deal.growth.queryStatus = "CLOSED";
+  deal.growth.lastUpdated = new Date();
+  if (imgUrl) {
+    deal.growth.cropImage = imgUrl;
+  }
   await deal.save();
 
   // Notify collective

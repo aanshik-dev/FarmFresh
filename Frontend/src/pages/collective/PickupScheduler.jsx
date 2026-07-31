@@ -238,7 +238,19 @@ const PickupScheduler = () => {
                           }`}>
                             Mark In Progress
                           </button>
-                          <button onClick={() => updateStatus(s._id, "CANCELLED")} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                          <button onClick={() => {
+                            const newDate = window.prompt("Enter new pickup date (YYYY-MM-DD):", s.pickupDate ? new Date(s.pickupDate).toISOString().split("T")[0] : "");
+                            if (newDate) updateStatus(s._id, "POSTPONED", newDate);
+                          }} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                            isDark ? "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20" : "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100"
+                          }`}>
+                            Postpone
+                          </button>
+                          <button onClick={() => {
+                            if (window.confirm("Are you sure you want to cancel this pickup schedule?")) {
+                              updateStatus(s._id, "CANCELLED");
+                            }
+                          }} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
                             isDark ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20" : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
                           }`}>
                             Cancel

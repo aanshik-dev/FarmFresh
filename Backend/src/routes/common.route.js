@@ -73,32 +73,38 @@ router.get("/collectives", async (req, res, next) => {
 
     // Aggregate unique partner farmer groups with APPROVED crop deals and active zone count per collective
     const [memberCounts, zoneCounts] = await Promise.all([
-      CropDeal.aggregate([
-        { $match: { status: "APPROVED" } },
-        {
-          $lookup: {
-            from: "memberships",
-            localField: "membership",
-            foreignField: "_id",
-            as: "mem",
-          },
-        },
-        { $unwind: "$mem" },
+      Membership.aggregate([
         {
           $match: {
-            "mem.collective": { $in: collectiveIds },
-            "mem.status": "ACTIVE",
+            collective: { $in: collectiveIds },
+          },
+        },
+        {
+          $lookup: {
+            from: "cropdeals",
+            localField: "_id",
+            foreignField: "membership",
+            as: "deals",
+          },
+        },
+        {
+          $match: {
+            $or: [
+              { status: "ACTIVE" },
+              { "deals.status": "APPROVED" },
+            ],
           },
         },
         {
           $group: {
-            _id: { collective: "$mem.collective", farmer: "$mem.farmer" },
+            _id: "$collective",
+            farmers: { $addToSet: "$farmer" },
           },
         },
         {
-          $group: {
-            _id: "$_id.collective",
-            count: { $sum: 1 },
+          $project: {
+            _id: 1,
+            count: { $size: "$farmers" },
           },
         },
       ]),

@@ -719,7 +719,7 @@ const AppShell = () => {
         setUnreadNotifCount(notifs.filter((n) => !n.isRead).length);
 
         const crops = cropRes.data?.crops || cropRes.data?.data?.cropData || [];
-        const openQueries = crops.filter((c) => c.dealCrop?.queryStatus === "OPEN").length;
+        const openQueries = crops.filter((c) => c.dealCrop?.growth?.queryStatus === "OPEN").length;
         setActionNeededCropsCount(openQueries);
       } catch {
         // Silently handle

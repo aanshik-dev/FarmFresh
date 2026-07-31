@@ -14,6 +14,8 @@ const FarmerDetailPanel = ({ schedule, farmerItem, onPaymentMarked, isDark }) =>
   const { toast } = useToast();
   const [paying, setPaying] = useState(false);
   const [proofUrl, setProofUrl] = useState("");
+  const [utrNumber, setUtrNumber] = useState("");
+  const [remarks, setRemarks] = useState("");
 
   if (!farmerItem) return null;
 
@@ -21,6 +23,8 @@ const FarmerDetailPanel = ({ schedule, farmerItem, onPaymentMarked, isDark }) =>
   const farmerItems = schedule.items?.filter(
     (it) => it.farmerGroup?._id === farmerItem.farmerGroup?._id
   ) || [];
+  const pendingItems = farmerItems.filter((it) => it.paymentStatus !== "PAID");
+  const pendingTotal = pendingItems.reduce((s, it) => s + it.totalAmount, 0);
   const totalDue = farmerItems.reduce((s, it) => s + it.totalAmount, 0);
   const allPaid = farmerItems.every((it) => it.paymentStatus === "PAID");
 
@@ -33,6 +37,31 @@ const FarmerDetailPanel = ({ schedule, farmerItem, onPaymentMarked, isDark }) =>
       onPaymentMarked();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to record payment");
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const handleBulkPay = async () => {
+    if (!proofUrl.trim()) { toast.error("Please attach a payment proof link"); return; }
+    setPaying(true);
+    try {
+      if (collectiveScheduleAPI.payFarmer) {
+        await collectiveScheduleAPI.payFarmer(schedule._id, farmerItem.farmerGroup?._id, {
+          paymentProof: proofUrl,
+          utrNumber,
+          remarks,
+        });
+      } else {
+        // Fallback sequentially
+        for (const item of pendingItems) {
+          await collectiveScheduleAPI.markItemPaid(schedule._id, item._id, { paymentProof: proofUrl });
+        }
+      }
+      toast.success(`Full payment of ₹${pendingTotal.toLocaleString("en-IN")} recorded!`);
+      onPaymentMarked();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to process payment");
     } finally {
       setPaying(false);
     }
@@ -54,7 +83,7 @@ const FarmerDetailPanel = ({ schedule, farmerItem, onPaymentMarked, isDark }) =>
             {farmerItem.farmerGroup?.phone}
             <span className="opacity-50">|</span>
             <Icon icon="ph:user-fill" className="w-3.5 h-3.5" />
-            {farmerItem.farmerGroup?.leadFarmer}
+            {farmerItem.farmerGroup?.leadFarmer || "Lead Farmer"}
           </div>
         </div>
       </div>
@@ -79,10 +108,10 @@ const FarmerDetailPanel = ({ schedule, farmerItem, onPaymentMarked, isDark }) =>
                   </div>
                   <div>
                     <p className={`font-bold text-base ${isDark ? "text-slate-200" : "text-slate-800"}`}>
-                      {item.cropDeal?.crop?.name || "Crop"}
+                      {item.cropDeal?.crop?.name || item.cropDeal?.crop?.crop?.name || "Crop"}
                     </p>
                     <p className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                      Code: {item.cropDeal?.crop?.code}
+                      Code: {item.cropDeal?.crop?.code || item.cropDeal?.crop?.crop?.code || "—"}
                     </p>
                   </div>
                 </div>
@@ -126,7 +155,12 @@ const FarmerDetailPanel = ({ schedule, farmerItem, onPaymentMarked, isDark }) =>
       <div className={`flex items-center justify-between p-5 rounded-2xl ${
         isDark ? "bg-emerald-500/10 border border-emerald-500/25" : "bg-emerald-50 border border-emerald-200 shadow-sm"
       }`}>
-        <p className={`font-bold ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Total Balance</p>
+        <div>
+          <p className={`font-bold ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Total Pickup Value</p>
+          <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+            Pending: ₹{pendingTotal.toLocaleString("en-IN")}
+          </p>
+        </div>
         <p className={`text-2xl font-black ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>₹{totalDue.toLocaleString("en-IN")}</p>
       </div>
 
@@ -134,32 +168,69 @@ const FarmerDetailPanel = ({ schedule, farmerItem, onPaymentMarked, isDark }) =>
       {!allPaid && (
         <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900/50 border-slate-700" : "bg-white border-slate-200 shadow-sm"}`}>
           <p className={`text-sm font-bold mb-3 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-            Attach Payment Proof & Mark Paid
+            Attach Payment Proof & Complete Payment
           </p>
-          <div className="relative mb-4">
-            <Icon icon="ph:link-bold" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-            <input
-              value={proofUrl}
-              onChange={(e) => setProofUrl(e.target.value)}
-              placeholder="Paste payment receipt URL or screenshot link..."
-              className={`w-full pl-10 rounded-xl border px-3 py-3 text-sm outline-none transition-all ${
-                isDark ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500"
-              }`}
-            />
+          
+          <div className="space-y-3 mb-4">
+            <div className="relative">
+              <Icon icon="ph:link-bold" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+              <input
+                value={proofUrl}
+                onChange={(e) => setProofUrl(e.target.value)}
+                placeholder="Payment Receipt URL or Screenshot link *"
+                className={`w-full pl-10 rounded-xl border px-3 py-2.5 text-sm outline-none transition-all ${
+                  isDark ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500"
+                }`}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                value={utrNumber}
+                onChange={(e) => setUtrNumber(e.target.value)}
+                placeholder="UTR / Ref Number (Optional)"
+                className={`w-full rounded-xl border px-3.5 py-2 text-xs outline-none transition-all ${
+                  isDark ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500"
+                }`}
+              />
+              <input
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="Remarks / Note (Optional)"
+                className={`w-full rounded-xl border px-3.5 py-2 text-xs outline-none transition-all ${
+                  isDark ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500" : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500"
+                }`}
+              />
+            </div>
           </div>
-          {farmerItems
-            .filter((it) => it.paymentStatus !== "PAID")
-            .map((item) => (
-              <button
-                key={item._id}
-                onClick={() => handleMarkPaid(item)}
-                disabled={paying}
-                className="w-full py-3.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white cursor-pointer flex items-center justify-center gap-2 mb-3 last:mb-0 hover:from-emerald-400 transition-all shadow-md shadow-emerald-500/20 disabled:opacity-60 disabled:hover:translate-y-0 hover:-translate-y-0.5"
-              >
-                {paying ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" /> : <Icon icon="ph:check-circle-bold" className="w-4 h-4" />}
-                Mark "{item.cropDeal?.crop?.name}" as Paid
-              </button>
-            ))}
+
+          <button
+            onClick={handleBulkPay}
+            disabled={paying}
+            className="w-full py-3.5 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white cursor-pointer flex items-center justify-center gap-2 mb-3 hover:from-emerald-400 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-60"
+          >
+            {paying ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" /> : <Icon icon="ph:check-circle-fill" className="w-5 h-5" />}
+            Pay All Pending Items (₹{pendingTotal.toLocaleString("en-IN")})
+          </button>
+
+          {pendingItems.length > 1 && (
+            <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+              <p className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Or Mark Item by Item:</p>
+              {pendingItems.map((item) => (
+                <button
+                  key={item._id}
+                  onClick={() => handleMarkPaid(item)}
+                  disabled={paying}
+                  className={`w-full py-2.5 px-3 rounded-lg text-xs font-semibold border flex items-center justify-between transition-all cursor-pointer ${
+                    isDark ? "border-slate-700 hover:bg-slate-800 text-slate-300" : "border-slate-200 hover:bg-slate-100 text-slate-700"
+                  }`}
+                >
+                  <span>Mark {item.cropDeal?.crop?.name || item.cropDeal?.crop?.crop?.name || "Crop"} as Paid</span>
+                  <span className="font-bold text-emerald-500">₹{item.totalAmount.toLocaleString("en-IN")}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

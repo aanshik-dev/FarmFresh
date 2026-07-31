@@ -70,6 +70,15 @@ const cropDealSchema = new mongoose.Schema(
         enum: ["OPEN", "CLOSED"],
         default: "CLOSED",
       },
+      lastUpdated: {
+        type: Date,
+        default: null,
+      },
+      cropImage: {
+        type: String,
+        trim: true,
+        default: "",
+      },
     },
     schedule: {
       expectedPickupDate: {
@@ -115,7 +124,7 @@ const cropDealSchema = new mongoose.Schema(
         stage: {
           type: String,
         },
-      }
+      },
     ],
   },
   { timestamps: true },

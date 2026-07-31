@@ -286,28 +286,32 @@ const getReadyDeals = async (collectiveId) => {
   })
     .populate({
       path: "crop",
-      match: { status: "ACTIVE" },
-      populate: { path: "crop", select: "name code" },
+      populate: { path: "crop", select: "name code category image" },
     })
-    .populate({ path: "membership", populate: { path: "farmer", select: "name phone profile" } })
+    .populate({ path: "membership", populate: { path: "farmer", select: "name groupName phone profile leadFarmer" } })
     .lean();
 
-  // Filter out deals where FarmerCrop is inactive or null
-  const activeDeals = deals.filter((d) => d.crop !== null);
+  const isReadyStage = (stage) => stage && String(stage).trim().toUpperCase() === "READY";
 
-  // Filter to only those with stage === "READY" or a READY status update
-  const readyDeals = activeDeals.filter((d) => d.growth?.stage === "READY");
+  const readyDeals = deals.filter((d) => {
+    const currentReady = isReadyStage(d.growth?.stage);
+    const updateReady = (d.updates || []).some((u) => isReadyStage(u.stage));
+    return currentReady || updateReady;
+  });
 
-  // Fallback check against updates if stage was not synced previously
-  if (readyDeals.length < activeDeals.length) {
-    const unreadyDeals = activeDeals.filter((d) => d.growth?.stage !== "READY");
-    const extraReady = unreadyDeals.filter((d) =>
-      (d.updates || []).some((u) => u.stage === "READY")
-    );
-    return { success: true, message: "Ready deals fetched !!", deals: [...readyDeals, ...extraReady] };
-  }
+  const formattedDeals = readyDeals.map((d) => ({
+    ...d,
+    crop: {
+      _id: d.crop?._id,
+      name: d.crop?.crop?.name || d.crop?.name || "Crop",
+      code: d.crop?.crop?.code || d.crop?.code || "",
+      category: d.crop?.crop?.category || "",
+      image: d.crop?.crop?.image || "",
+    },
+    expectedQuantity: d.growth?.expectedQuantity || d.requestedQuantity || d.crop?.yield || 0,
+  }));
 
-  return { success: true, message: "Ready deals fetched !!", deals: readyDeals };
+  return { success: true, message: "Ready deals fetched !!", deals: formattedDeals };
 };
 
 export default {

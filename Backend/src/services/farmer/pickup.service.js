@@ -26,6 +26,7 @@ const getFarmerPickups = async (farmerId) => {
   return {
     success: true,
     message: "Pickup history fetched !!",
+    pickups: items,
     upcoming,
     past,
   };

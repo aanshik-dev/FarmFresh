@@ -15,6 +15,7 @@ const FarmerSchedules = () => {
   const { toast } = useToast();
 
   const [pickups, setPickups] = useState([]);
+  const [balanceData, setBalanceData] = useState({ totalBalance: 0, balances: [] });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("upcoming"); // upcoming | past | all
 
@@ -25,14 +26,18 @@ const FarmerSchedules = () => {
   const fetchPickups = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await farmerPickupAPI.getPickups();
-      setPickups(data.pickups || []);
+      const [pickRes, balRes] = await Promise.all([
+        farmerPickupAPI.getPickups(),
+        farmerPickupAPI.getBalance ? farmerPickupAPI.getBalance() : Promise.resolve({ data: { totalBalance: 0, balances: [] } }),
+      ]);
+      setPickups(pickRes.data.pickups || pickRes.data.upcoming || []);
+      setBalanceData(balRes.data || { totalBalance: 0, balances: [] });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load pickups");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchPickups();
@@ -74,6 +79,43 @@ const FarmerSchedules = () => {
                 </h1>
                 <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                   {pickups.filter((s) => s.status === "SCHEDULED").length} upcoming · {pickups.length} total
+                </p>
+              </div>
+            </div>
+
+            {/* Financial Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              <div className={`p-5 rounded-2xl border backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center font-bold">
+                    <Icon icon="ph:wallet-bold" className="w-5 h-5" />
+                  </div>
+                  <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    Pending Balance Due
+                  </span>
+                </div>
+                <p className="text-2xl font-black text-amber-500">
+                  ₹{(balanceData.totalBalance || 0).toLocaleString("en-IN")}
+                </p>
+                <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                  Amount awaiting payment from collectives
+                </p>
+              </div>
+
+              <div className={`p-5 rounded-2xl border backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-bold">
+                    <Icon icon="ph:currency-inr-bold" className="w-5 h-5" />
+                  </div>
+                  <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    Total Lifetime Earnings
+                  </span>
+                </div>
+                <p className="text-2xl font-black text-emerald-500">
+                  ₹{(balanceData.balances || []).reduce((sum, b) => sum + (b.totalEarnings || 0), 0).toLocaleString("en-IN")}
+                </p>
+                <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                  Total received across all completed pickups
                 </p>
               </div>
             </div>

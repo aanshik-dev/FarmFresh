@@ -232,6 +232,30 @@ const FarmerProfile = () => {
           </div>
         </div>
 
+        {/* Financial Earnings Card */}
+        <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-bold">
+              <Icon icon="ph:bank-fill" className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className={`font-bold text-base ${isDark ? "text-white" : "text-slate-900"}`}>Financial Profile & Earnings</h2>
+              <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Summary of payments received and balance due from collectives</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className={`p-4 rounded-xl border ${isDark ? "bg-slate-800/40 border-slate-700/60" : "bg-slate-50 border-slate-200"}`}>
+              <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Lifetime Earnings</p>
+              <p className="text-2xl font-black text-emerald-500">₹{(user?.totalEarnings || 0).toLocaleString("en-IN")}</p>
+            </div>
+            <div className={`p-4 rounded-xl border ${isDark ? "bg-slate-800/40 border-slate-700/60" : "bg-slate-50 border-slate-200"}`}>
+              <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Pending Balance</p>
+              <p className="text-2xl font-black text-amber-500">₹{(user?.balance || 0).toLocaleString("en-IN")}</p>
+            </div>
+          </div>
+        </div>
+
         {/* My Active Crops from system */}
         <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
           <h2 className={`font-semibold mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>Active Crop Records</h2>

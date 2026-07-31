@@ -4,7 +4,9 @@ import { Icon } from "@iconify/react";
 import { useTheme } from "../../context/ThemeContext";
 import EmptyState from "../../components/common/EmptyState";
 import { useToast } from "../../components/ui";
+import { useAuth } from "../../context/AuthContext";
 import { collectiveMemberAPI, collectiveZoneAPI, collectiveDealAPI } from "../../services/api";
+import axios from "axios";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatAddress = (addr) => {
@@ -262,7 +264,7 @@ const DetailPanel = ({ farmer, isDark, onGetStatus, onTerminateDeal, onClose }) 
               {/* Group Description & Crops Grown */}
               <div className={`rounded-xl p-3.5 border ${isDark ? "bg-slate-800/50 border-slate-700/50" : "bg-slate-50 border-slate-200"}`}>
                 <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  About & Crops Grown
+                  About & Dealing Crop
                 </p>
                 {farmer.desc && (
                   <p className={`text-xs leading-relaxed mb-3 ${isDark ? "text-slate-300" : "text-slate-600"}`}>{farmer.desc}</p>
@@ -270,7 +272,7 @@ const DetailPanel = ({ farmer, isDark, onGetStatus, onTerminateDeal, onClose }) 
 
                 {grownCropsList.length > 0 && (
                   <div>
-                    <p className={`text-[10px] font-semibold mb-1.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Crops Grown:</p>
+                    <p className={`text-[10px] font-semibold mb-1.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Dealing Crop:</p>
                     <div className="flex flex-wrap gap-1.5">
                       {grownCropsList.map((cName) => (
                         <span
@@ -319,7 +321,7 @@ const DetailPanel = ({ farmer, isDark, onGetStatus, onTerminateDeal, onClose }) 
                   }[deal.status] || "bg-slate-500/15 text-slate-400 border-slate-500/30";
 
                   const stageLabel = deal.growth?.stage || "SOWING";
-                  const lastUpdateDate = deal.updatedAt || deal.createdAt;
+                  const lastUpdateDate = deal.growth?.lastUpdated || deal.updatedAt || deal.createdAt;
                   const lastUpdatedText = fmtDT(lastUpdateDate);
 
                   const daysSinceUpdate = lastUpdateDate
@@ -378,10 +380,17 @@ const DetailPanel = ({ farmer, isDark, onGetStatus, onTerminateDeal, onClose }) 
 
                       {/* Status timestamp & Action buttons */}
                       <div className="flex flex-wrap items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700/60 gap-2">
-                        <span className={`text-[10px] font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                          <Icon icon="ph:clock-bold" className="w-3 h-3 inline mr-1 text-slate-400" />
-                          Last Updated: {lastUpdatedText}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          {deal.growth?.cropImage && (
+                            <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
+                              <img src={deal.growth.cropImage} alt="Crop" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <span className={`text-[10px] font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            <Icon icon="ph:clock-bold" className="w-3 h-3 inline mr-1 text-slate-400" />
+                            Last Updated: {lastUpdatedText}
+                          </span>
+                        </div>
 
                         <div className="flex items-center gap-2">
                           {isApproved && (
@@ -439,6 +448,7 @@ const DetailPanel = ({ farmer, isDark, onGetStatus, onTerminateDeal, onClose }) 
 const FarmerGroupManagement = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [tab, setTab] = useState("members"); // "members" | "requests"
   const [memberData, setMemberData] = useState({ requests: [], approved: [], rejected: [], terminated: [], cancelled: [] });
@@ -455,6 +465,9 @@ const FarmerGroupManagement = () => {
   const [approving, setApproving] = useState(false);
   const [selectedZone, setSelectedZone] = useState("");
   const [cropDecisions, setCropDecisions] = useState({});
+  const [formStep, setFormStep] = useState(1);
+  const [logistics, setLogistics] = useState({ route: "", distance: "", estTime: "" });
+  const [fetchingRoute, setFetchingRoute] = useState(false);
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -523,7 +536,31 @@ const FarmerGroupManagement = () => {
   // Open Approval Form for Pending Request
   const openApproveForm = (farmer) => {
     setSelectedFarmer(farmer);
-    setSelectedZone(farmer.membership?.zone?._id || (zones[0]?._id || ""));
+    const initialZone = farmer.membership?.zone?._id || "";
+    setSelectedZone(initialZone);
+
+    // Check if logistics already exist
+    const initialLogistics = {
+      route: farmer.membership?.route || "",
+      distance: farmer.membership?.distance !== undefined && farmer.membership?.distance !== null && farmer.membership?.distance > 0 ? String(farmer.membership.distance) : "",
+      estTime: farmer.membership?.estTime !== undefined && farmer.membership?.estTime !== null && farmer.membership?.estTime > 0 ? String(farmer.membership.estTime) : "",
+    };
+    setLogistics(initialLogistics);
+
+    // Check if ALL 4 step 1 fields are present (zone, route, distance, estTime)
+    const isStep1Complete = Boolean(
+      initialZone &&
+      initialLogistics.route.trim() &&
+      initialLogistics.distance.trim() &&
+      initialLogistics.estTime.trim()
+    );
+
+    // If all step 1 data is present, go directly to step 2, otherwise open step 1
+    if (isStep1Complete) {
+      setFormStep(2);
+    } else {
+      setFormStep(1);
+    }
 
     const initialDecisions = {};
     (farmer.deals || []).forEach((d) => {
@@ -535,6 +572,44 @@ const FarmerGroupManagement = () => {
     });
     setCropDecisions(initialDecisions);
     setView("approve_form");
+  };
+
+  const handleAutoFillRoute = async () => {
+    if (!user?.coord?.lat || !user?.coord?.long) {
+      toast.error("Collective coordinates are missing in your profile!");
+      return;
+    }
+    if (!selectedFarmer?.coord?.lat || !selectedFarmer?.coord?.long) {
+      toast.error("Farmer Group coordinates are missing!");
+      return;
+    }
+
+    setFetchingRoute(true);
+    try {
+      const cLon = user.coord.long;
+      const cLat = user.coord.lat;
+      const fLon = selectedFarmer.coord.long;
+      const fLat = selectedFarmer.coord.lat;
+
+      const url = `https://router.project-osrm.org/route/v1/driving/${cLon},${cLat};${fLon},${fLat}?overview=full&geometries=polyline`;
+      const res = await axios.get(url);
+
+      if (res.data?.routes?.length > 0) {
+        const routeData = res.data.routes[0];
+        setLogistics({
+          route: routeData.geometry || "",
+          distance: (routeData.distance / 1000).toFixed(2), // Convert meters to km
+          estTime: Math.ceil(routeData.duration / 60).toString(), // Convert seconds to minutes
+        });
+        toast.success("Route details auto-filled successfully!");
+      } else {
+        toast.error("Could not find a valid route.");
+      }
+    } catch (err) {
+      toast.error("Failed to fetch route from OSRM.");
+    } finally {
+      setFetchingRoute(false);
+    }
   };
 
   const handleDecisionToggle = (dealId, action) => {
@@ -578,8 +653,8 @@ const FarmerGroupManagement = () => {
       }
     }
 
-    if (acceptedCrops.length > 0 && !selectedZone) {
-      toast.error("Please select an operating zone for the farmer group");
+    if (acceptedCrops.length > 0 && (!selectedZone || !logistics.route || !logistics.distance)) {
+      toast.error("Please ensure zone, route, and distance are filled for accepted crops.");
       return;
     }
 
@@ -590,6 +665,9 @@ const FarmerGroupManagement = () => {
         crops: acceptedCrops,
         rejectedCrops,
         zoneId: selectedZone || undefined,
+        route: logistics.route || undefined,
+        distance: logistics.distance ? Number(logistics.distance) : undefined,
+        estTime: logistics.estTime ? Number(logistics.estTime) : undefined,
       });
 
       toast.success(`Processed request for ${selectedFarmer.name || selectedFarmer.groupName || "Farmer Group"}!`);
@@ -892,8 +970,8 @@ const FarmerGroupManagement = () => {
               Back to Farmer Groups
             </button>
 
-            <div className={`rounded-2xl border p-5 sm:p-6 backdrop-blur-xl shadow-xl ${
-              isDark ? "bg-slate-900/80 border-slate-800/80 shadow-black/40" : "bg-white/90 border-slate-200 shadow-slate-200/50"
+            <div className={`rounded-2xl border p-5 sm:p-6 shadow-lg ${
+              isDark ? "bg-slate-900 border-slate-800 shadow-black/40" : "bg-white border-slate-200 shadow-slate-200/60"
             }`}>
               <div className="flex items-center gap-4 mb-4 pb-4 border-b border-slate-200 dark:border-slate-800">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -909,169 +987,289 @@ const FarmerGroupManagement = () => {
                 </div>
               </div>
 
+              {/* Step Tab Selector */}
+              <div className="flex items-center gap-2 mb-5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setFormStep(1)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    formStep === 1
+                      ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] flex items-center justify-center">1</span>
+                  1. Logistics & Zone
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormStep(2)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    formStep === 2
+                      ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  }`}
+                >
+                  <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] flex items-center justify-center">2</span>
+                  2. Crop Decisions
+                </button>
+              </div>
+
               {selectedFarmer && (
                 <div className="space-y-4">
-                  {/* Farmer's Note */}
-                  {selectedFarmer.membership?.note && (
-                    <div className={`p-3 rounded-xl border ${isDark ? "bg-amber-900/20 border-amber-900/40" : "bg-amber-50 border-amber-200"}`}>
-                      <h4 className={`text-xs font-bold mb-1 flex items-center gap-2 ${isDark ? "text-amber-500" : "text-amber-700"}`}>
-                        <Icon icon="ph:note-pencil-bold" className="w-3.5 h-3.5" />
-                        Message from Farmer
-                      </h4>
-                      <p className={`text-xs italic ${isDark ? "text-amber-400/80" : "text-amber-800/80"}`}>
-                        "{selectedFarmer.membership.note}"
-                      </p>
-                    </div>
-                  )}
 
-                  {/* Zone Assignment */}
-                  <div className={`p-4 rounded-xl border ${isDark ? "bg-slate-800/40 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
-                    <h4 className="text-xs font-bold mb-2 flex items-center gap-2">
-                      <Icon icon="ph:map-pin-bold" className="w-3.5 h-3.5 text-emerald-500" />
-                      Assign Operating Zone *
-                    </h4>
-                    {zones.length === 0 ? (
-                      <p className={`text-[10px] ${isDark ? "text-amber-400" : "text-amber-600"}`}>
-                        No zones configured. Please create zones in Zone Management first.
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {zones.map((z) => (
-                          <button
-                            key={z._id}
-                            type="button"
-                            onClick={() => setSelectedZone(z._id)}
-                            className={`py-2 px-3 text-left rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-                              selectedZone === z._id
-                                ? "bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/25"
-                                : isDark
-                                ? "bg-slate-800/60 border-slate-700 text-slate-300 hover:border-slate-500"
-                                : "bg-white border-slate-200 text-slate-700 hover:border-emerald-300"
-                            }`}
-                          >
-                            <p className="text-xs font-extrabold">{z.name}</p>
-                            <p className="text-[10px] opacity-80 mt-0.5">{z.area || z.direction || "Active Zone"}</p>
-                          </button>
-                        ))}
+
+                  {/* STEP 1: Logistics & Routing */}
+                  {formStep === 1 && (
+                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="space-y-4">
+                      {/* Zone Assignment */}
+                      <div className={`p-4 rounded-xl border ${isDark ? "bg-slate-800/30 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                        <h4 className="text-xs font-bold mb-2.5 flex items-center gap-2">
+                          <Icon icon="ph:map-pin-bold" className="w-3.5 h-3.5 text-emerald-500" />
+                          Assign Operating Zone *
+                        </h4>
+                        {zones.length === 0 ? (
+                          <p className={`text-[10px] ${isDark ? "text-amber-400" : "text-amber-600"}`}>
+                            No zones configured. Please create zones in Zone Management first.
+                          </p>
+                        ) : (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {zones.map((z) => {
+                              const isSelected = selectedZone === z._id;
+                              return (
+                                <button
+                                  key={z._id}
+                                  type="button"
+                                  onClick={() => setSelectedZone(z._id)}
+                                  className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                                    isSelected
+                                      ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30"
+                                      : isDark
+                                      ? "border-slate-800 bg-slate-800/40 text-slate-300 hover:border-slate-700"
+                                      : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"
+                                  }`}
+                                >
+                                  <span className="truncate">{z.name}</span>
+                                  {isSelected && <Icon icon="ph:check-circle-fill" className="w-4 h-4 text-emerald-500 shrink-0 ml-1" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  {/* Crop Decisions (Accept / Reject per crop) */}
-                  <div>
-                    <h4 className="text-xs font-bold mb-2 flex items-center gap-2">
-                      <Icon icon="ph:coins-bold" className="w-3.5 h-3.5 text-amber-500" />
-                      Requested Crops & Negotiated Rates
-                    </h4>
-                    <div className="space-y-2">
-                      {(selectedFarmer.deals || []).map((deal) => {
-                        const cropName = deal.crop?.crop?.name || deal.crop?.name || "Crop";
-                        const decision = cropDecisions[deal._id] || { action: "ACCEPT", price: "", reason: "" };
-
-                        return (
-                          <div
-                            key={deal._id}
-                            className={`p-3 rounded-xl border transition-all ${
-                              decision.action === "ACCEPT"
-                                ? isDark ? "bg-slate-800/40 border-slate-700" : "bg-white border-slate-200"
-                                : isDark ? "bg-red-950/20 border-red-900/40" : "bg-red-50/60 border-red-200"
-                            }`}
+                      {/* Routing Details */}
+                      <div className={`p-4 rounded-xl border ${isDark ? "bg-slate-800/40 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-xs font-bold flex items-center gap-2">
+                            <Icon icon="ph:navigation-arrow-bold" className="w-3.5 h-3.5 text-blue-500" />
+                            Logistics & Routing *
+                          </h4>
+                          <button
+                            type="button"
+                            onClick={handleAutoFillRoute}
+                            disabled={fetchingRoute}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border border-blue-500/30 transition-all cursor-pointer"
                           >
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
-                              <div>
-                                <span className="font-bold text-xs">{cropName}</span>
-                                {deal.demandedPrice > 0 && (
-                                  <span className={`text-[10px] ml-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                                    Demanded: <strong className="text-amber-500">₹{deal.demandedPrice}/kg</strong>
-                                  </span>
-                                )}
-                              </div>
+                            {fetchingRoute ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-3 h-3" /> : <Icon icon="ph:magic-wand-bold" className="w-3 h-3" />}
+                            Auto-Fill Route
+                          </button>
+                        </div>
 
-                              {/* Accept / Reject Segmented Buttons */}
-                              <div className={`flex items-center p-0.5 rounded-lg border shrink-0 ${isDark ? "bg-slate-900 border-slate-700" : "bg-slate-100 border-slate-200"}`}>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDecisionToggle(deal._id, "ACCEPT")}
-                                  className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
-                                    decision.action === "ACCEPT"
-                                      ? "bg-emerald-500 text-white shadow-sm"
-                                      : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-600 hover:text-slate-900"
-                                  }`}
-                                >
-                                  Accept
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDecisionToggle(deal._id, "REJECT")}
-                                  className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
-                                    decision.action === "REJECT"
-                                      ? "bg-red-500 text-white shadow-sm"
-                                      : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-600 hover:text-slate-900"
-                                  }`}
-                                >
-                                  Reject
-                                </button>
-                              </div>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                          <div className="space-y-1">
+                            <label className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Distance (km)</label>
+                            <input
+                              type="number"
+                              value={logistics.distance}
+                              onChange={(e) => setLogistics(p => ({ ...p, distance: e.target.value }))}
+                              placeholder="e.g. 15.5"
+                              className={`w-full px-3 py-2 rounded-lg border text-xs outline-none transition-all ${isDark ? "bg-slate-900/50 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Est. Time (mins)</label>
+                            <input
+                              type="number"
+                              value={logistics.estTime}
+                              onChange={(e) => setLogistics(p => ({ ...p, estTime: e.target.value }))}
+                              placeholder="e.g. 45"
+                              className={`w-full px-3 py-2 rounded-lg border text-xs outline-none transition-all ${isDark ? "bg-slate-900/50 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"}`}
+                            />
+                          </div>
+                        </div>
 
-                            {decision.action === "ACCEPT" ? (
-                              <div className="relative">
-                                <Icon icon="ph:currency-inr-bold" className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-                                <input
-                                  type="number"
-                                  placeholder="Agreed purchase price per kg *"
-                                  value={decision.price}
-                                  onChange={(e) => handleDecisionFieldChange(deal._id, "price", e.target.value)}
-                                  className={`w-full pl-8 pr-3 py-1.5 rounded-lg border text-xs outline-none transition-all ${
-                                    isDark
-                                      ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500"
-                                      : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500"
-                                  }`}
-                                />
-                              </div>
-                            ) : (
-                              <div className="relative">
-                                <Icon icon="ph:warning-circle-bold" className={`absolute left-3 top-2 w-3.5 h-3.5 ${isDark ? "text-red-400" : "text-red-500"}`} />
-                                <input
-                                  type="text"
-                                  placeholder="Rejection reason for this crop *"
-                                  value={decision.reason}
-                                  onChange={(e) => handleDecisionFieldChange(deal._id, "reason", e.target.value)}
-                                  className={`w-full pl-8 pr-3 py-1.5 rounded-lg border text-xs outline-none transition-all ${
-                                    isDark
-                                      ? "bg-red-950/30 border-red-900/50 text-white focus:border-red-500"
-                                      : "bg-red-50 border-red-200 text-slate-900 focus:border-red-500"
-                                  }`}
-                                />
-                              </div>
+                        <div className="space-y-1">
+                          <label className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Route Geometry Status</label>
+                          <div className={`w-full px-3 py-2 rounded-lg border text-xs flex items-center justify-between ${isDark ? "bg-slate-900/50 border-slate-700" : "bg-white border-slate-200"}`}>
+                            <span className={logistics.route ? "text-emerald-500 font-bold" : "text-slate-400"}>
+                              {logistics.route ? "✅ Route Path Data Generated (Ready for Maps)" : "No route data generated yet"}
+                            </span>
+                            {logistics.route && (
+                              <Icon icon="ph:map-trifold-bold" className="w-4 h-4 text-emerald-500" />
                             )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
-                  {/* Form Action Buttons */}
-                  <div className="flex gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                    <button
-                      type="button"
-                      onClick={() => setView("list")}
-                      className={`flex-1 py-2 rounded-xl text-xs font-semibold border cursor-pointer transition-colors ${
-                        isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleReviewSubmit}
-                      disabled={approving || !selectedZone}
-                      className="flex-1 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all cursor-pointer disabled:opacity-50 disabled:hover:translate-y-0"
-                    >
-                      {approving ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-4 h-4" /> : <Icon icon="ph:check-bold" className="w-4 h-4" />}
-                      Save & Submit Review
-                    </button>
-                  </div>
+                      {/* Step 1 Actions */}
+                      <div className="flex gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setView("list")}
+                          className={`flex-1 py-2 rounded-xl text-xs font-semibold border cursor-pointer transition-colors ${
+                            isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!selectedZone || !logistics.route || !logistics.distance}
+                          onClick={() => setFormStep(2)}
+                          className="flex-1 py-2 rounded-xl text-xs font-bold bg-blue-500 text-white shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all cursor-pointer disabled:opacity-50 disabled:hover:translate-y-0"
+                        >
+                          Next: Review Crops
+                          <Icon icon="ph:arrow-right-bold" className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* STEP 2: Crop Decisions */}
+                  {formStep === 2 && (
+                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="space-y-4">
+                      {/* Farmer's Note (Moved to Step 2) */}
+                      {selectedFarmer.membership?.note && (
+                        <div className="p-3 rounded-xl border-l-4 border-emerald-500 bg-slate-50 dark:bg-slate-800/40 border-t border-r border-b border-slate-200 dark:border-slate-800">
+                          <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            <Icon icon="ph:chat-text-bold" className="w-3.5 h-3.5 text-emerald-500" />
+                            Message from Farmer
+                          </p>
+                          <p className={`text-xs italic leading-relaxed ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+                            "{selectedFarmer.membership.note}"
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Crop Decisions (Accept / Reject per crop) */}
+                      <div>
+                        <h4 className="text-xs font-bold mb-2 flex items-center gap-2">
+                          <Icon icon="ph:coins-bold" className="w-3.5 h-3.5 text-amber-500" />
+                          Requested Crops & Negotiated Rates
+                        </h4>
+                        <div className="space-y-2">
+                          {(selectedFarmer.deals || []).map((deal) => {
+                            const cropName = deal.crop?.crop?.name || deal.crop?.name || "Crop";
+                            const decision = cropDecisions[deal._id] || { action: "ACCEPT", price: "", reason: "" };
+
+                            return (
+                              <div
+                                key={deal._id}
+                                className={`p-3 rounded-xl border transition-all ${
+                                  decision.action === "ACCEPT"
+                                    ? isDark ? "bg-slate-800/40 border-slate-700" : "bg-white border-slate-200"
+                                    : isDark ? "bg-red-950/20 border-red-900/40" : "bg-red-50/60 border-red-200"
+                                }`}
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+                                  <div>
+                                    <span className="font-bold text-xs">{cropName}</span>
+                                    {deal.demandedPrice > 0 && (
+                                      <span className={`text-[10px] ml-2 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                                        Demanded: <strong className="text-amber-500">₹{deal.demandedPrice}/kg</strong>
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Accept / Reject Segmented Buttons */}
+                                  <div className={`flex items-center p-0.5 rounded-lg border shrink-0 ${isDark ? "bg-slate-900 border-slate-700" : "bg-slate-100 border-slate-200"}`}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDecisionToggle(deal._id, "ACCEPT")}
+                                      className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                                        decision.action === "ACCEPT"
+                                          ? "bg-emerald-500 text-white shadow-sm"
+                                          : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-600 hover:text-slate-900"
+                                      }`}
+                                    >
+                                      Accept
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDecisionToggle(deal._id, "REJECT")}
+                                      className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all cursor-pointer ${
+                                        decision.action === "REJECT"
+                                          ? "bg-red-500 text-white shadow-sm"
+                                          : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-600 hover:text-slate-900"
+                                      }`}
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {decision.action === "ACCEPT" ? (
+                                  <div className="relative">
+                                    <Icon icon="ph:currency-inr-bold" className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+                                    <input
+                                      type="number"
+                                      placeholder="Agreed purchase price per kg (Crop Price) *"
+                                      value={decision.price}
+                                      onChange={(e) => handleDecisionFieldChange(deal._id, "price", e.target.value)}
+                                      className={`w-full pl-8 pr-3 py-1.5 rounded-lg border text-xs outline-none transition-all ${
+                                        isDark
+                                          ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500"
+                                          : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500"
+                                      }`}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="relative">
+                                    <Icon icon="ph:warning-circle-bold" className={`absolute left-3 top-2 w-3.5 h-3.5 ${isDark ? "text-red-400" : "text-red-500"}`} />
+                                    <input
+                                      type="text"
+                                      placeholder="Rejection reason for this crop *"
+                                      value={decision.reason}
+                                      onChange={(e) => handleDecisionFieldChange(deal._id, "reason", e.target.value)}
+                                      className={`w-full pl-8 pr-3 py-1.5 rounded-lg border text-xs outline-none transition-all ${
+                                        isDark
+                                          ? "bg-red-950/30 border-red-900/50 text-white focus:border-red-500"
+                                          : "bg-red-50 border-red-200 text-slate-900 focus:border-red-500"
+                                      }`}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Form Action Buttons */}
+                      <div className="flex gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={() => setFormStep(1)}
+                          className={`flex-1 py-2 rounded-xl text-xs font-semibold border cursor-pointer transition-colors ${
+                            isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          <Icon icon="ph:arrow-left-bold" className="inline w-3 h-3 mr-1" />
+                          Back to Logistics
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleReviewSubmit}
+                          disabled={approving || !selectedZone}
+                          className="flex-1 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all cursor-pointer disabled:opacity-50 disabled:hover:translate-y-0"
+                        >
+                          {approving ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-4 h-4" /> : <Icon icon="ph:check-bold" className="w-4 h-4" />}
+                          Save & Submit Review
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               )}
             </div>
