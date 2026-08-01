@@ -273,27 +273,33 @@ const getMemberData = async (farmerId) => {
   };
 };
 
-const cancelMemberRequest = async (dealIds) => {
+const cancelMemberRequest = async (farmerId, dealIds) => {
   // validation
+  if (!farmerId) {
+    throwErr(404, "Farmer Group not found !!");
+  }
   if (!dealIds || dealIds.length === 0) {
     throwErr(400, "request Id is required to cancel the request !!");
   }
 
+  // Only deals that actually belong to this farmer group can be cancelled
   const dealCrops = await CropDeal.find({
     _id: { $in: dealIds },
     status: "REQUESTED",
-  });
-  if (!dealCrops || dealCrops.length !== dealIds.length) {
+  }).populate({ path: "membership", match: { farmer: farmerId } });
+
+  const ownedDeals = dealCrops.filter((d) => d.membership);
+  if (ownedDeals.length !== dealIds.length) {
     throwErr(403, "Some requests can not be cancelled !!");
   }
 
   const session = await mongoose.startSession();
   try {
     await session.withTransaction(async () => {
-      const bulkOps = dealIds.map((dealId) => ({
+      const bulkOps = ownedDeals.map((deal) => ({
         updateOne: {
           filter: {
-            _id: dealId,
+            _id: deal._id,
             status: "REQUESTED",
           },
           update: {
@@ -331,6 +337,12 @@ const terminateDeal = async (farmerId, dealId, reason = "") => {
 
   if (deal.status !== "APPROVED")
     throwErr(400, "Only APPROVED deals can be terminated !!");
+
+  if (deal.schedule?.activeSchedule)
+    throwErr(
+      400,
+      "This deal is locked into an open pickup and cannot be terminated yet !!",
+    );
 
   deal.status = "F_TERMINATE";
   if (reason) deal.terminationReason = reason;

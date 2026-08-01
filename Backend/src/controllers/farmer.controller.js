@@ -10,6 +10,7 @@ import {
 } from "../services/farmer/crop.service.js";
 
 import memberService from "../services/farmer/membership.service.js";
+import reviewService from "../services/farmer/review.service.js";
 
 const addCrop = async (req, res, next) => {
   try {
@@ -77,7 +78,8 @@ const sendRequest = async (req, res, next) => {
 const cancelRequest = async (req, res, next) => {
   try {
     const { dealIds } = req.body;
-    const response = await memberService.cancelMemberRequest(dealIds);
+    const { id: farmerId } = req.user;
+    const response = await memberService.cancelMemberRequest(farmerId, dealIds);
     res.status(200).json(response);
   } catch (error) {
     next(error);
@@ -115,6 +117,26 @@ const terminateDeal = async (req, res, next) => {
   }
 };
 
+const submitReview = async (req, res, next) => {
+  try {
+    const { id: farmerId } = req.user;
+    const response = await reviewService.submitReview(farmerId, req.body);
+    res.status(201).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getMyReviews = async (req, res, next) => {
+  try {
+    const { id: farmerId } = req.user;
+    const response = await reviewService.getMyReviews(farmerId);
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   addCrop,
   editCrop,
@@ -125,4 +147,6 @@ export {
   getCollectives,
   getMemberships,
   terminateDeal,
+  submitReview,
+  getMyReviews,
 };

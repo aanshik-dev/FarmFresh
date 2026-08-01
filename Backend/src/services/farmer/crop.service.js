@@ -141,6 +141,20 @@ const deleteCropData = async (farmerId, cropId) => {
     await session.withTransaction(async () => {
       const membershipIds = farmerMember.map((fm) => fm._id);
       if (membershipIds.length > 0) {
+        // A crop locked into an open pickup cannot be removed — the pickup
+        // would still collect and pay for a terminated deal.
+        const lockedDeals = await CropDeal.find({
+          membership: { $in: membershipIds },
+          crop: cropId,
+          status: "APPROVED",
+          "schedule.activeSchedule": { $type: "objectId" },
+        });
+        if (lockedDeals.length > 0) {
+          throwErr(
+            400,
+            "This crop is part of an upcoming pickup and cannot be deleted. Cancel the pickup or wait for it to finish first !!",
+          );
+        }
         await CropDeal.updateMany(
           {
             membership: { $in: membershipIds },

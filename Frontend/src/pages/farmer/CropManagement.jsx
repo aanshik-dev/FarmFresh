@@ -8,6 +8,7 @@ import EmptyState from "../../components/common/EmptyState";
 import CropSelect from "../../components/common/CropSelect";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import ImageCarouselModal from "../../components/common/ImageCarouselModal";
+import DatePicker from "../../components/common/DatePicker";
 import {
   farmerCropAPI,
   commonAPI,
@@ -195,10 +196,18 @@ const CropCard = ({
           <div className="mb-3 p-2.5 rounded-xl bg-slate-950/40 border border-slate-800/50">
             <div className="flex items-center justify-between text-xs mb-1">
               <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
-                <Icon icon="ph:plant-bold" className="w-3.5 h-3.5 text-emerald-400" />
-                Growth Stage: <span className="text-white font-bold">{STAGE_LABEL[currentStage] || currentStage}</span>
+                <Icon
+                  icon="ph:plant-bold"
+                  className="w-3.5 h-3.5 text-emerald-400"
+                />
+                Growth Stage:{" "}
+                <span className="text-white font-bold">
+                  {STAGE_LABEL[currentStage] || currentStage}
+                </span>
               </span>
-              <span className="text-xs font-mono font-bold text-emerald-400">{progressPct}%</span>
+              <span className="text-xs font-mono font-bold text-emerald-400">
+                {progressPct}%
+              </span>
             </div>
             <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
               <div
@@ -214,19 +223,44 @@ const CropCard = ({
           className={`grid grid-cols-3 gap-2 px-3 py-2 rounded-xl mb-3 text-xs ${isDark ? "bg-slate-950/50" : "bg-slate-50"}`}
         >
           <div className="flex flex-col items-center gap-0.5">
-            <Icon icon="ph:scales-fill" className={`w-3.5 h-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+            <Icon
+              icon="ph:scales-fill"
+              className={`w-3.5 h-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
+            />
             <span className="font-bold">{crop.yield ?? "—"} kg</span>
-            <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Yield</span>
+            <span
+              className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}
+            >
+              Yield
+            </span>
           </div>
           <div className="flex flex-col items-center gap-0.5">
-            <Icon icon="ph:map-trifold-fill" className={`w-3.5 h-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-            <span className="font-bold">{crop.farmland ? `${crop.farmland} ac` : "—"}</span>
-            <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Area</span>
+            <Icon
+              icon="ph:map-trifold-fill"
+              className={`w-3.5 h-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
+            />
+            <span className="font-bold">
+              {crop.farmland ? `${crop.farmland} ac` : "—"}
+            </span>
+            <span
+              className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}
+            >
+              Area
+            </span>
           </div>
           <div className="flex flex-col items-center gap-0.5">
-            <Icon icon="ph:calendar-blank-fill" className={`w-3.5 h-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-            <span className="font-bold text-[10px] text-center">{fmtDate(crop.plantedDate)}</span>
-            <span className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}>Planted</span>
+            <Icon
+              icon="ph:calendar-blank-fill"
+              className={`w-3.5 h-3.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
+            />
+            <span className="font-bold text-[10px] text-center">
+              {fmtDate(crop.plantedDate)}
+            </span>
+            <span
+              className={`text-[10px] ${isDark ? "text-slate-500" : "text-slate-400"}`}
+            >
+              Planted
+            </span>
           </div>
         </div>
 
@@ -279,12 +313,11 @@ const CropCard = ({
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isDark ? "bg-slate-700" : "bg-slate-200"}`}
               >
-                <Icon
-                  icon="ph:link-break"
-                  className="w-5 h-5 text-slate-400"
-                />
+                <Icon icon="ph:link-break" className="w-5 h-5 text-slate-400" />
               </div>
-              <p className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              <p
+                className={`text-xs font-medium ${isDark ? "text-slate-500" : "text-slate-400"}`}
+              >
                 Not linked to collective
               </p>
             </div>
@@ -297,7 +330,10 @@ const CropCard = ({
             onClick={() => onEdit(crop)}
             className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border cursor-pointer transition-all flex items-center justify-center gap-1.5 ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600" : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"}`}
           >
-            <Icon icon="ph:pencil-fill" className="w-3.5 h-3.5 text-emerald-400" />
+            <Icon
+              icon="ph:pencil-fill"
+              className="w-3.5 h-3.5 text-emerald-400"
+            />
             Edit
           </button>
           <button
@@ -425,7 +461,9 @@ const DetailPanel = ({
       setPreviews([]);
       onRefresh();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to send status update");
+      toast.error(
+        err.response?.data?.message || "Failed to send status update",
+      );
     } finally {
       setSubmitting(false);
       setUploading(false);
@@ -515,7 +553,9 @@ const DetailPanel = ({
       </div>
 
       {/* Tab bar */}
-      <div className={`flex border-b ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+      <div
+        className={`flex border-b ${isDark ? "border-slate-800" : "border-slate-200"}`}
+      >
         {PANEL_TABS.map((t) => (
           <button
             key={t.key}
@@ -547,19 +587,28 @@ const DetailPanel = ({
               className="space-y-3"
             >
               {/* Crop stats */}
-              <div className={`rounded-xl p-3.5 border ${isDark ? "bg-slate-800/50 border-slate-700/50" : "bg-slate-50 border-slate-200"}`}>
-                <p className={`text-[10px] font-bold uppercase tracking-wider mb-2.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+              <div
+                className={`rounded-xl p-3.5 border ${isDark ? "bg-slate-800/50 border-slate-700/50" : "bg-slate-50 border-slate-200"}`}
+              >
+                <p
+                  className={`text-[10px] font-bold uppercase tracking-wider mb-2.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
+                >
                   Crop Details
                 </p>
                 <div className="grid grid-cols-2 gap-2.5">
                   {[
                     { label: "Est. Yield", value: `${crop.yield ?? "—"} kg` },
-                    { label: "Farmland", value: crop.farmland ? `${crop.farmland} acres` : "—" },
+                    {
+                      label: "Farmland",
+                      value: crop.farmland ? `${crop.farmland} acres` : "—",
+                    },
                     { label: "Planted Date", value: fmtDate(crop.plantedDate) },
                     { label: "Status", value: crop.status },
                   ].map(({ label, value }) => (
                     <div key={label}>
-                      <p className={`text-[10px] font-semibold mb-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                      <p
+                        className={`text-[10px] font-semibold mb-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
+                      >
                         {label}
                       </p>
                       <p className="text-sm font-bold">{value}</p>
@@ -571,7 +620,9 @@ const DetailPanel = ({
               {isLinked && deal ? (
                 <>
                   {collective && (
-                    <div className={`rounded-xl p-3.5 border ${isDark ? "bg-emerald-950/30 border-emerald-500/20" : "bg-emerald-50 border-emerald-200/70"}`}>
+                    <div
+                      className={`rounded-xl p-3.5 border ${isDark ? "bg-emerald-950/30 border-emerald-500/20" : "bg-emerald-50 border-emerald-200/70"}`}
+                    >
                       <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mb-2">
                         Linked Collective
                       </p>
@@ -580,33 +631,56 @@ const DetailPanel = ({
                           {collective.name?.charAt(0) || "C"}
                         </div>
                         <div>
-                          <p className="font-bold text-sm text-white">{collective.name}</p>
-                          <p className="text-xs text-slate-400">{collective.phone || "—"}</p>
+                          <p className="font-bold text-sm text-white">
+                            {collective.name}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {collective.phone || "—"}
+                          </p>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  <div className={`rounded-xl p-3.5 border ${isDark ? "bg-slate-800/50 border-slate-700/50" : "bg-slate-50 border-slate-200"}`}>
-                    <p className={`text-[10px] font-bold uppercase tracking-wider mb-2.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
+                  <div
+                    className={`rounded-xl p-3.5 border ${isDark ? "bg-slate-800/50 border-slate-700/50" : "bg-slate-50 border-slate-200"}`}
+                  >
+                    <p
+                      className={`text-[10px] font-bold uppercase tracking-wider mb-2.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
+                    >
                       Deal Summary
                     </p>
                     <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <p className="text-[10px] text-slate-500">Agreed Price</p>
-                        <p className="text-sm font-bold text-emerald-400">₹{deal.agreedPrice || 0}/kg</p>
+                        <p className="text-[10px] text-slate-500">
+                          Agreed Price
+                        </p>
+                        <p className="text-sm font-bold text-emerald-400">
+                          ₹{deal.agreedPrice || 0}/kg
+                        </p>
                       </div>
                       <div>
-                        <p className="text-[10px] text-slate-500">Current Stage</p>
-                        <p className="text-sm font-bold text-white">{STAGE_LABEL[deal.growth?.stage] || "Sowing"}</p>
+                        <p className="text-[10px] text-slate-500">
+                          Current Stage
+                        </p>
+                        <p className="text-sm font-bold text-white">
+                          {STAGE_LABEL[deal.growth?.stage] || "Sowing"}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </>
               ) : (
-                <div className={`rounded-xl p-4 border text-center ${isDark ? "bg-slate-800/40 border-slate-700/50" : "bg-slate-100 border-slate-200"}`}>
-                  <Icon icon="ph:link-break" className="w-8 h-8 mx-auto mb-2 text-slate-500" />
-                  <p className="text-sm font-semibold text-slate-400">Not linked to any collective</p>
+                <div
+                  className={`rounded-xl p-4 border text-center ${isDark ? "bg-slate-800/40 border-slate-700/50" : "bg-slate-100 border-slate-200"}`}
+                >
+                  <Icon
+                    icon="ph:link-break"
+                    className="w-8 h-8 mx-auto mb-2 text-slate-500"
+                  />
+                  <p className="text-sm font-semibold text-slate-400">
+                    Not linked to any collective
+                  </p>
                 </div>
               )}
 
@@ -615,13 +689,21 @@ const DetailPanel = ({
                   onClick={() => onEdit(crop)}
                   className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Icon icon="ph:pencil-fill" className="w-3.5 h-3.5 text-emerald-400" /> Edit Crop
+                  <Icon
+                    icon="ph:pencil-fill"
+                    className="w-3.5 h-3.5 text-emerald-400"
+                  />{" "}
+                  Edit Crop
                 </button>
                 <button
                   onClick={() => onDelete(crop)}
                   className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 cursor-pointer transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Icon icon="ph:trash-fill" className="w-3.5 h-3.5 text-red-400" /> Delete
+                  <Icon
+                    icon="ph:trash-fill"
+                    className="w-3.5 h-3.5 text-red-400"
+                  />{" "}
+                  Delete
                 </button>
               </div>
             </motion.div>
@@ -642,16 +724,28 @@ const DetailPanel = ({
                   <div className="mb-3 p-3 rounded-xl border border-slate-700/60 bg-slate-900/40">
                     <p className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
                       <span>Current Photos</span>
-                      <span className="text-[10px] text-slate-500 font-normal">Click to view carousel</span>
+                      <span className="text-[10px] text-slate-500 font-normal">
+                        Click to view carousel
+                      </span>
                     </p>
                     <div className="flex items-center gap-2 overflow-x-auto pb-1">
                       {existingImages.map((src, i) => (
                         <div
                           key={i}
-                          onClick={() => setCarouselData({ isOpen: true, images: existingImages, initialIndex: i })}
+                          onClick={() =>
+                            setCarouselData({
+                              isOpen: true,
+                              images: existingImages,
+                              initialIndex: i,
+                            })
+                          }
                           className="block relative w-16 h-16 rounded-lg overflow-hidden border border-slate-700 group shrink-0 cursor-pointer"
                         >
-                          <img src={src} alt={`Crop ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img
+                            src={src}
+                            alt={`Crop ${i + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
                         </div>
                       ))}
                     </div>
@@ -673,7 +767,10 @@ const DetailPanel = ({
                     onChange={handleFileChange}
                     className="hidden"
                   />
-                  <Icon icon="ph:camera-bold" className="w-8 h-8 mx-auto text-emerald-400 mb-1" />
+                  <Icon
+                    icon="ph:camera-bold"
+                    className="w-8 h-8 mx-auto text-emerald-400 mb-1"
+                  />
                   <p className="text-xs text-slate-300 font-semibold">
                     Click to select photos
                   </p>
@@ -690,8 +787,15 @@ const DetailPanel = ({
                     </p>
                     <div className="grid grid-cols-4 gap-2">
                       {previews.map((src, i) => (
-                        <div key={i} className="relative h-16 rounded-lg overflow-hidden border border-emerald-500/40">
-                          <img src={src} alt="preview" className="w-full h-full object-cover" />
+                        <div
+                          key={i}
+                          className="relative h-16 rounded-lg overflow-hidden border border-emerald-500/40"
+                        >
+                          <img
+                            src={src}
+                            alt="preview"
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                       ))}
                     </div>
@@ -741,7 +845,10 @@ const DetailPanel = ({
                 className="w-full py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white cursor-pointer shadow-lg shadow-emerald-500/20 hover:from-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {submitting || uploading ? (
-                  <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" />
+                  <Icon
+                    icon="svg-spinners:12-dots-scale-rotate"
+                    className="w-5 h-5"
+                  />
                 ) : (
                   <Icon icon="ph:paper-plane-tilt-fill" className="w-4 h-4" />
                 )}
@@ -761,41 +868,71 @@ const DetailPanel = ({
             >
               {historyLoading ? (
                 <div className="flex items-center justify-center h-32">
-                  <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-8 h-8 text-emerald-400" />
+                  <Icon
+                    icon="svg-spinners:12-dots-scale-rotate"
+                    className="w-8 h-8 text-emerald-400"
+                  />
                 </div>
               ) : pickupHistory.length === 0 ? (
                 <div className="text-center py-8">
-                  <Icon icon="ph:truck" className="w-10 h-10 mx-auto mb-2 text-slate-600" />
-                  <p className="text-sm font-semibold text-slate-400">No pickups recorded for this crop yet</p>
-                  <p className="text-xs text-slate-500 mt-1">Pickup details will appear here after collection.</p>
+                  <Icon
+                    icon="ph:truck"
+                    className="w-10 h-10 mx-auto mb-2 text-slate-600"
+                  />
+                  <p className="text-sm font-semibold text-slate-400">
+                    No pickups recorded for this crop yet
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Pickup details will appear here after collection.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {pickupHistory.map((item) => (
-                    <div key={item._id} className="p-3.5 rounded-xl border border-slate-800 bg-slate-900/50 space-y-2 text-xs">
+                    <div
+                      key={item._id}
+                      className="p-3.5 rounded-xl border border-slate-800 bg-slate-900/50 space-y-2 text-xs"
+                    >
                       <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold text-emerald-400">{item.scheduleCode || "SCHEDULE"}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.paymentStatus === "PAID" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}>
+                        <span className="font-mono font-bold text-emerald-400">
+                          {item.scheduleCode || "SCHEDULE"}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.paymentStatus === "PAID" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}
+                        >
                           {item.paymentStatus || "PENDING"}
                         </span>
                       </div>
                       <div className="grid grid-cols-3 gap-2 py-2 bg-slate-950/60 rounded-lg text-center">
                         <div>
                           <p className="text-slate-500">Collected</p>
-                          <p className="font-bold text-white">{item.collectedQuantity || 0} kg</p>
+                          <p className="font-bold text-white">
+                            {item.collectedQuantity || 0} kg
+                          </p>
                         </div>
                         <div>
                           <p className="text-slate-500">Agreed Rate</p>
-                          <p className="font-bold text-white">₹{item.agreedPrice || 0}/kg</p>
+                          <p className="font-bold text-white">
+                            ₹{item.agreedPrice || 0}/kg
+                          </p>
                         </div>
                         <div>
                           <p className="text-slate-500">Total Money</p>
-                          <p className="font-bold text-emerald-400">₹{(item.totalAmount || 0).toLocaleString("en-IN")}</p>
+                          <p className="font-bold text-emerald-400">
+                            ₹{(item.totalAmount || 0).toLocaleString("en-IN")}
+                          </p>
                         </div>
                       </div>
                       <div className="flex justify-between text-slate-400 text-[11px]">
-                        <span>Collective: <strong className="text-white">{item.collective?.name || "—"}</strong></span>
-                        <span>Date: {fmtDate(item.pickupDate || item.completedAt)}</span>
+                        <span>
+                          Collective:{" "}
+                          <strong className="text-white">
+                            {item.collective?.name || "—"}
+                          </strong>
+                        </span>
+                        <span>
+                          Date: {fmtDate(item.pickupDate || item.completedAt)}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -806,7 +943,9 @@ const DetailPanel = ({
         </AnimatePresence>
         <ImageCarouselModal
           isOpen={carouselData.isOpen}
-          onClose={() => setCarouselData((prev) => ({ ...prev, isOpen: false }))}
+          onClose={() =>
+            setCarouselData((prev) => ({ ...prev, isOpen: false }))
+          }
           images={carouselData.images}
           initialIndex={carouselData.initialIndex}
         />
@@ -828,7 +967,12 @@ const CropManagement = () => {
   const [view, setView] = useState("list");
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ code: "", yld: "", plantedDate: "", farmland: "" });
+  const [form, setForm] = useState({
+    code: "",
+    yld: "",
+    plantedDate: "",
+    farmland: "",
+  });
 
   const [selectedCrop, setSelectedCrop] = useState(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -842,7 +986,8 @@ const CropManagement = () => {
         farmerCropAPI.get(),
         commonAPI.getCrops(),
       ]);
-      const cropData = cropsRes.data?.data?.cropData ?? cropsRes.data?.crops ?? [];
+      const cropData =
+        cropsRes.data?.data?.cropData ?? cropsRes.data?.crops ?? [];
       // Filter out INACTIVE crops from state completely
       setCrops(cropData.filter((c) => c.status !== "INACTIVE"));
       setMasterCrops(masterRes.data.crops || []);
@@ -867,9 +1012,15 @@ const CropManagement = () => {
     setEditingId(crop._id);
     setForm({
       code: crop.crop?.code || "",
-      yld: crop.yield !== undefined && crop.yield !== null ? String(crop.yield) : "",
+      yld:
+        crop.yield !== undefined && crop.yield !== null
+          ? String(crop.yield)
+          : "",
       plantedDate: crop.plantedDate ? crop.plantedDate.split("T")[0] : "",
-      farmland: crop.farmland !== undefined && crop.farmland !== null ? String(crop.farmland) : "",
+      farmland:
+        crop.farmland !== undefined && crop.farmland !== null
+          ? String(crop.farmland)
+          : "",
     });
     setView("form");
   };
@@ -928,24 +1079,37 @@ const CropManagement = () => {
   });
 
   useEffect(() => {
-    if (filteredCrops.length > 0 && (!selectedCrop || !filteredCrops.some((c) => c._id === selectedCrop._id))) {
+    if (
+      filteredCrops.length > 0 &&
+      (!selectedCrop || !filteredCrops.some((c) => c._id === selectedCrop._id))
+    ) {
       setSelectedCrop(filteredCrops[0]);
     }
   }, [filteredCrops, selectedCrop]);
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+    <div
+      className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}
+    >
       <AnimatePresence mode="wait">
         {view === "list" ? (
-          <motion.div key="list" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <motion.div
+            key="list"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+          >
             {/* Top Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 bg-clip-text text-transparent">
                   My Crop Management
                 </h1>
-                <p className={`text-xs sm:text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  Track active crops, farmland area, growth progress, and pickup history
+                <p
+                  className={`text-xs sm:text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                >
+                  Track active crops, farmland area, growth progress, and pickup
+                  history
                 </p>
               </div>
 
@@ -959,11 +1123,21 @@ const CropManagement = () => {
             </div>
 
             {/* Filter Pills */}
-            <div className={`flex items-center gap-1.5 p-1.5 rounded-2xl border mb-6 w-fit backdrop-blur-md ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+            <div
+              className={`flex items-center gap-1.5 p-1.5 rounded-2xl border mb-6 w-fit backdrop-blur-md ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}
+            >
               {[
-                { key: "all", label: "All Crops", icon: "ph:list-bullets-bold" },
+                {
+                  key: "all",
+                  label: "All Crops",
+                  icon: "ph:list-bullets-bold",
+                },
                 { key: "linked", label: "Linked", icon: "ph:link-bold" },
-                { key: "unlinked", label: "Unlinked", icon: "ph:link-break-bold" },
+                {
+                  key: "unlinked",
+                  label: "Unlinked",
+                  icon: "ph:link-break-bold",
+                },
               ].map((t) => (
                 <button
                   key={t.key}
@@ -971,7 +1145,9 @@ const CropManagement = () => {
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
                     activeTab === t.key
                       ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20"
-                      : isDark ? "text-slate-400 hover:text-slate-200" : "text-slate-500 hover:text-slate-900"
+                      : isDark
+                        ? "text-slate-400 hover:text-slate-200"
+                        : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
                   <Icon icon={t.icon} className="w-3.5 h-3.5" />
@@ -982,7 +1158,10 @@ const CropManagement = () => {
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
-                <Icon icon="svg-spinners:12-dots-scale-rotate" className={`w-10 h-10 ${isDark ? "text-emerald-400" : "text-emerald-500"}`} />
+                <Icon
+                  icon="svg-spinners:12-dots-scale-rotate"
+                  className={`w-10 h-10 ${isDark ? "text-emerald-400" : "text-emerald-500"}`}
+                />
               </div>
             ) : filteredCrops.length === 0 ? (
               <EmptyState
@@ -1015,7 +1194,12 @@ const CropManagement = () => {
                 {selectedCrop && (
                   <div className="hidden lg:block lg:w-[38%] lg:shrink-0">
                     <AnimatePresence mode="wait">
-                      <motion.div key={selectedCrop._id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}>
+                      <motion.div
+                        key={selectedCrop._id}
+                        initial={{ opacity: 0, x: 16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 16 }}
+                      >
                         <DetailPanel
                           crop={selectedCrop}
                           isDark={isDark}
@@ -1032,15 +1216,24 @@ const CropManagement = () => {
           </motion.div>
         ) : (
           /* Form View */
-          <motion.div key="form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="max-w-2xl mx-auto">
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="max-w-2xl mx-auto"
+          >
             <button
               onClick={() => setView("list")}
               className={`mb-6 flex items-center gap-2 text-sm font-semibold cursor-pointer transition-colors ${isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-500 hover:text-emerald-600"}`}
             >
-              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" /> Back to Crop List
+              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" /> Back to
+              Crop List
             </button>
 
-            <div className={`rounded-3xl border p-6 sm:p-8 backdrop-blur-xl shadow-2xl ${isDark ? "bg-slate-900/80 border-slate-800 shadow-black/40" : "bg-white/90 border-slate-200 shadow-slate-200/50"}`}>
+            <div
+              className={`rounded-3xl border p-6 sm:p-8 backdrop-blur-xl shadow-2xl ${isDark ? "bg-slate-900/80 border-slate-800 shadow-black/40" : "bg-white/90 border-slate-200 shadow-slate-200/50"}`}
+            >
               <h2 className="text-2xl font-bold mb-2">
                 {editingId ? "Edit Crop Details" : "Register New Crop"}
               </h2>
@@ -1068,7 +1261,9 @@ const CropManagement = () => {
                       type="text"
                       inputMode="numeric"
                       value={form.yld}
-                      onChange={(e) => setForm((p) => ({ ...p, yld: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, yld: e.target.value }))
+                      }
                       placeholder="e.g. 500"
                       className="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/50 text-sm text-white outline-none focus:border-emerald-500 transition-all"
                     />
@@ -1081,7 +1276,9 @@ const CropManagement = () => {
                       type="text"
                       inputMode="numeric"
                       value={form.farmland}
-                      onChange={(e) => setForm((p) => ({ ...p, farmland: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, farmland: e.target.value }))
+                      }
                       placeholder="e.g. 2.5"
                       className="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/50 text-sm text-white outline-none focus:border-emerald-500 transition-all"
                     />
@@ -1091,10 +1288,10 @@ const CropManagement = () => {
                   <label className="text-xs font-bold uppercase tracking-wider block mb-2 text-slate-300">
                     Planted Date
                   </label>
-                  <input
-                    type="date"
+                  <DatePicker
                     value={form.plantedDate}
-                    onChange={(e) => setForm((p) => ({ ...p, plantedDate: e.target.value }))}
+                    onChange={(v) => setForm((p) => ({ ...p, plantedDate: v }))}
+                    placeholder="Select planted date"
                     className="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/50 text-sm text-white outline-none focus:border-emerald-500 transition-all"
                   />
                 </div>
@@ -1111,7 +1308,14 @@ const CropManagement = () => {
                     disabled={saving}
                     className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 text-white cursor-pointer flex items-center justify-center gap-2 hover:from-emerald-400 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-60"
                   >
-                    {saving ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" /> : <Icon icon="ph:check-bold" className="w-4 h-4" />}
+                    {saving ? (
+                      <Icon
+                        icon="svg-spinners:12-dots-scale-rotate"
+                        className="w-5 h-5"
+                      />
+                    ) : (
+                      <Icon icon="ph:check-bold" className="w-4 h-4" />
+                    )}
                     {editingId ? "Save Changes" : "Save Crop"}
                   </button>
                 </div>

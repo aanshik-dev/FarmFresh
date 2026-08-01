@@ -356,6 +356,12 @@ const terminateDeal = async (collectiveId, dealId, reason = "") => {
   if (deal.status !== "APPROVED")
     throwErr(400, "Only APPROVED deals can be terminated !!");
 
+  if (deal.schedule?.activeSchedule)
+    throwErr(
+      400,
+      "This deal is locked into an open pickup and cannot be terminated yet !!",
+    );
+
   deal.status = "C_TERMINATE";
   if (reason) deal.terminationReason = reason;
   await deal.save();

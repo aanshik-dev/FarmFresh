@@ -750,7 +750,12 @@ const AppShell = () => {
     if (isAuthenticated) {
       syncBadges();
       const interval = setInterval(syncBadges, 10000);
-      return () => clearInterval(interval);
+      const onBadgeSync = () => syncBadges();
+      window.addEventListener("farmfresh:badges-sync", onBadgeSync);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("farmfresh:badges-sync", onBadgeSync);
+      };
     }
   }, [isAuthenticated, syncBadges]);
 

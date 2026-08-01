@@ -6,6 +6,7 @@ import { useToast } from "../../components/ui";
 import StatusBadge from "../../components/common/StatusBadge";
 import EmptyState from "../../components/common/EmptyState";
 import ConfirmModal from "../../components/common/ConfirmModal";
+import DatePicker from "../../components/common/DatePicker";
 import {
   collectiveScheduleAPI,
   collectiveDriverAPI,
@@ -128,11 +129,17 @@ const ScheduleDetailView = ({ data, onBack, isDark, onAction, onEdit }) => {
         {/* Assigned Driver Card */}
         <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <img 
-              src={`https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=${schedule.driver?.name || "driver"}`} 
-              alt="Driver" 
-              className="w-14 h-14 rounded-full object-cover bg-slate-850 border border-slate-700 shrink-0" 
-            />
+            {schedule.driver?.profile ? (
+              <img
+                src={schedule.driver.profile}
+                alt={schedule.driver.name || "Driver"}
+                className="w-14 h-14 rounded-full object-cover bg-slate-850 border border-slate-700 shrink-0"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-800 border border-slate-700 shrink-0">
+                <Icon icon="ph:user-fill" className="w-6 h-6 text-slate-500" />
+              </div>
+            )}
             <div>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Assigned Driver</p>
               <h4 className="font-bold text-base text-white">{schedule.driver?.name || "—"}</h4>
@@ -247,6 +254,7 @@ const ScheduleDetailView = ({ data, onBack, isDark, onAction, onEdit }) => {
 const PostponePanel = ({ scheduleId, onClose, onConfirm }) => {
   const [newDate, setNewDate] = useState("");
   const [reason, setReason] = useState("");
+  const [minISO] = useState(() => new Date().toISOString().slice(0, 10));
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
@@ -254,10 +262,11 @@ const PostponePanel = ({ scheduleId, onClose, onConfirm }) => {
         <div className="space-y-4">
           <div>
             <label className="text-xs font-semibold block mb-1.5 text-slate-400">New Pickup Date *</label>
-            <input
-              type="date"
+            <DatePicker
               value={newDate}
-              onChange={(e) => setNewDate(e.target.value)}
+              onChange={setNewDate}
+              minDate={minISO}
+              placeholder="Select new date"
               className={inputCls}
             />
           </div>
@@ -294,6 +303,13 @@ const PickupScheduler = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
 
+  const [minISO] = useState(() => new Date().toISOString().slice(0, 10));
+  const [maxISO] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 21);
+    return d.toISOString().slice(0, 10);
+  });
+
   const [schedules, setSchedules] = useState([]);
   const [readyDeals, setReadyDeals] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -322,6 +338,9 @@ const PickupScheduler = () => {
   // Detail panel
   const [detailSchedule, setDetailSchedule] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // Edit mode
+  const [editingScheduleId, setEditingScheduleId] = useState(null);
 
   // Modals
   const [confirmModal, setConfirmModal] = useState(null); // { type, scheduleId, label, description }
@@ -381,8 +400,6 @@ const PickupScheduler = () => {
     0
   );
   const capacityExceeded = capacity > 0 && totalSelectedQty > capacity;
-
-  const [editingScheduleId, setEditingScheduleId] = useState(null);
 
   const openForm = () => {
     setForm({ driverId: "", zoneId: "", pickupDate: "", time: "09:00", notes: "", items: [] });
@@ -770,100 +787,100 @@ const PickupScheduler = () => {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="rounded-xl border bg-slate-900/40 border-slate-800/60 shadow-lg p-4 hover:border-slate-700 transition-all cursor-pointer group flex flex-col justify-between"
+                    className="group relative rounded-2xl border bg-slate-900/40 border-slate-800/60 shadow-lg p-5 transition-all cursor-pointer flex flex-col justify-between"
                     onClick={() => handleViewDetails(s)}
                   >
                     <div className="flex-1">
-                      {/* Top: code + status */}
-                      <div className="flex items-start justify-between gap-2 mb-2.5">
+                      {/* Header: code + status */}
+                      <div className="flex items-start justify-between gap-2 mb-3">
                         <div>
-                          <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
-                            {s.code || "—"}
-                          </h3>
+                          <p className="text-sm font-mono font-bold text-emerald-400 uppercase tracking-wide">
+                            {s.code || "SCHEDULE"}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                            <Icon icon="ph:map-pin-fill" className="w-3 h-3 text-emerald-400" />
+                            {s.zone?.name || "—"}
+                          </p>
                         </div>
                         <StatusBadge status={s.status?.toLowerCase()} size="sm" />
                       </div>
 
-                      {/* Zone + Date row */}
-                      <div className="flex items-center justify-between mb-2.5 text-xs">
-                        <div className="flex items-center gap-1">
-                          <Icon icon="ph:map-pin-fill" className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="font-medium text-slate-300">{s.zone?.name || "—"}</span>
-                        </div>
-                        <span className="font-semibold text-emerald-400">{fmt(s.pickupDate)}</span>
-                      </div>
-
                       {/* Driver */}
-                      <div className="flex items-center gap-2 mb-2.5 p-1.5 rounded-lg bg-slate-800/25">
-                        <img 
-                          src={`https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=${s.driver?.name || "driver"}`} 
-                          alt="Driver" 
-                          className="w-7 h-7 rounded-full object-cover bg-slate-800 border border-slate-700 shrink-0" 
-                        />
+                      <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/25 mb-3">
+                        {s.driver?.profile ? (
+                          <img
+                            src={s.driver.profile}
+                            alt={s.driver.name || "Driver"}
+                            className="w-10 h-10 rounded-full object-cover border border-slate-700 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-800 border border-slate-700 shrink-0">
+                            <Icon icon="ph:user-fill" className="w-4 h-4 text-slate-500" />
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
-                          <p className="text-[11px] font-semibold text-white truncate">{s.driver?.name || "—"}</p>
-                          <p className="text-[9px] text-slate-500 truncate">{s.driver?.vehicleNumber || s.driver?.phone || ""}</p>
+                          <p className="text-sm font-semibold text-white truncate">{s.driver?.name || "Driver not assigned"}</p>
+                          <p className="text-xs text-slate-500 truncate">{s.driver?.vehicleNumber || s.driver?.phone || ""}</p>
                         </div>
+                        <span className="text-xs font-bold text-emerald-400">{fmt(s.pickupDate)}</span>
                       </div>
 
                       {/* Stats row */}
-                      <div className="flex gap-1.5 mb-2.5">
-                        <div className="flex-1 text-center bg-slate-800/20 rounded-md py-1">
-                          <p className="text-xs font-bold text-white">{s.itemCount ?? 0}</p>
-                          <p className="text-[9px] text-slate-500">Crops</p>
+                      <div className="flex gap-1.5 mb-3">
+                        <div className="flex-1 text-center bg-slate-800/20 rounded-md py-1.5">
+                          <p className="text-sm font-bold text-white">{s.itemCount ?? 0}</p>
+                          <p className="text-xs text-slate-500">Crops</p>
                         </div>
-                        <div className="flex-1 text-center bg-slate-800/20 rounded-md py-1">
-                          <p className="text-xs font-bold text-white">{s.totalQuantity ?? 0} kg</p>
-                          <p className="text-[9px] text-slate-500">Qty</p>
+                        <div className="flex-1 text-center bg-slate-800/20 rounded-md py-1.5">
+                          <p className="text-sm font-bold text-white">{s.totalQuantity ?? 0} kg</p>
+                          <p className="text-xs text-slate-500">Qty</p>
                         </div>
-                        <div className="flex-1 text-center bg-emerald-500/5 rounded-md py-1">
-                          <p className="text-xs font-bold text-emerald-400">
+                        <div className="flex-1 text-center bg-emerald-500/5 rounded-md py-1.5">
+                          <p className="text-sm font-bold text-emerald-400">
                             {s.totalAmount ? `₹${(s.totalAmount / 1000).toFixed(1)}k` : "₹0"}
                           </p>
-                          <p className="text-[9px] text-slate-500">Total</p>
+                          <p className="text-xs text-slate-500">Total</p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Actions - Uniform Height & Padding */}
-                    <div
-                      className="flex gap-2 pt-3 border-t border-slate-800 mt-auto"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        id={`btn-detail-${s._id}`}
-                        onClick={() => { handleViewDetails(s); }}
-                        className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all cursor-pointer text-center"
+                    {/* Footer: status actions + view-details arrow */}
+                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                      <div className="flex gap-2">
+                        {["SCHEDULED", "POSTPONED"].includes(s.status) && (
+                          <button
+                            id={`btn-postpone-${s._id}`}
+                            onClick={(e) => { e.stopPropagation(); setPostponeModal(s._id); }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer text-center"
+                          >
+                            Postpone
+                          </button>
+                        )}
+                        {s.status === "SCHEDULED" && (
+                          <button
+                            id={`btn-start-${s._id}`}
+                            onClick={(e) => { e.stopPropagation(); handleAction("start", s._id); }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all cursor-pointer text-center"
+                          >
+                            Start
+                          </button>
+                        )}
+                        {s.status === "IN_PROGRESS" && (
+                          <button
+                            id={`btn-complete-${s._id}`}
+                            onClick={(e) => { e.stopPropagation(); handleAction("complete", s._id); }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all cursor-pointer text-center"
+                          >
+                            Complete
+                          </button>
+                        )}
+                      </div>
+                      <span
+                        onClick={(e) => { e.stopPropagation(); handleViewDetails(s); }}
+                        className="text-sm font-semibold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform cursor-pointer"
                       >
-                        Details
-                      </button>
-                      {["SCHEDULED", "POSTPONED"].includes(s.status) && (
-                        <button
-                          id={`btn-postpone-${s._id}`}
-                          onClick={() => setPostponeModal(s._id)}
-                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer text-center"
-                        >
-                          Postpone
-                        </button>
-                      )}
-                      {s.status === "SCHEDULED" && (
-                        <button
-                          id={`btn-start-${s._id}`}
-                          onClick={() => handleAction("start", s._id)}
-                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all cursor-pointer text-center"
-                        >
-                          Start
-                        </button>
-                      )}
-                      {s.status === "IN_PROGRESS" && (
-                        <button
-                          id={`btn-complete-${s._id}`}
-                          onClick={() => handleAction("complete", s._id)}
-                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all cursor-pointer text-center"
-                        >
-                          Complete
-                        </button>
-                      )}
+                        View Details <Icon icon="ph:arrow-right-bold" className="w-4 h-4" />
+                      </span>
                     </div>
                   </motion.div>
                 ))}
@@ -974,11 +991,13 @@ const PickupScheduler = () => {
                 {/* Date + Time */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Field label="Pickup Date" required>
-                    <input
-                      type="date"
+                    <DatePicker
                       id="form-pickup-date"
                       value={form.pickupDate}
-                      onChange={(e) => setForm((p) => ({ ...p, pickupDate: e.target.value }))}
+                      onChange={(v) => setForm((p) => ({ ...p, pickupDate: v }))}
+                      minDate={minISO}
+                      maxDate={maxISO}
+                      placeholder="Select pickup date"
                       className={inputCls}
                     />
                   </Field>

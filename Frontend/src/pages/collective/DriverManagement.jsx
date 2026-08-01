@@ -24,7 +24,7 @@ const DriverManagement = () => {
   const [saving, setSaving] = useState(false);
   
   const [form, setForm] = useState({
-    name: "", phone: "", license: "", vehicleNumber: "", capacity: "", zones: [],
+    name: "", phone: "", license: "", vehicleNumber: "", capacity: "", zones: [], image: null,
   });
 
   const fetchAll = useCallback(async () => {
@@ -47,7 +47,7 @@ const DriverManagement = () => {
 
   const openAdd = () => {
     setEditDriver(null);
-    setForm({ name: "", phone: "", license: "", vehicleNumber: "", capacity: "", zones: [] });
+    setForm({ name: "", phone: "", license: "", vehicleNumber: "", capacity: "", zones: [], image: null });
     setView("form");
   };
 
@@ -57,6 +57,7 @@ const DriverManagement = () => {
       name: d.name, phone: d.phone, license: d.license,
       vehicleNumber: d.vehicleNumber, capacity: d.capacity,
       zones: d.zones?.map((z) => z._id || z) || [],
+      image: null,
     });
     setView("form");
   };
@@ -71,13 +72,21 @@ const DriverManagement = () => {
     if (!form.name || !form.phone || !form.license || !form.vehicleNumber || !form.capacity) {
       toast.error("All fields except zones are required"); return;
     }
+    const fd = new FormData();
+    fd.append("name", form.name);
+    fd.append("phone", form.phone);
+    fd.append("license", form.license);
+    fd.append("vehicleNumber", form.vehicleNumber);
+    fd.append("capacity", form.capacity);
+    fd.append("zones", JSON.stringify(form.zones));
+    if (form.image) fd.append("image", form.image);
     setSaving(true);
     try {
       if (editDriver) {
-        await collectiveDriverAPI.edit(editDriver._id, form);
+        await collectiveDriverAPI.edit(editDriver._id, fd);
         toast.success("Driver updated!");
       } else {
-        await collectiveDriverAPI.add(form);
+        await collectiveDriverAPI.add(fd);
         toast.success("Driver added!");
       }
       setView("list");
@@ -169,14 +178,29 @@ const DriverManagement = () => {
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shadow-sm shrink-0 ${
-                          isDark ? "bg-slate-800 text-emerald-400" : "bg-emerald-50 text-emerald-600"
-                        }`}>
-                          {(d.name || "?").charAt(0)}
-                        </div>
+                        {d.profile ? (
+                          <img
+                            src={d.profile}
+                            alt={d.name}
+                            className={`w-12 h-12 rounded-xl object-cover shadow-sm shrink-0 ${
+                              isDark ? "border border-slate-700" : "border border-slate-200"
+                            }`}
+                          />
+                        ) : (
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shadow-sm shrink-0 ${
+                            isDark ? "bg-slate-800 text-emerald-400" : "bg-emerald-50 text-emerald-600"
+                          }`}>
+                            {(d.name || "?").charAt(0)}
+                          </div>
+                        )}
                         <div>
                           <p className="font-bold text-base truncate">{d.name}</p>
                           <p className={`text-[11px] font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>{d.phone}</p>
+                          {d.driverId && (
+                            <p className={`text-[10px] font-mono font-semibold mt-0.5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
+                              {d.driverId}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <StatusBadge status={d.status?.toLowerCase()} size="sm" />
@@ -255,6 +279,57 @@ const DriverManagement = () => {
               <p className={`text-sm mb-6 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                 {editDriver ? "Update contact information, vehicle details, or zone assignments." : "Add a new driver to assign them to pickup schedules."}
               </p>
+
+              {/* Optional Driver Photo */}
+              <div className="flex items-center gap-4 mb-6">
+                <label className="cursor-pointer group">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setForm((p) => ({ ...p, image: file }));
+                    }}
+                  />
+                  <div className={`w-24 h-24 rounded-2xl overflow-hidden flex items-center justify-center border-2 border-dashed transition-all ${
+                    form.image || editDriver?.profile
+                      ? "border-emerald-500/50 bg-slate-900"
+                      : isDark
+                        ? "border-slate-700 bg-slate-900/50 group-hover:border-emerald-500/40"
+                        : "border-slate-300 bg-slate-50 group-hover:border-emerald-400/50"
+                  }`}>
+                    {form.image ? (
+                      <img src={URL.createObjectURL(form.image)} alt="Driver preview" className="w-full h-full object-cover" />
+                    ) : editDriver?.profile ? (
+                      <img src={editDriver.profile} alt="Driver" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 text-slate-500">
+                        <Icon icon="ph:camera-fill" className="w-6 h-6" />
+                        <span className="text-[10px] font-semibold">Photo</span>
+                      </div>
+                    )}
+                  </div>
+                </label>
+                <div>
+                  <p className="text-sm font-semibold">{form.image || editDriver?.profile ? "Driver Photo" : "Add Photo (optional)"}</p>
+                  <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                    Upload a photo of the driver. Saved as{" "}
+                    <span className="font-mono">Farmfresh/drivers</span> with the driver ID.
+                  </p>
+                  {form.image && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, image: null }))}
+                      className={`text-xs font-semibold mt-1.5 cursor-pointer transition-colors ${
+                        isDark ? "text-red-400 hover:text-red-300" : "text-red-500 hover:text-red-600"
+                      }`}
+                    >
+                      Remove photo
+                    </button>
+                  )}
+                </div>
+              </div>
 
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

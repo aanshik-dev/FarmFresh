@@ -402,12 +402,20 @@ const Login = () => {
                       className={`flex justify-between pb-1.5 ${isDark ? "text-slate-300" : "text-slate-600"}`}
                     >
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          className="accent-emerald-400 border-emerald-400 cursor-pointer"
-                          type="checkbox"
-                          checked={Remember}
-                          onChange={() => setRemember(!Remember)}
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setRemember(!Remember)}
+                          aria-label="Remember me"
+                          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer ${
+                            Remember
+                              ? "bg-emerald-500 border-emerald-500 shadow-md shadow-emerald-500/30"
+                              : "border-slate-400 hover:border-emerald-400"
+                          }`}
+                        >
+                          {Remember && (
+                            <Icon icon="ph:check-bold" className="w-3 h-3 text-white" />
+                          )}
+                        </button>
                         <span>Remember me</span>
                       </label>
 

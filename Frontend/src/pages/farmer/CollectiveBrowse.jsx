@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import { commonAPI, farmerMemberAPI, farmerCropAPI } from '../../services/api';
+import { commonAPI, farmerMemberAPI, farmerCropAPI, farmerReviewAPI } from '../../services/api';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatAddress = (addr) => {
@@ -115,11 +115,18 @@ const CollRow = ({ coll, isDark, isSelected, onClick, partnerStatus }) => {
 };
 
 // ── Detail Panel ──────────────────────────────────────────────────────────────
-const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, onRequest, requesting, onCancelRequest, onTerminateDeal, onClose }) => {
+const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, myReviews = [], onSubmitReview, onRequest, requesting, onCancelRequest, onTerminateDeal, onClose }) => {
   const [tab, setTab] = useState('overview');
   const [selectedCrops, setSelectedCrops] = useState({});
   const [prices, setPrices] = useState({});
   const [note, setNote] = useState('');
+
+  // Existing review for this collective (if any) — prefill the form on mount.
+  const myReview = (myReviews || []).find(r => String(r.cid?._id || r.cid) === String(coll?._id));
+  const [rating, setRating] = useState(() => myReview?.rating || 0);
+  const [hover, setHover] = useState(0);
+  const [comment, setComment] = useState(() => myReview?.comment || '');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => { setTab('overview'); setSelectedCrops({}); setPrices({}); setNote(''); }, [coll?._id]);
 
@@ -132,6 +139,8 @@ const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, onRequest, r
 
   const approvedMembers = Array.isArray(memberData?.approved) ? memberData.approved : [];
   const requestMembers = Array.isArray(memberData?.requests) ? memberData.requests : [];
+
+  const isPartner = approvedMembers.some(m => String(m._id) === String(coll._id));
 
   const myDeals = [...approvedMembers, ...requestMembers]
     .filter(m => m && (m.collective?._id === coll._id || m.collective === coll._id || m._id === coll._id))
@@ -158,10 +167,18 @@ const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, onRequest, r
     onRequest(coll, crops, note);
   };
 
+  const handleSubmitReview = async () => {
+    if (rating === 0 || !comment.trim()) return;
+    setSubmitting(true);
+    await onSubmitReview(coll, rating, comment.trim());
+    setSubmitting(false);
+  };
+
   const TABS = [
     { key: 'overview', label: 'Overview', icon: 'ph:info-bold' },
     { key: 'request', label: 'Request', icon: 'ph:paper-plane-tilt-bold' },
     ...(myDeals.length > 0 ? [{ key: 'deals', label: 'My Deals', icon: 'ph:handshake-bold' }] : []),
+    { key: 'review', label: 'Review', icon: 'ph:star-fill' },
   ];
 
   return (
@@ -293,8 +310,25 @@ const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, onRequest, r
                         ? isDark ? 'bg-slate-900/40 border-slate-800/80 opacity-60' : 'bg-slate-100/70 border-slate-200/80 opacity-75'
                         : checked ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-slate-800/50 border-slate-700/50'
                     }`}>
-                      <input type="checkbox" checked={checked} disabled={disabled} onChange={() => toggleCrop(fc._id)}
-                        className="w-4 h-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 cursor-pointer" />
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => toggleCrop(fc._id)}
+                        aria-label={checked ? "Deselect crop" : "Select crop"}
+                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all cursor-pointer disabled:cursor-not-allowed ${
+                          checked
+                            ? "bg-emerald-500 border-emerald-500 shadow-md shadow-emerald-500/30"
+                            : disabled
+                              ? "border-slate-700 bg-slate-800/60"
+                              : isDark
+                                ? "border-slate-600 bg-slate-800 hover:border-emerald-500/60"
+                                : "border-slate-300 bg-white hover:border-emerald-400"
+                        }`}
+                      >
+                        {checked && (
+                          <Icon icon="ph:check-bold" className="w-3.5 h-3.5 text-white" />
+                        )}
+                      </button>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-white">{fc.crop?.name}</p>
                         <p className="text-[10px] text-slate-400">Yield: {fc.yield ?? '—'} kg</p>
@@ -383,6 +417,76 @@ const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, onRequest, r
               })}
             </motion.div>
           )}
+
+          {/* Review tab */}
+          {tab === 'review' && (
+            <motion.div key="review" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+              {/* Collective rating summary */}
+              <div className={`rounded-xl p-3.5 border flex items-center gap-3 ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="w-10 h-10 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                  <Icon icon="ph:star-fill" className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {Number(coll.ratingAvg) > 0 ? `${Number(coll.ratingAvg).toFixed(1)} / 5` : 'No ratings yet'}
+                  </p>
+                  <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Average collective rating</p>
+                </div>
+              </div>
+
+              {!isPartner ? (
+                <div className={`rounded-xl p-3.5 border flex items-start gap-2 ${isDark ? 'bg-amber-950/30 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
+                  <Icon icon="ph:lock-fill" className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                  <p className={`text-xs ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
+                    Only active partner farmer groups can rate and review this collective. Send a membership request to get started.
+                  </p>
+                </div>
+              ) : (
+                <div className={`rounded-xl p-4 border ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-200'}`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {rating > 0 ? 'Your Review' : 'Rate this Collective'}
+                  </p>
+
+                  {/* Star selector */}
+                  <div className="flex items-center gap-1.5 mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHover(star)}
+                        onMouseLeave={() => setHover(0)}
+                        aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                        className="cursor-pointer transition-transform hover:scale-110"
+                      >
+                        <Icon icon={star <= (hover || rating) ? 'ph:star-fill' : 'ph:star'} className={`w-8 h-8 ${star <= (hover || rating) ? 'text-amber-400' : isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                      </button>
+                    ))}
+                    <span className={`ml-1 text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {rating > 0 ? `${rating} / 5` : 'Tap a star'}
+                    </span>
+                  </div>
+
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    rows={4}
+                    maxLength={1000}
+                    placeholder="Share your experience with this collective…"
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-xs outline-none transition-all focus:border-emerald-500 resize-none ${isDark ? 'bg-slate-900/70 border-slate-700 text-slate-100 placeholder:text-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'}`}
+                  />
+
+                  <button
+                    onClick={handleSubmitReview}
+                    disabled={submitting || rating === 0 || !comment.trim()}
+                    className="mt-3 w-full py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white cursor-pointer shadow-lg shadow-amber-500/25 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? 'Submitting…' : rating > 0 ? 'Update Review' : 'Submit Review'}
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </div>
@@ -398,6 +502,7 @@ const CollectiveBrowse = () => {
   const [collectives, setCollectives] = useState([]);
   const [memberData, setMemberData] = useState({});
   const [myCrops, setMyCrops] = useState([]);
+  const [myReviews, setMyReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
@@ -420,15 +525,17 @@ const CollectiveBrowse = () => {
     try {
       const params = {};
       if (farmerLat && farmerLng) { params.lat = farmerLat; params.long = farmerLng; params.radius = 500; }
-      const [colRes, memRes, cropRes] = await Promise.all([
+      const [colRes, memRes, cropRes, revRes] = await Promise.all([
         commonAPI.getCollectives(params),
         farmerMemberAPI.get(),
         farmerCropAPI.get(),
+        farmerReviewAPI.get(),
       ]);
       setCollectives(colRes.data.collectives || []);
       setMemberData(memRes.data.memberData || {});
       const cropData = cropRes.data?.data?.cropData ?? cropRes.data?.cropData ?? cropRes.data?.crops ?? [];
       setMyCrops(Array.isArray(cropData) ? cropData : []);
+      setMyReviews(revRes.data?.reviews || []);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to load data');
     } finally { setLoading(false); }
@@ -532,6 +639,16 @@ const CollectiveBrowse = () => {
       toast.error(err.response?.data?.message || 'Failed to terminate deal');
     } finally {
       setIsTerminating(false);
+    }
+  };
+
+  const handleSubmitReview = async (coll, rating, comment) => {
+    try {
+      const res = await farmerReviewAPI.submit({ collectiveId: coll._id, rating, comment });
+      toast.success(res.data?.message || 'Review submitted!');
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit review');
     }
   };
 
@@ -642,6 +759,8 @@ const CollectiveBrowse = () => {
                     isDark={isDark}
                     myCrops={myCrops}
                     memberData={memberData}
+                    myReviews={myReviews}
+                    onSubmitReview={handleSubmitReview}
                     onRequest={handleRequest}
                     requesting={requesting}
                     onCancelRequest={handleCancelRequest}
@@ -663,6 +782,8 @@ const CollectiveBrowse = () => {
                     isDark={isDark}
                     myCrops={myCrops}
                     memberData={memberData}
+                    myReviews={myReviews}
+                    onSubmitReview={handleSubmitReview}
                     onRequest={handleRequest}
                     requesting={requesting}
                     onCancelRequest={handleCancelRequest}

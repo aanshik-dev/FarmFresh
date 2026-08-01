@@ -58,7 +58,7 @@ export const assignZone = async (req, res, next) => {
 export const addDriver = async (req, res, next) => {
   try {
     const { id: collectiveId } = req.user;
-    const result = await driverService.addDriver(collectiveId, req.body);
+    const result = await driverService.addDriver(collectiveId, req.body, req.file);
     res.status(201).json(result);
   } catch (err) { next(err); }
 };
@@ -75,7 +75,7 @@ export const editDriver = async (req, res, next) => {
   try {
     const { id: collectiveId } = req.user;
     const { driverId } = req.params;
-    const result = await driverService.editDriver(collectiveId, driverId, req.body);
+    const result = await driverService.editDriver(collectiveId, driverId, req.body, req.file);
     res.status(200).json(result);
   } catch (err) { next(err); }
 };

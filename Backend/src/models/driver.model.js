@@ -7,6 +7,17 @@ const driverSchema = new mongoose.Schema(
       ref: "Collective",
       required: true,
     },
+    driverId: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+    },
+    profile: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     name: {
       type: String,
       required: true,

@@ -63,11 +63,15 @@ const FarmerNotifications = () => {
 
   useEffect(() => { fetchNotifs(); }, [fetchNotifs]);
 
+  const syncBadges = () =>
+    window.dispatchEvent(new Event("farmfresh:badges-sync"));
+
   const markAllRead = async () => {
     try {
       await farmerNotifAPI.markAllRead();
       setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
       toast.success("All marked as read");
+      syncBadges();
     } catch {
       toast.error("Failed to mark all as read");
     }
@@ -78,6 +82,7 @@ const FarmerNotifications = () => {
     try {
       await farmerNotifAPI.markRead(id);
       setNotifs((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
+      syncBadges();
     } catch { /* silent */ }
   };
 

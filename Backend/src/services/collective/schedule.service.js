@@ -6,6 +6,7 @@ import Driver from "../../models/driver.model.js";
 import Zone from "../../models/zone.model.js";
 import Membership from "../../models/membership.model.js";
 import FarmerGroup from "../../models/farmerGroup.model.js";
+import FarmerCrop from "../../models/farmerCrop.model.js";
 import CollectedCrop from "../../models/collectedCrops.model.js";
 import Notification from "../../models/notification.model.js";
 import PaymentTransaction from "../../models/paymentTransaction.model.js";
@@ -295,7 +296,7 @@ const getSchedules = async (collectiveId, filter = "all") => {
   }
 
   const schedules = await Schedule.find(query)
-    .populate("driver", "name phone vehicleNumber capacity")
+    .populate("driver", "name phone vehicleNumber capacity profile driverId")
     .populate("zone", "name color")
     .sort({ pickupDate: -1 })
     .lean();
@@ -348,7 +349,7 @@ const groupItemsByFarmer = (items) => {
 /** Full detail of one pickup: raw items + farmer-wise grouping + payments made. */
 const getScheduleDetail = async (collectiveId, scheduleId) => {
   const schedule = await Schedule.findOne({ _id: scheduleId, collective: collectiveId })
-    .populate("driver", "name phone vehicleNumber capacity")
+    .populate("driver", "name phone vehicleNumber capacity profile driverId")
     .populate("zone", "name color")
     .lean();
   if (!schedule) throwErr(404, "Schedule not found !!");
@@ -392,7 +393,7 @@ const getPickupDashboard = async (collectiveId) => {
       status: { $in: OPEN_STATUSES },
       pickupDate: { $gte: todayStart, $lte: todayEnd },
     })
-      .populate("driver", "name phone vehicleNumber")
+      .populate("driver", "name phone vehicleNumber profile")
       .populate("zone", "name color")
       .sort({ time: 1 })
       .lean(),
@@ -401,7 +402,7 @@ const getPickupDashboard = async (collectiveId) => {
       status: { $in: OPEN_STATUSES },
       pickupDate: { $gt: todayEnd, $lte: endOfDay(horizon) },
     })
-      .populate("driver", "name phone vehicleNumber")
+      .populate("driver", "name phone vehicleNumber profile")
       .populate("zone", "name color")
       .sort({ pickupDate: 1 })
       .limit(10)
@@ -617,15 +618,24 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
             },
           },
           { session, new: true },
-        ).populate({ path: "crop", select: "crop" });
+        ).populate({ path: "crop", select: "crop yield" });
 
-        // Update collective's crop inventory stock when crop is collected
-        if (item.status === "COLLECTED" && item.collectedQuantity > 0 && deal?.crop?.crop) {
-          await CollectedCrop.findOneAndUpdate(
-            { collective: collectiveId, crop: deal.crop.crop },
-            { $inc: { quantity: item.collectedQuantity } },
-            { session },
-          );
+        if (item.status === "COLLECTED" && item.collectedQuantity > 0) {
+          // Deduct the collected quantity from the partner farmer's crop account.
+          const farmerCrop = deal?.crop?._id ? await FarmerCrop.findById(deal.crop._id).session(session) : null;
+          if (farmerCrop) {
+            farmerCrop.yield = Math.max(0, (farmerCrop.yield || 0) - item.collectedQuantity);
+            await farmerCrop.save({ session });
+          }
+
+          // Update collective's crop inventory stock when crop is collected
+          if (deal?.crop?.crop) {
+            await CollectedCrop.findOneAndUpdate(
+              { collective: collectiveId, crop: deal.crop.crop },
+              { $inc: { quantity: item.collectedQuantity } },
+              { session },
+            );
+          }
         }
       }
 
@@ -639,11 +649,11 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
         );
       }
       for (const [farmerId, summary] of perFarmer) {
-        await FarmerGroup.findByIdAndUpdate(
-          farmerId,
-          { $inc: { pendingBalance: summary.amount, totalPickups: 1 } },
-          { session },
-        );
+        // Only count as a pickup when something was actually collected —
+        // a fully-skipped line must not inflate pickup stats.
+        const inc = { pendingBalance: summary.amount };
+        if (summary.quantity > 0) inc.totalPickups = 1;
+        await FarmerGroup.findByIdAndUpdate(farmerId, { $inc: inc }, { session });
       }
 
       schedule.status = "COMPLETED";
@@ -662,8 +672,14 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
     await session.endSession();
   }
 
+  // Farmers who had nothing collected receive no completion notification —
+  // a ₹0 balance message is noise, not information.
+  const notifyFarmers = [...perFarmer.entries()].filter(
+    ([, summary]) => summary.quantity > 0 || summary.amount > 0,
+  );
+
   await Notification.insertMany(
-    [...perFarmer.entries()].map(([farmerId, summary]) => ({
+    notifyFarmers.map(([farmerId, summary]) => ({
       recipient: farmerId,
       recipientRole: "FARMER_GROUP",
       type: "PICKUP",
@@ -1053,13 +1069,18 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
   if (notes !== undefined) schedule.notes = notes;
 
   // Re-calculate items if provided
-  if (Array.isArray(items) && items.length > 0) {
+  if (Array.isArray(items)) {
     // Load current items
     const currentItems = await ScheduleItem.find({ schedule: schedule._id });
 
     // Find items to remove (in current but not in new list)
     const newDealIds = new Set(items.map((i) => String(i.cropDealId)));
     const toRemove = currentItems.filter((ci) => !newDealIds.has(String(ci.cropDeal)));
+
+    // Find items to add (in new list but not in current)
+    const currentDealIds = new Set(currentItems.map((ci) => String(ci.cropDeal)));
+    const toAdd = items.filter((i) => !currentDealIds.has(String(i.cropDealId)));
+    const toUpdate = items.filter((i) => currentDealIds.has(String(i.cropDealId)));
 
     // Track farmer notifications
     const changesByFarmer = {};
@@ -1069,20 +1090,20 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
       changesByFarmer[key].push(msg);
     };
 
-    // Release crop deals back to the pool for removed items
-    for (const item of toRemove) {
-      addChange(item.farmerGroup, `Crop dropped: ${item.cropName}`);
-      await CropDeal.findByIdAndUpdate(item.cropDeal, {
-        $set: { "schedule.activeSchedule": null },
-      });
-      await item.deleteOne();
+    // ── Phase 1: validate EVERYTHING before mutating anything ──
+    // A validation failure here must not leave partially-applied changes.
+
+    // No deal may appear twice in the new item list
+    const seen = new Set();
+    for (const item of items) {
+      const id = String(item.cropDealId);
+      if (seen.has(id))
+        throwErr(400, "The same crop deal cannot be added to a pickup twice !!");
+      seen.add(id);
     }
 
-    // Find items to add (in new list but not in current)
-    const currentDealIds = new Set(currentItems.map((ci) => String(ci.cropDeal)));
-    const toAdd = items.filter((i) => !currentDealIds.has(String(i.cropDealId)));
-
     // Load and validate new deals, enforcing zone consistency
+    const preparedAdds = [];
     if (toAdd.length > 0) {
       const newDeals = await CropDeal.find({
         _id: { $in: toAdd.map((i) => i.cropDealId) },
@@ -1103,44 +1124,88 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
 
         const addItem = toAdd.find((i) => String(i.cropDealId) === String(deal._id));
         const qty = Number(addItem?.collectedQuantity) || deal.crop?.yield || 0;
+        if (qty <= 0)
+          throwErr(400, "Every selected crop needs a collection quantity greater than 0 !!");
         const { name, code } = cropLabel(deal.crop);
         const amount = round2(deal.agreedPrice * qty);
 
-        const newItem = new ScheduleItem({
-          schedule: schedule._id,
-          collective: collectiveId,
-          farmerGroup: deal.membership.farmer,
-          membership: deal.membership._id,
-          cropDeal: deal._id,
-          cropName: name,
-          cropCode: code,
-          plannedQuantity: qty,
-          collectedQuantity: qty,
-          agreedPrice: deal.agreedPrice,
-          totalAmount: amount,
+        preparedAdds.push({
+          deal,
+          qty,
+          name,
+          code,
+          amount,
+          farmer: deal.membership.farmer,
         });
-        await newItem.save();
-        await CropDeal.findByIdAndUpdate(deal._id, { $set: { "schedule.activeSchedule": schedule._id } });
-
-        addChange(deal.membership.farmer, `Crop added: ${name} (${qty} kg)`);
       }
     }
 
-    // Update quantities of existing crop items if modified
-    const toUpdate = items.filter((i) => currentDealIds.has(String(i.cropDealId)));
+    // Validate quantity updates of existing items
+    const preparedUpdates = [];
     for (const item of toUpdate) {
       const currentItem = currentItems.find((ci) => String(ci.cropDeal) === String(item.cropDealId));
-      if (currentItem) {
-        const qty = Number(item.collectedQuantity) || currentItem.collectedQuantity;
-        if (currentItem.collectedQuantity !== qty) {
-          const oldQty = currentItem.collectedQuantity;
-          currentItem.plannedQuantity = qty;
-          currentItem.collectedQuantity = qty;
-          currentItem.totalAmount = round2(currentItem.agreedPrice * qty);
-          await currentItem.save();
+      if (!currentItem) continue;
+      const qty = Number(item.collectedQuantity) || currentItem.collectedQuantity;
+      if (Number.isNaN(qty) || qty < 0)
+        throwErr(400, "Collected quantity must be a positive number !!");
+      preparedUpdates.push({ currentItem, qty });
+    }
 
-          addChange(currentItem.farmerGroup, `Quantity changed for ${currentItem.cropName}: ${oldQty} kg -> ${qty} kg`);
-        }
+    // Capacity check against the projected final state (before any write)
+    const removedIds = new Set(toRemove.map((ci) => String(ci._id)));
+    let projectedTotal = currentItems
+      .filter((ci) => !removedIds.has(String(ci._id)))
+      .reduce((sum, i) => sum + (i.collectedQuantity || 0), 0);
+    projectedTotal += preparedAdds.reduce((sum, a) => sum + a.qty, 0);
+    for (const { currentItem, qty } of preparedUpdates) {
+      projectedTotal += qty - (currentItem.collectedQuantity || 0);
+    }
+    const driver = await Driver.findById(schedule.driver);
+    if (driver?.capacity && projectedTotal > driver.capacity)
+      throwErr(400, `Updated crop total exceeds ${driver.name}'s vehicle capacity of ${driver.capacity} kg !!`);
+
+    // ── Phase 2: apply the mutations ──
+
+    // Release crop deals back to the pool for removed items
+    for (const item of toRemove) {
+      addChange(item.farmerGroup, `Crop dropped: ${item.cropName}`);
+      await CropDeal.findByIdAndUpdate(item.cropDeal, {
+        $set: { "schedule.activeSchedule": null },
+      });
+      await item.deleteOne();
+    }
+
+    // Add the newly selected crops
+    for (const { deal, qty, name, code, amount, farmer } of preparedAdds) {
+      const newItem = new ScheduleItem({
+        schedule: schedule._id,
+        collective: collectiveId,
+        farmerGroup: farmer,
+        membership: deal.membership._id,
+        cropDeal: deal._id,
+        cropName: name,
+        cropCode: code,
+        plannedQuantity: qty,
+        collectedQuantity: qty,
+        agreedPrice: deal.agreedPrice,
+        totalAmount: amount,
+      });
+      await newItem.save();
+      await CropDeal.findByIdAndUpdate(deal._id, { $set: { "schedule.activeSchedule": schedule._id } });
+
+      addChange(farmer, `Crop added: ${name} (${qty} kg)`);
+    }
+
+    // Update quantities of existing crop items if modified
+    for (const { currentItem, qty } of preparedUpdates) {
+      if (currentItem.collectedQuantity !== qty) {
+        const oldQty = currentItem.collectedQuantity;
+        currentItem.plannedQuantity = qty;
+        currentItem.collectedQuantity = qty;
+        currentItem.totalAmount = round2(currentItem.agreedPrice * qty);
+        await currentItem.save();
+
+        addChange(currentItem.farmerGroup, `Quantity changed for ${currentItem.cropName}: ${oldQty} kg -> ${qty} kg`);
       }
     }
 
@@ -1151,11 +1216,6 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
     schedule.itemCount = allItems.length;
     const farmerIds = [...new Set(allItems.map((i) => i.farmerGroup.toString()))];
     schedule.farmerCount = farmerIds.length;
-
-    // Check capacity
-    const driver = await Driver.findById(schedule.driver);
-    if (driver?.capacity && schedule.totalQuantity > driver.capacity)
-      throwErr(400, `Updated crop total exceeds ${driver.name}'s vehicle capacity of ${driver.capacity} kg !!`);
 
     // Insert notifications for each farmer group about their changes
     for (const [farmerId, messages] of Object.entries(changesByFarmer)) {

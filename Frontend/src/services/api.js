@@ -90,6 +90,12 @@ export const farmerNotifAPI = {
   delete: (notifId) => api.delete(`/farmer/me/notifications/${notifId}`),
 };
 
+// ── Farmer Reviews ─────────────────────────────────────────────────────────────
+export const farmerReviewAPI = {
+  submit: (data) => api.post("/farmer/me/reviews", data),
+  get: () => api.get("/farmer/me/reviews"),
+};
+
 export const farmerAnnouncementAPI = {
   get: () => api.get("/farmer/me/announcements"),
   markRead: (announcementId) => api.patch(`/farmer/me/announcements/${announcementId}/read`),

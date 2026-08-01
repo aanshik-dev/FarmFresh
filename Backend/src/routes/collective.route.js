@@ -16,7 +16,7 @@ import {
 } from "../controllers/collectiveExtra.controller.js";
 import verifyToken from "../middlewares/authMiddleware.js";
 import authorizeRoles from "../middlewares/roleMiddleware.js";
-import { docUpload, singleFile } from "../middlewares/uploader.js";
+import upload, { docUpload, singleFile } from "../middlewares/uploader.js";
 
 const router = express.Router();
 const auth = [verifyToken, authorizeRoles("COLLECTIVE")];
@@ -41,9 +41,9 @@ router.patch("/me/zones/:zoneId", ...auth, editZone);
 router.delete("/me/zones/:zoneId", ...auth, deleteZone);
 
 // ── Drivers
-router.post("/me/drivers", ...auth, addDriver);
+router.post("/me/drivers", ...auth, singleFile(upload, "image"), addDriver);
 router.get("/me/drivers", ...auth, getDrivers);
-router.patch("/me/drivers/:driverId", ...auth, editDriver);
+router.patch("/me/drivers/:driverId", ...auth, singleFile(upload, "image"), editDriver);
 router.delete("/me/drivers/:driverId", ...auth, deleteDriver);
 
 // ── Deal / Crop Status

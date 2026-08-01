@@ -8,6 +8,8 @@ import {
   cancelRequest,
   getMemberships,
   terminateDeal,
+  submitReview,
+  getMyReviews,
 } from "../controllers/farmer.controller.js";
 import {
   updateCropStatus,
@@ -59,6 +61,10 @@ router.get("/me/notifications", ...auth, getNotifications);
 router.patch("/me/notifications/:notifId/read", ...auth, markNotificationRead);
 router.patch("/me/notifications/read-all", ...auth, markAllNotificationsRead);
 router.delete("/me/notifications/:notifId", ...auth, deleteNotification);
+
+// ── Reviews
+router.post("/me/reviews", ...auth, submitReview);
+router.get("/me/reviews", ...auth, getMyReviews);
 
 // ── Announcements
 router.get("/me/announcements", ...auth, getFarmerAnnouncements);

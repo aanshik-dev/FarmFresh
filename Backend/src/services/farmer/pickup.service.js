@@ -98,7 +98,7 @@ const loadFarmerItems = (farmerId, extraQuery = {}) =>
     .populate({
       path: "schedule",
       populate: [
-        { path: "driver", select: "name phone vehicleNumber capacity" },
+        { path: "driver", select: "name phone vehicleNumber capacity profile" },
         { path: "zone", select: "name color" },
         { path: "collective", select: "name phone profile" },
       ],

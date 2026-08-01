@@ -9,7 +9,6 @@ const footerLinks = [
   { name: "Assistance & Analytics", path: "/assistance" },
   { name: "About Collective", path: "/about" },
   { name: "Contacts", path: "/contacts" },
-  { name: "UI Components", path: "/ui" },
   { name: "Coordinator Login", path: "/login" },
   { name: "Become a Partner", path: "/signup" },
 ];
