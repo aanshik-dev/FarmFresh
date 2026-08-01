@@ -4,6 +4,8 @@ import dealService from "../services/collective/deal.service.js";
 import scheduleService from "../services/collective/schedule.service.js";
 import notificationService from "../services/notification.service.js";
 import announcementService from "../services/announcement.service.js";
+import uploadFile from "../utils/uploadFile.js";
+import throwErr from "../utils/throwErr.js";
 
 // ══ Zone Controllers ══════════════════════════════════════════════════════════
 
@@ -112,7 +114,7 @@ export const getDealStatusHistory = async (req, res, next) => {
   try {
     const { id: collectiveId } = req.user;
     const { dealId } = req.params;
-    const result = await dealService.getStatusHistory(collectiveId, dealId);
+    const result = await dealService.getDealStatusHistory(collectiveId, dealId);
     res.status(200).json(result);
   } catch (err) { next(err); }
 };
@@ -154,12 +156,20 @@ export const updateScheduleStatus = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const updateSchedule = async (req, res, next) => {
+  try {
+    const { id: collectiveId } = req.user;
+    const { scheduleId } = req.params;
+    const result = await scheduleService.updateSchedule(collectiveId, scheduleId, req.body);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
 export const markItemPaid = async (req, res, next) => {
   try {
     const { id: collectiveId } = req.user;
     const { scheduleId, itemId } = req.params;
-    const { paymentProof } = req.body;
-    const result = await scheduleService.markItemPaid(collectiveId, scheduleId, itemId, paymentProof);
+    const result = await scheduleService.markItemPaid(collectiveId, scheduleId, itemId, req.body);
     res.status(200).json(result);
   } catch (err) { next(err); }
 };
@@ -176,8 +186,66 @@ export const payFarmerForSchedule = async (req, res, next) => {
 export const getReadyDeals = async (req, res, next) => {
   try {
     const { id: collectiveId } = req.user;
-    const result = await scheduleService.getReadyDeals(collectiveId);
+    const { zoneId, scheduleId } = req.query;
+    const result = await scheduleService.getReadyDeals(collectiveId, { zoneId, scheduleId });
     res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
+/** Live + upcoming pickups and the outstanding payout, for the dashboard. */
+export const getPickupDashboard = async (req, res, next) => {
+  try {
+    const { id: collectiveId } = req.user;
+    const result = await scheduleService.getPickupDashboard(collectiveId);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
+// ══ Payment Controllers ═══════════════════════════════════════════════════════
+
+export const getPayments = async (req, res, next) => {
+  try {
+    const { id: collectiveId } = req.user;
+    const { farmerGroupId, scheduleId } = req.query;
+    const result = await scheduleService.getPayments(collectiveId, { farmerGroupId, scheduleId });
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
+/** Balance, lifetime earnings, every pickup line and every receipt for one farmer group. */
+export const getFarmerLedger = async (req, res, next) => {
+  try {
+    const { id: collectiveId } = req.user;
+    const { farmerGroupId } = req.params;
+    const result = await scheduleService.getFarmerLedger(collectiveId, farmerGroupId);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
+/** Upload a payment receipt image and hand back its hosted URL. */
+export const uploadPaymentProof = async (req, res, next) => {
+  try {
+    const { id: collectiveId } = req.user;
+    if (!req.file) throwErr(400, "A receipt file is required !!");
+
+    // Naming convention: Farmfresh/payments/[schedule_code]_[farmerGroup_FID]_[timestamp]
+    const { scheduleCode = "SC", farmerFid = "F" } = req.body;
+    const timestamp = Date.now();
+    const fileName = `${scheduleCode}_${farmerFid}_${timestamp}`;
+
+    const result = await uploadFile(
+      req.file.buffer,
+      `Farmfresh/payments`,
+      fileName,
+      { overwrite: false }, // payment proofs are never overwritten
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Payment proof uploaded !!",
+      url: result.secure_url,
+      publicId: result.public_id,
+    });
   } catch (err) { next(err); }
 };
 
@@ -204,6 +272,15 @@ export const markAllNotificationsRead = async (req, res, next) => {
   try {
     const { id } = req.user;
     const result = await notificationService.markAllRead(id);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
+export const deleteNotification = async (req, res, next) => {
+  try {
+    const { id } = req.user;
+    const { notifId } = req.params;
+    const result = await notificationService.deleteNotification(id, notifId);
     res.status(200).json(result);
   } catch (err) { next(err); }
 };

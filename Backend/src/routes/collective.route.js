@@ -7,14 +7,16 @@ import {
   addZone, getZones, editZone, deleteZone, assignZone,
   addDriver, getDrivers, editDriver, deleteDriver,
   requestCropStatus, setPickupDate, getDealStatusHistory,
-  createSchedule, getSchedules, getScheduleDetail, updateScheduleStatus,
-  markItemPaid, payFarmerForSchedule, getReadyDeals,
-  getNotifications, markNotificationRead, markAllNotificationsRead,
+  createSchedule, getSchedules, getScheduleDetail, updateSchedule, updateScheduleStatus,
+  markItemPaid, payFarmerForSchedule, getReadyDeals, getPickupDashboard,
+  getPayments, getFarmerLedger, uploadPaymentProof,
+  getNotifications, markNotificationRead, markAllNotificationsRead, deleteNotification,
   createAnnouncement, getCollectiveAnnouncements, deleteAnnouncement,
   getDashboardStats,
 } from "../controllers/collectiveExtra.controller.js";
 import verifyToken from "../middlewares/authMiddleware.js";
 import authorizeRoles from "../middlewares/roleMiddleware.js";
+import { docUpload, singleFile } from "../middlewares/uploader.js";
 
 const router = express.Router();
 const auth = [verifyToken, authorizeRoles("COLLECTIVE")];
@@ -51,17 +53,25 @@ router.get("/me/deals/:dealId/status-history", ...auth, getDealStatusHistory);
 router.get("/me/ready-deals", ...auth, getReadyDeals);
 
 // ── Pickup Schedules
+router.get("/me/pickup-dashboard", ...auth, getPickupDashboard);
 router.post("/me/schedules", ...auth, createSchedule);
 router.get("/me/schedules", ...auth, getSchedules);
 router.get("/me/schedules/:scheduleId", ...auth, getScheduleDetail);
+router.patch("/me/schedules/:scheduleId", ...auth, updateSchedule);
 router.patch("/me/schedules/:scheduleId/status", ...auth, updateScheduleStatus);
 router.patch("/me/schedules/:scheduleId/items/:itemId/pay", ...auth, markItemPaid);
 router.post("/me/schedules/:scheduleId/farmers/:farmerGroupId/pay", ...auth, payFarmerForSchedule);
+
+// ── Payments & Ledgers
+router.get("/me/payments", ...auth, getPayments);
+router.post("/me/payments/proof", ...auth, singleFile(docUpload, "proof"), uploadPaymentProof);
+router.get("/me/farmers/:farmerGroupId/ledger", ...auth, getFarmerLedger);
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 router.get("/me/notifications", ...auth, getNotifications);
 router.patch("/me/notifications/:notifId/read", ...auth, markNotificationRead);
 router.patch("/me/notifications/read-all", ...auth, markAllNotificationsRead);
+router.delete("/me/notifications/:notifId", ...auth, deleteNotification);
 
 // ── Announcements ─────────────────────────────────────────────────────────────
 router.post("/me/announcements", ...auth, createAnnouncement);

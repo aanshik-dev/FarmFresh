@@ -90,15 +90,16 @@ const setExpectedPickupDate = async (collectiveId, dealId, expectedPickupDate) =
 };
 
 // ── Get status update history for a deal ─────────────────────────────────────
-const getDealStatusHistory = async (dealId) => {
-  const deal = await CropDeal.findById(dealId).lean();
-  if (!deal) throwErr(404, "Deal not found !!");
+const getDealStatusHistory = async (collectiveId, dealId) => {
+  const deal = await CropDeal.findById(dealId)
+    .populate({ path: "membership", match: { collective: collectiveId } })
+    .populate({ path: "crop", populate: { path: "crop", select: "name code" } })
+    .lean();
 
-  const history = (deal.updates || []).sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-  );
+  if (!deal || !deal.membership)
+    throwErr(404, "Deal not found or does not belong to your collective !!");
 
-  return { success: true, history };
+  return { success: true, message: "Status fetched !!", deal, growth: deal.growth };
 };
 
 export default {

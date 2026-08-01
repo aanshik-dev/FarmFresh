@@ -45,6 +45,10 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

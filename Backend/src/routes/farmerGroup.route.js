@@ -12,12 +12,15 @@ import {
 import {
   updateCropStatus,
   getDealStatusHistory,
+  getDealPickupHistory,
   getActiveDeals,
   getFarmerPickups,
+  getFarmerPickupDetail,
   getFarmerBalance,
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  deleteNotification,
   getFarmerAnnouncements,
   markAnnouncementRead,
   getDashboardStats,
@@ -43,16 +46,19 @@ router.get("/me/members", ...auth, getMemberships);
 // ── Deal / Crop Status
 router.post("/me/deals/:dealId/update-status", ...auth, updateCropStatus);
 router.get("/me/deals/:dealId/status-history", ...auth, getDealStatusHistory);
+router.get("/me/deals/:dealId/pickup-history", ...auth, getDealPickupHistory);
 router.get("/me/deals/active", ...auth, getActiveDeals);
 
 // ── Pickup & Balance
 router.get("/me/pickups", ...auth, getFarmerPickups);
+router.get("/me/pickups/:scheduleId", ...auth, getFarmerPickupDetail);
 router.get("/me/balance", ...auth, getFarmerBalance);
 
 // ── Notifications
 router.get("/me/notifications", ...auth, getNotifications);
 router.patch("/me/notifications/:notifId/read", ...auth, markNotificationRead);
 router.patch("/me/notifications/read-all", ...auth, markAllNotificationsRead);
+router.delete("/me/notifications/:notifId", ...auth, deleteNotification);
 
 // ── Announcements
 router.get("/me/announcements", ...auth, getFarmerAnnouncements);

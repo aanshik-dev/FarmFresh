@@ -40,15 +40,7 @@ const SettingsPage = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
 
-  const [notifs, setNotifs] = useState({
-    membershipRequests: true,
-    cropStatusUpdates: true,
-    scheduleAlerts: true,
-    announcements: true,
-  });
-
   const isFarmer = user?.role === "FARMER_GROUP";
-  const isCollective = user?.role === "COLLECTIVE";
 
   const handleChangePass = async () => {
     if (!oldPass || !newPass || !confirmPass) {
@@ -87,7 +79,6 @@ const SettingsPage = () => {
       await deactivateAccount();
       toast.success("Account deactivated successfully. Logging out...");
 
-      // Wait a moment for toast
       setTimeout(() => {
         localStorage.removeItem("user");
         localStorage.removeItem("accessToken");
@@ -118,52 +109,6 @@ const SettingsPage = () => {
     },
   ];
 
-  const notificationOptions = isFarmer
-    ? [
-        {
-          key: "scheduleAlerts",
-          label: "Pickup Schedule Alerts",
-          desc: "Get notified when a pickup is scheduled",
-        },
-        {
-          key: "membershipUpdates",
-          label: "Membership Status Updates",
-          desc: "Approval, rejection of membership requests",
-        },
-        {
-          key: "announcements",
-          label: "Collective Announcements",
-          desc: "Price updates and general notices",
-        },
-        {
-          key: "statusRequests",
-          label: "Crop Status Requests",
-          desc: "When a collective requests crop updates",
-        },
-      ]
-    : [
-        {
-          key: "membershipRequests",
-          label: "Membership Requests",
-          desc: "New farmer group membership requests",
-        },
-        {
-          key: "cropStatusUpdates",
-          label: "Crop Status Updates",
-          desc: "Status responses from farmer groups",
-        },
-        {
-          key: "reviews",
-          label: "New Reviews",
-          desc: "Ratings and reviews from farmer groups",
-        },
-        {
-          key: "pickupAlerts",
-          label: "Pickup Alerts",
-          desc: "Pickup status changes and completions",
-        },
-      ];
-
   return (
     <div
       className={`min-h-screen p-5 sm:p-7 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}
@@ -178,7 +123,7 @@ const SettingsPage = () => {
           <p
             className={`text-sm mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}
           >
-            Account and notification preferences
+            Manage your account details and password
           </p>
         </div>
 
@@ -257,44 +202,6 @@ const SettingsPage = () => {
             >
               Update Password
             </Button>
-          </div>
-        </Section>
-
-        <Section
-          title="Notification Preferences"
-          icon="ph:bell-fill"
-          isDark={isDark}
-        >
-          <div className="space-y-3">
-            {notificationOptions.map((item) => (
-              <div
-                key={item.key}
-                className={`flex items-center justify-between p-3 rounded-xl ${isDark ? "bg-slate-800/50" : "bg-slate-50"}`}
-              >
-                <div>
-                  <p
-                    className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-800"}`}
-                  >
-                    {item.label}
-                  </p>
-                  <p
-                    className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}
-                  >
-                    {item.desc}
-                  </p>
-                </div>
-                <button
-                  onClick={() =>
-                    setNotifs((p) => ({ ...p, [item.key]: !p[item.key] }))
-                  }
-                  className={`relative w-11 h-6 rounded-full transition-all cursor-pointer ${notifs[item.key] ? "bg-emerald-500" : isDark ? "bg-slate-700" : "bg-slate-300"}`}
-                >
-                  <span
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${notifs[item.key] ? "translate-x-5" : ""}`}
-                  />
-                </button>
-              </div>
-            ))}
           </div>
         </Section>
 

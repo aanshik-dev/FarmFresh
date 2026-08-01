@@ -16,7 +16,8 @@ const driverSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      match: [/^[6-9]\d{9}$/, "Invalid phone number format"],
+      // Optional +91 / 91 / 0 prefix followed by a 10 digit Indian mobile number
+      match: [/^(?:\+?91|0)?[6-9]\d{9}$/, "Invalid phone number format"],
     },
     license: {
       type: String,

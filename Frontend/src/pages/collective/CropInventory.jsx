@@ -7,7 +7,7 @@ import StatusBadge from "../../components/common/StatusBadge";
 import EmptyState from "../../components/common/EmptyState";
 import CropSelect from "../../components/common/CropSelect";
 import ConfirmModal from "../../components/common/ConfirmModal";
-import { collectiveCropAPI, commonAPI } from "../../services/api";
+import { collectiveCropAPI, collectiveMemberAPI, commonAPI } from "../../services/api";
 
 const CATEGORY_ICON = {
   Grain: "ph:basket-fill",
@@ -29,8 +29,8 @@ const DEFAULT_META = { gradient: "from-emerald-400 to-teal-500", chip: "bg-emera
 
 const getSeasonMeta = (s) => SEASON_META[s] || DEFAULT_META;
 const getCategoryIcon = (c) => CATEGORY_ICON[c] || "ph:plant-fill";
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—");
 
-// ── Shared Image Component ───────────────────────────────────────────────────
 const CropImg = ({ image, category, season, cls = "w-11 h-11 rounded-xl", iconCls = "w-5 h-5" }) => {
   const [failed, setFailed] = useState(false);
   const meta = getSeasonMeta(season);
@@ -47,38 +47,205 @@ const CropImg = ({ image, category, season, cls = "w-11 h-11 rounded-xl", iconCl
   );
 };
 
+// ── Crop Detail View ─────────────────────────────────────────
+const CropDetailView = ({ crop, isDark, memberData, onBack }) => {
+  if (!crop) return null;
+  const meta = getSeasonMeta(crop.season);
+
+  const approvedMembers = Array.isArray(memberData?.approved) ? memberData.approved : [];
+
+  // Filter farmer groups supplying this crop code
+  const supplyingGroups = useMemo(() => {
+    const list = [];
+    approvedMembers.forEach((fg) => {
+      const deals = Array.isArray(fg.deals) ? fg.deals : [];
+      deals.forEach((d) => {
+        const dealCode = d.crop?.crop?.code || d.crop?.code;
+        if (dealCode === crop.code && (d.status === "APPROVED" || d.status === "REQUESTED")) {
+          list.push({
+            farmerGroup: fg.name || fg.groupName || "Farmer Group",
+            leadFarmer: fg.leadFarmer || "N/A",
+            phone: fg.phone,
+            address: fg.address,
+            agreedPrice: d.agreedPrice || d.demandedPrice || 0,
+            growthStage: d.growth?.stage || "SOWING",
+            plantedDate: d.crop?.plantedDate || d.plantedDate,
+            yield: d.crop?.yield || d.yield || 0,
+            farmland: d.crop?.farmland || d.farmland || 0,
+            dealStatus: d.status,
+          });
+        }
+      });
+    });
+    return list;
+  }, [approvedMembers, crop.code]);
+
+  const aggregateYield = useMemo(() => {
+    return supplyingGroups.reduce((acc, item) => acc + (Number(item.yield) || 0), 0);
+  }, [supplyingGroups]);
+
+  return (
+    <motion.div
+      key="detail"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      className="max-w-4xl mx-auto w-full"
+    >
+      <button
+        onClick={onBack}
+        className={`mb-6 flex items-center gap-2 text-sm font-semibold cursor-pointer transition-colors ${
+          isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-500 hover:text-emerald-600"
+        }`}
+      >
+        <Icon icon="ph:arrow-left-bold" className="w-4 h-4" /> Back to Inventory
+      </button>
+
+      <div className={`rounded-2xl border p-6 shadow-xl ${
+        isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"
+      }`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-slate-800 gap-4">
+          <div className="flex items-center gap-4">
+            <CropImg image={crop.image} category={crop.category} season={crop.season} cls="w-16 h-16 rounded-2xl" iconCls="w-8 h-8" />
+            <div>
+              <h2 className="text-2xl font-bold text-white">{crop.name}</h2>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  {crop.code}
+                </span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded ${meta.chip}`}>
+                  {crop.season}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end">
+            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Target Price</p>
+            <p className="text-2xl font-black text-emerald-400">₹{crop.price}<span className="text-sm font-semibold text-emerald-400/70">/kg</span></p>
+          </div>
+        </div>
+
+        {/* 8 Smart Metrics Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Code</p>
+            <p className="text-sm font-mono font-bold text-white">{crop.code}</p>
+          </div>
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Category</p>
+            <p className="text-sm font-bold text-white truncate">{crop.category || "General"}</p>
+          </div>
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">In-Stock Qty</p>
+            <p className="text-sm font-bold text-white">{crop.quantity || 0} kg</p>
+          </div>
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Stock Value</p>
+            <p className="text-sm font-bold text-white">₹{(crop.price * (crop.quantity || 0)).toLocaleString("en-IN")}</p>
+          </div>
+
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Suppliers</p>
+            <p className="text-sm font-bold text-white">{supplyingGroups.length} Groups</p>
+          </div>
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Aggr. Weight</p>
+            <p className="text-sm font-bold text-white">{aggregateYield} kg</p>
+          </div>
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Season</p>
+            <p className="text-sm font-bold text-white">{crop.season}</p>
+          </div>
+          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Status</p>
+            <p className="text-sm font-bold text-white">{crop.status}</p>
+          </div>
+        </div>
+
+        {/* Supplying Farmer Groups Breakdown */}
+        <div>
+          <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <Icon icon="ph:users-three-bold" className="w-5 h-5 text-emerald-400" />
+            Active Supply Lines
+          </h3>
+
+          {supplyingGroups.length === 0 ? (
+            <div className="p-8 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 text-center">
+              <Icon icon="ph:users-three" className="w-10 h-10 mx-auto mb-3 text-slate-600" />
+              <p className="text-sm text-slate-400 font-medium">No farmer groups currently supply this crop.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {supplyingGroups.map((fg, idx) => (
+                <div key={idx} className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 transition-all hover:border-slate-700">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                      <h4 className="font-bold text-base text-white">{fg.farmerGroup}</h4>
+                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                        <Icon icon="ph:user-bold" /> {fg.leadFarmer} &middot; <Icon icon="ph:phone-fill" /> {fg.phone}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-[10px] text-slate-500 font-bold uppercase">Agreed Rate</p>
+                        <span className="text-sm font-bold text-emerald-400">₹{fg.agreedPrice}/kg</span>
+                      </div>
+                      <StatusBadge status={fg.dealStatus?.toLowerCase()} size="sm" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 px-4 bg-slate-900/60 rounded-xl border border-slate-800/60 text-center">
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Growth Stage</p>
+                      <p className="font-bold text-sm text-emerald-400">{fg.growthStage}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Planted Date</p>
+                      <p className="font-bold text-sm text-white">{fmtDate(fg.plantedDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Est. Yield</p>
+                      <p className="font-bold text-sm text-amber-400">{fg.yield} kg</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Farmland</p>
+                      <p className="font-bold text-sm text-white">{fg.farmland} ac</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// ── Main CropInventory Component ─────────────────────────────────────────────
 const CropInventory = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
 
   const [crops, setCrops] = useState([]);
   const [masterCrops, setMasterCrops] = useState([]);
-  const [backendStats, setBackendStats] = useState({ totalCrops: 0, totalQuantity: 0, totalAmount: 0 });
+  const [memberData, setMemberData] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // View state: "list" | "form"
   const [view, setView] = useState("list");
-  const [viewMode, setViewMode] = useState("grid"); // "grid" | "table"
+  const [viewMode, setViewMode] = useState("table");
 
-  // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [showArchived, setShowArchived] = useState(false);
 
-  // Selected crop for detail drawer / panel
   const [selectedCrop, setSelectedCrop] = useState(null);
 
-  // Form State for Add / Edit
-  const [editingCrop, setEditingCrop] = useState(null); // null = Add, object = Edit
+  const [editingCrop, setEditingCrop] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    code: "",
-    price: "",
-    quantity: "0",
-  });
+  const [form, setForm] = useState({ code: "", price: "", quantity: "0" });
 
-  // Delete Modal State
   const [cropToDelete, setCropToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -86,22 +253,18 @@ const CropInventory = () => {
     if (!isSilent) setLoading(true);
     else setRefreshing(true);
     try {
-      const [inventoryRes, masterRes] = await Promise.all([
+      const [inventoryRes, masterRes, memberRes] = await Promise.all([
         collectiveCropAPI.get(),
         commonAPI.getCrops(),
+        collectiveMemberAPI.get(),
       ]);
 
       const resData = inventoryRes.data?.data || inventoryRes.data || {};
       const inventoryList = resData.inventory || inventoryRes.data?.crops || [];
 
       setCrops(Array.isArray(inventoryList) ? inventoryList : []);
-      setBackendStats({
-        totalCrops: resData.totalCrops ?? inventoryList.length,
-        totalQuantity: resData.totalQuantity ?? 0,
-        totalAmount: resData.totalAmount ?? 0,
-      });
-
       setMasterCrops(masterRes.data?.crops || []);
+      setMemberData(memberRes.data?.memberData || {});
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load crop inventory");
     } finally {
@@ -110,18 +273,14 @@ const CropInventory = () => {
     }
   }, [toast]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Open Add Form
   const openAddForm = () => {
     setEditingCrop(null);
     setForm({ code: "", price: "", quantity: "0" });
     setView("form");
   };
 
-  // Open Edit Form
   const openEditForm = (crop) => {
     setEditingCrop(crop);
     setForm({
@@ -132,21 +291,14 @@ const CropInventory = () => {
     setView("form");
   };
 
-  // Handle Form Submit (Add or Edit)
   const handleSave = async (e) => {
     if (e) e.preventDefault();
 
     if (editingCrop) {
-      // Edit validation
       if (form.price === "" || isNaN(Number(form.price)) || Number(form.price) <= 0) {
         toast.error("Please enter a valid price greater than 0");
         return;
       }
-      if (form.quantity !== "" && (isNaN(Number(form.quantity)) || Number(form.quantity) < 0)) {
-        toast.error("Stock quantity cannot be negative");
-        return;
-      }
-
       setSaving(true);
       try {
         const payload = {
@@ -164,30 +316,20 @@ const CropInventory = () => {
         setSaving(false);
       }
     } else {
-      // Add validation
       if (!form.code) {
-        toast.error("Please select a crop from the directory");
+        toast.error("Please select a crop from directory");
         return;
       }
       if (form.price === "" || isNaN(Number(form.price)) || Number(form.price) <= 0) {
         toast.error("Please enter a valid price greater than 0");
         return;
       }
-      if (form.quantity !== "" && (isNaN(Number(form.quantity)) || Number(form.quantity) < 0)) {
-        toast.error("Stock quantity cannot be negative");
-        return;
-      }
-
       setSaving(true);
       try {
-        const payload = {
-          code: form.code,
-          price: Number(form.price),
-        };
+        const payload = { code: form.code, price: Number(form.price) };
         const res = await collectiveCropAPI.add(payload);
         const addedCropId = res.data?.crop?._id;
 
-        // Optionally set initial stock if user entered quantity > 0
         if (addedCropId && form.quantity !== "" && Number(form.quantity) > 0) {
           await collectiveCropAPI.edit({
             id: addedCropId,
@@ -207,7 +349,6 @@ const CropInventory = () => {
     }
   };
 
-  // Handle Delete Confirm
   const confirmDelete = async () => {
     if (!cropToDelete) return;
     setIsDeleting(true);
@@ -224,16 +365,12 @@ const CropInventory = () => {
     }
   };
 
-  // Dynamic Categories
   const categories = useMemo(() => {
     const set = new Set();
-    crops.forEach((c) => {
-      if (c.category) set.add(c.category);
-    });
+    crops.forEach((c) => { if (c.category) set.add(c.category); });
     return ["ALL", ...Array.from(set)];
   }, [crops]);
 
-  // Filtered Crops
   const filteredCrops = useMemo(() => {
     return crops.filter((crop) => {
       if (!showArchived && crop.status !== "ACTIVE") return false;
@@ -241,237 +378,84 @@ const CropInventory = () => {
 
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const nameMatch = crop.name?.toLowerCase().includes(q);
-        const codeMatch = crop.code?.toLowerCase().includes(q);
-        const catMatch = crop.category?.toLowerCase().includes(q);
-        const seasonMatch = crop.season?.toLowerCase().includes(q);
-        return nameMatch || codeMatch || catMatch || seasonMatch;
+        return crop.name?.toLowerCase().includes(q) || crop.code?.toLowerCase().includes(q);
       }
-
       return true;
     });
   }, [crops, showArchived, selectedCategory, searchQuery]);
 
-  // Stats Calculation (Strictly Active Crops)
   const activeCrops = useMemo(() => crops.filter((c) => c.status === "ACTIVE"), [crops]);
   const stats = useMemo(() => {
     const totalCropsCount = activeCrops.length;
     const totalQty = activeCrops.reduce((acc, c) => acc + (Number(c.quantity) || 0), 0);
-    const totalVal = activeCrops.reduce(
-      (acc, c) => acc + (Number(c.quantity) || 0) * (Number(c.price) || 0),
-      0
-    );
+    const totalVal = activeCrops.reduce((acc, c) => acc + (Number(c.quantity) || 0) * (Number(c.price) || 0), 0);
     const lowStockCount = activeCrops.filter((c) => (c.quantity || 0) < 100).length;
 
-    return {
-      totalCrops: totalCropsCount,
-      totalQuantity: totalQty,
-      totalAmount: totalVal,
-      lowStockCount,
-    };
+    return { totalCrops: totalCropsCount, totalQuantity: totalQty, totalAmount: totalVal, lowStockCount };
   }, [activeCrops]);
-
-  // Reversed Exit Animation Variants for List & Form
-  const listVariants = {
-    initial: { opacity: 0, x: -40 },
-    animate: { opacity: 1, x: 0, transition: { duration: 0.25, ease: "easeOut" } },
-    exit: { opacity: 0, x: -40, transition: { duration: 0.2, ease: "easeIn" } },
-  };
-
-  const formVariants = {
-    initial: { opacity: 0, x: 40 },
-    animate: { opacity: 1, x: 0, transition: { duration: 0.25, ease: "easeOut" } },
-    exit: { opacity: 0, x: 40, transition: { duration: 0.2, ease: "easeIn" } },
-  };
 
   return (
     <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
       <AnimatePresence mode="wait">
         {view === "list" ? (
-          <motion.div key="list" variants={listVariants} initial="initial" animate="animate" exit="exit">
-            {/* ── Top Header ────────────────────────────────────────────────────────── */}
+          <motion.div key="list" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 bg-clip-text text-transparent">
-                    Crop Inventory & Pricing
-                  </h1>
-                  <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${isDark ? "bg-slate-800/80 text-emerald-400 border-slate-700" : "bg-emerald-50 text-emerald-600 border-emerald-200"}`}>
-                    Collective View
-                  </span>
-                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 bg-clip-text text-transparent">
+                  Crop Inventory & Pricing
+                </h1>
                 <p className={`text-xs sm:text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  Manage procurement crops, set purchase prices, and track live inventory stock
+                  Manage procurement crops, target prices, and supplying farmer group details
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 flex-wrap">
-                <button
-                  onClick={() => fetchData(true)}
-                  title="Refresh Data"
-                  disabled={refreshing || loading}
-                  className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                    isDark
-                      ? "border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100 shadow-sm"
-                  }`}
-                >
-                  <Icon icon="ph:arrows-clockwise-bold" className={`w-4 h-4 ${refreshing ? "animate-spin text-emerald-500" : ""}`} />
-                </button>
-
-                <button
-                  onClick={openAddForm}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-semibold cursor-pointer shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300"
-                >
-                  <Icon icon="ph:plus-bold" className="w-4 h-4" />
-                  Add Crop
+              <div className="flex items-center gap-3">
+                <button onClick={openAddForm} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-semibold cursor-pointer shadow-lg shadow-emerald-500/25 hover:-translate-y-0.5 transition-all">
+                  <Icon icon="ph:plus-bold" className="w-4 h-4" /> Add Crop
                 </button>
               </div>
             </div>
 
-            {/* ── Summary Stats Cards (Compact Height) ────────────────────────────────────────────────── */}
+            {/* Summary Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
               {[
-                {
-                  label: "Active Crops",
-                  value: stats.totalCrops,
-                  unit: "items",
-                  icon: "ph:plant-fill",
-                  gradient: "from-emerald-500/20 to-emerald-500/5",
-                  color: "text-emerald-500",
-                },
-                {
-                  label: "Total Stock",
-                  value: stats.totalQuantity.toLocaleString("en-IN"),
-                  unit: "kg",
-                  icon: "ph:package-fill",
-                  gradient: "from-blue-500/20 to-blue-500/5",
-                  color: "text-blue-500",
-                },
-                {
-                  label: "Inventory Value",
-                  value: `₹${stats.totalAmount.toLocaleString("en-IN", { maximumFractionDigits: 1 })}`,
-                  unit: "est.",
-                  icon: "ph:currency-inr-fill",
-                  gradient: "from-amber-500/20 to-amber-500/5",
-                  color: "text-amber-500",
-                },
-                {
-                  label: "Low Stock Items",
-                  value: stats.lowStockCount,
-                  unit: "< 100 kg",
-                  icon: "ph:warning-fill",
-                  gradient: "from-red-500/20 to-red-500/5",
-                  color: stats.lowStockCount > 0 ? "text-red-500" : "text-slate-400",
-                },
-              ].map((card, idx) => (
-                <motion.div
-                  key={card.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`relative overflow-hidden rounded-2xl border p-3.5 sm:p-4 backdrop-blur-xl ${
-                    isDark ? "bg-slate-900/60 border-slate-800/80 shadow-lg shadow-black/20" : "bg-white border-slate-200 shadow-sm"
-                  }`}
-                >
-                  <div className={`absolute -right-6 -top-6 w-20 h-20 rounded-full bg-gradient-to-br ${card.gradient} blur-xl pointer-events-none`} />
+                { label: "Active Crops", value: stats.totalCrops, unit: "items", icon: "ph:plant-fill", color: "text-emerald-500" },
+                { label: "Total Stock", value: stats.totalQuantity.toLocaleString("en-IN"), unit: "kg", icon: "ph:package-fill", color: "text-blue-500" },
+                { label: "Inventory Value", value: `₹${stats.totalAmount.toLocaleString("en-IN")}`, unit: "est.", icon: "ph:currency-inr-fill", color: "text-amber-500" },
+                { label: "Low Stock Items", value: stats.lowStockCount, unit: "< 100 kg", icon: "ph:warning-fill", color: stats.lowStockCount > 0 ? "text-red-500" : "text-slate-400" },
+              ].map((card) => (
+                <div key={card.label} className={`rounded-2xl border p-4 backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-slate-800" : "bg-slate-100"} ${card.color}`}>
-                      <Icon icon={card.icon} className="w-4 h-4" />
-                    </div>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-800/50 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                      {card.unit}
-                    </span>
+                    <Icon icon={card.icon} className={`w-5 h-5 ${card.color}`} />
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">{card.unit}</span>
                   </div>
-                  <p className="text-xl sm:text-2xl font-extrabold tracking-tight leading-tight">{card.value}</p>
-                  <p className={`text-xs font-semibold mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{card.label}</p>
-                </motion.div>
+                  <p className="text-2xl font-extrabold">{card.value}</p>
+                  <p className={`text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>{card.label}</p>
+                </div>
               ))}
             </div>
 
-            {/* ── Toolbar ───────────────────────────────────────────────────────────── */}
-            <div className={`rounded-2xl border p-4 mb-6 backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800/80" : "bg-white border-slate-200 shadow-sm"}`}>
+            {/* Toolbar */}
+            <div className={`rounded-2xl border p-4 mb-6 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-                {/* Search */}
-                <div className="relative flex-1 min-w-[240px]">
+                <div className="relative flex-1">
                   <Icon icon="ph:magnifying-glass-bold" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by crop name, code, category..."
-                    className={`w-full pl-10 pr-9 py-2.5 rounded-xl border text-sm outline-none transition-all ${
-                      isDark
-                        ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                    }`}
+                    placeholder="Search by crop name or code..."
+                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500" : "bg-slate-50 border-slate-200 text-slate-900"}`}
                   />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery("")} className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? "text-slate-400 hover:text-white" : "text-slate-400 hover:text-slate-700"}`}>
-                      <Icon icon="ph:x-circle-fill" className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
 
-                {/* Category Pills & Controls */}
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-1.5 overflow-x-auto max-w-full pb-1 md:pb-0 scrollbar-none">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                          selectedCategory === cat
-                            ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25"
-                            : isDark
-                            ? "bg-slate-800 text-slate-400 hover:text-slate-200"
-                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                        }`}
-                      >
-                        {cat === "ALL" ? "All Categories" : cat}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="h-6 w-[1px] bg-slate-700/50 hidden sm:block" />
-
-                  {/* Toggle Archived */}
-                  <button
-                    onClick={() => setShowArchived((p) => !p)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
-                      showArchived
-                        ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                        : isDark
-                        ? "border-slate-800 text-slate-400 hover:text-white"
-                        : "border-slate-200 text-slate-600 hover:bg-slate-100"
-                    }`}
-                  >
-                    <Icon icon={showArchived ? "ph:eye-fill" : "ph:eye-slash-fill"} className="w-3.5 h-3.5" />
-                    {showArchived ? "Archived Included" : "Active Only"}
-                  </button>
-
-                  {/* View Mode */}
-                  <div className={`flex items-center p-1 rounded-xl border ${isDark ? "bg-slate-800/60 border-slate-700/80" : "bg-slate-100 border-slate-200"}`}>
-                    <button
-                      onClick={() => setViewMode("grid")}
-                      title="Grid View"
-                      className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                        viewMode === "grid"
-                          ? isDark ? "bg-slate-700 text-emerald-400 shadow-sm" : "bg-white text-emerald-600 shadow-sm"
-                          : isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"
-                      }`}
-                    >
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center p-1 rounded-xl border border-slate-800 bg-slate-900">
+                    <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-lg ${viewMode === "grid" ? "bg-slate-800 text-emerald-400" : "text-slate-500"}`}>
                       <Icon icon="ph:squares-four-bold" className="w-4 h-4" />
                     </button>
-                    <button
-                      onClick={() => setViewMode("table")}
-                      title="Table View"
-                      className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                        viewMode === "table"
-                          ? isDark ? "bg-slate-700 text-emerald-400 shadow-sm" : "bg-white text-emerald-600 shadow-sm"
-                          : isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"
-                      }`}
-                    >
+                    <button onClick={() => setViewMode("table")} className={`p-1.5 rounded-lg ${viewMode === "table" ? "bg-slate-800 text-emerald-400" : "text-slate-500"}`}>
                       <Icon icon="ph:table-bold" className="w-4 h-4" />
                     </button>
                   </div>
@@ -479,396 +463,135 @@ const CropInventory = () => {
               </div>
             </div>
 
-            {/* ── Main Inventory Content ────────────────────────────────────────────── */}
+            {/* Crop Cards */}
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-72">
-                <Icon icon="svg-spinners:12-dots-scale-rotate" className={`w-12 h-12 mb-3 ${isDark ? "text-emerald-400" : "text-emerald-500"}`} />
-                <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Loading crop inventory data...</p>
+              <div className="flex items-center justify-center h-64">
+                <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-10 h-10 text-emerald-400" />
               </div>
             ) : filteredCrops.length === 0 ? (
-              <EmptyState
-                icon="ph:plant-fill"
-                title="No crops found"
-                description={
-                  searchQuery || selectedCategory !== "ALL"
-                    ? "No crops matched your current filter criteria. Try adjusting search terms."
-                    : "Your crop inventory is currently empty. Click 'Add Crop' to start procuring crops."
-                }
-              />
+              <EmptyState icon="ph:plant-fill" title="No crops found" description="Add your first procurement crop." />
             ) : viewMode === "grid" ? (
-              /* ── Grid Cards View (Slightly More Compact) ── */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-                {filteredCrops.map((crop, i) => {
-                  const isInactive = crop.status === "INACTIVE";
-                  const stockVal = Number(crop.quantity || 0);
-                  const meta = getSeasonMeta(crop.season);
-
-                  return (
-                    <motion.div
-                      key={crop._id}
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.03 }}
-                      onClick={() => setSelectedCrop(crop)}
-                      className={`relative overflow-hidden rounded-2xl border p-4 backdrop-blur-xl flex flex-col justify-between cursor-pointer transition-all ${
-                        selectedCrop?._id === crop._id
-                          ? isDark
-                            ? "bg-emerald-500/10 border-slate-700 shadow-xl ring-1 ring-emerald-500/30"
-                            : "bg-emerald-50/80 border-slate-200 shadow-xl ring-1 ring-emerald-400/25"
-                          : isInactive
-                          ? isDark ? "bg-slate-900/30 border-slate-800 opacity-60" : "bg-slate-100/60 border-slate-200 opacity-60"
-                          : isDark
-                          ? "bg-slate-900/60 border-slate-800/80 shadow-lg shadow-black/20 hover:border-slate-700"
-                          : "bg-white border-slate-200 shadow-sm hover:shadow-md"
-                      }`}
-                    >
-                      {/* Gradient stripe */}
-                      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${meta.gradient}`} />
-
-                      <div>
-                        {/* Top card header */}
-                        <div className="flex items-start justify-between gap-2.5 mb-3 pt-1">
-                          <div className="flex items-center gap-2.5">
-                            <CropImg image={crop.image} category={crop.category} season={crop.season} cls="w-10 h-10 rounded-xl" iconCls="w-5 h-5" />
-                            <div>
-                              <h3 className="font-bold text-base leading-tight">{crop.name}</h3>
-                              <span className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5 ${
-                                isDark ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              }`}>
-                                {crop.code}
-                              </span>
-                            </div>
-                          </div>
-
-                          {isInactive ? (
-                            <StatusBadge status="inactive" size="sm" />
-                          ) : stockVal < 100 ? (
-                            <StatusBadge status="low_stock" size="sm" />
-                          ) : (
-                            <StatusBadge status="in_stock" size="sm" />
-                          )}
-                        </div>
-
-                        {/* Category & Season Badges */}
-                        <div className="flex flex-wrap items-center gap-1.5 mb-3">
-                          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${
-                            isDark ? "bg-slate-800 text-slate-300 border-slate-700" : "bg-slate-100 text-slate-700 border-slate-200"
-                          }`}>
-                            {crop.category || "General"}
-                          </span>
-                          {crop.season && (
-                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${meta.chip}`}>
-                              {crop.season}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Pricing & Stock section */}
-                        <div className={`rounded-xl p-2.5 mb-3 grid grid-cols-2 gap-2 border ${
-                          isDark ? "bg-slate-800/40 border-slate-800" : "bg-slate-50 border-slate-100"
-                        }`}>
-                          <div>
-                            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                              Offering Price
-                            </p>
-                            <p className={`text-base font-extrabold mt-0.5 ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
-                              ₹{(Number(crop.price) || 0).toLocaleString("en-IN")}
-                              <span className="text-xs font-normal">/kg</span>
-                            </p>
-                          </div>
-                          <div>
-                            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                              In Stock
-                            </p>
-                            <p className="text-base font-extrabold mt-0.5">
-                              {stockVal.toLocaleString("en-IN")}
-                              <span className="text-xs font-normal ml-0.5">kg</span>
-                            </p>
-                          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredCrops.map((crop) => (
+                  <div
+                    key={crop._id}
+                    onClick={() => { setSelectedCrop(crop); setView("detail"); }}
+                    className={`relative overflow-hidden rounded-2xl border p-3.5 cursor-pointer transition-all ${
+                      isDark ? "bg-slate-900/40 border-slate-800 hover:border-emerald-500/50 hover:bg-slate-900/80 shadow-md" : "bg-white border-slate-200 shadow-sm"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div className="flex items-center gap-3">
+                        <CropImg image={crop.image} category={crop.category} season={crop.season} cls="w-12 h-12 rounded-xl" iconCls="w-5 h-5" />
+                        <div>
+                          <h3 className="font-bold text-base text-white mb-0.5">{crop.name}</h3>
+                          <p className="text-[10px] text-slate-400 font-medium mb-1">{crop.category} &middot; {crop.season}</p>
+                          <span className="text-[10px] font-mono text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">{crop.code}</span>
                         </div>
                       </div>
+                      <StatusBadge status={crop.quantity < 100 ? "low_stock" : "in_stock"} size="sm" />
+                    </div>
 
-                      {/* Card Actions */}
-                      <div className="flex items-center gap-2 pt-2.5 border-t border-slate-200 dark:border-slate-800" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => openEditForm(crop)}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${
-                            isDark ? "border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-slate-600" : "border-slate-200 text-slate-700 hover:bg-slate-100"
-                          }`}
-                        >
-                          <Icon icon="ph:pencil-simple-bold" className="w-3.5 h-3.5" />
-                          Edit
-                        </button>
-                        {!isInactive && (
-                          <button
-                            onClick={() => setCropToDelete(crop)}
-                            className={`p-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${
-                              isDark ? "border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20" : "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
-                            }`}
-                          >
-                            <Icon icon="ph:trash-bold" className="w-4 h-4" />
-                          </button>
-                        )}
+                    <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-950/60 border border-slate-800 mb-3 text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Target Price</p>
+                        <p className="text-sm font-black text-emerald-400">₹{crop.price}<span className="text-[10px] font-semibold text-emerald-400/70">/kg</span></p>
                       </div>
-                    </motion.div>
-                  );
-                })}
+                      <div className="flex flex-col items-center justify-center border-l border-slate-800">
+                        <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">In Stock</p>
+                        <p className="text-sm font-black text-white">{crop.quantity} <span className="text-[10px] font-semibold text-slate-400">kg</span></p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => openEditForm(crop)} className="flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors">
+                        Edit Settings
+                      </button>
+                      <button onClick={() => setCropToDelete(crop)} className="p-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors">
+                        <Icon icon="ph:trash-bold" className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              /* ── Table View ── */
-              <div className={`rounded-2xl border overflow-hidden backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800/80 shadow-2xl shadow-black/20" : "bg-white border-slate-200 shadow-xl shadow-slate-200/50"}`}>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className={isDark ? "bg-slate-800/50 border-b border-slate-800" : "bg-slate-50 border-b border-slate-200"}>
-                      <tr>
-                        <th className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Crop Detail</th>
-                        <th className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Category & Season</th>
-                        <th className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Offering Price</th>
-                        <th className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Available Stock</th>
-                        <th className={`px-6 py-4 text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Status</th>
-                        <th className={`px-6 py-4 text-xs font-bold uppercase tracking-wider text-right ${isDark ? "text-slate-400" : "text-slate-500"}`}>Actions</th>
+              <div className="rounded-2xl border border-slate-800 overflow-hidden bg-slate-900/60">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-slate-950 border-b border-slate-800 text-xs text-slate-400 uppercase">
+                    <tr>
+                      <th className="p-4">Crop</th>
+                      <th className="p-4">Category & Season</th>
+                      <th className="p-4">Target Price</th>
+                      <th className="p-4">Stock</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {filteredCrops.map((crop) => (
+                      <tr key={crop._id} onClick={() => { setSelectedCrop(crop); setView("detail"); }} className="hover:bg-slate-800/40 cursor-pointer">
+                        <td className="p-4 flex items-center gap-3">
+                          <CropImg image={crop.image} category={crop.category} season={crop.season} />
+                          <div>
+                            <p className="font-bold text-white">{crop.name}</p>
+                            <p className="text-xs font-mono text-emerald-400">{crop.code}</p>
+                          </div>
+                        </td>
+                        <td className="p-4">{crop.category} · {crop.season}</td>
+                        <td className="p-4 font-bold text-emerald-400">₹{crop.price}/kg</td>
+                        <td className="p-4 font-bold">{crop.quantity} kg</td>
+                        <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={() => openEditForm(crop)} className="p-2 text-slate-300 hover:text-emerald-400">
+                            <Icon icon="ph:pencil-simple-bold" className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => setCropToDelete(crop)} className="p-2 text-red-400 hover:text-red-300">
+                            <Icon icon="ph:trash-bold" className="w-4 h-4" />
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className={`divide-y ${isDark ? "divide-slate-800/70" : "divide-slate-100"}`}>
-                      {filteredCrops.map((crop, i) => {
-                        const isInactive = crop.status === "INACTIVE";
-                        const stockVal = Number(crop.quantity || 0);
-
-                        return (
-                          <tr
-                            key={crop._id}
-                            onClick={() => setSelectedCrop(crop)}
-                            className={`group cursor-pointer transition-colors ${
-                              isInactive
-                                ? isDark ? "bg-slate-900/20 opacity-60" : "bg-slate-50/50 opacity-60"
-                                : isDark ? "hover:bg-slate-800/40" : "hover:bg-emerald-50/40"
-                            }`}
-                          >
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3.5">
-                                <CropImg image={crop.image} category={crop.category} season={crop.season} cls="w-10 h-10 rounded-xl" iconCls="w-5 h-5" />
-                                <div>
-                                  <p className="font-bold text-base flex items-center gap-2">
-                                    {crop.name}
-                                    {isInactive && (
-                                      <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">
-                                        Archived
-                                      </span>
-                                    )}
-                                  </p>
-                                  <p className={`text-xs font-mono font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>{crop.code}</p>
-                                </div>
-                              </div>
-                            </td>
-
-                            <td className="px-6 py-4">
-                              <div className="flex flex-col gap-1">
-                                <span className={`inline-flex items-center gap-1 text-xs font-semibold w-max px-2.5 py-0.5 rounded-md ${
-                                  isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-slate-100 text-slate-700 border border-slate-200"
-                                }`}>
-                                  <Icon icon="ph:tag-bold" className="w-3 h-3 text-emerald-500" />
-                                  {crop.category || "General"}
-                                </span>
-                                {crop.season && (
-                                  <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                                    Season: <strong className={isDark ? "text-slate-300" : "text-slate-700"}>{crop.season}</strong>
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            <td className="px-6 py-4">
-                              <p className={`font-bold text-base ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
-                                ₹{(Number(crop.price) || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-                                <span className={`text-xs font-normal ml-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>/kg</span>
-                              </p>
-                            </td>
-
-                            <td className="px-6 py-4">
-                              <p className="font-semibold text-sm">{stockVal.toLocaleString("en-IN")} kg</p>
-                              <p className={`text-xs ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                                Val: ₹{((Number(crop.price) || 0) * stockVal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                              </p>
-                            </td>
-
-                            <td className="px-6 py-4">
-                              {isInactive ? (
-                                <StatusBadge status="inactive" size="sm" />
-                              ) : stockVal < 100 ? (
-                                <StatusBadge status="low_stock" size="sm" />
-                              ) : (
-                                <StatusBadge status="in_stock" size="sm" />
-                              )}
-                            </td>
-
-                            <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => openEditForm(crop)}
-                                  className={`p-2 rounded-xl cursor-pointer transition-all ${
-                                    isDark
-                                      ? "hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border border-transparent hover:border-slate-700"
-                                      : "hover:bg-emerald-50 text-slate-600 hover:text-emerald-600 border border-transparent hover:border-emerald-200"
-                                  }`}
-                                >
-                                  <Icon icon="ph:pencil-simple-fill" className="w-4 h-4" />
-                                </button>
-                                {!isInactive && (
-                                  <button
-                                    onClick={() => setCropToDelete(crop)}
-                                    className={`p-2 rounded-xl cursor-pointer transition-all ${
-                                      isDark
-                                        ? "hover:bg-red-500/20 text-red-400 border border-transparent hover:border-red-500/30"
-                                        : "hover:bg-red-50 text-red-500 border border-transparent hover:border-red-200"
-                                    }`}
-                                  >
-                                    <Icon icon="ph:trash-fill" className="w-4 h-4" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </motion.div>
+        ) : view === "detail" && selectedCrop ? (
+          <CropDetailView
+            key="detail"
+            crop={selectedCrop}
+            isDark={isDark}
+            memberData={memberData}
+            onBack={() => { setSelectedCrop(null); setView("list"); }}
+          />
         ) : (
-          /* ── Add / Edit Form View (Reversed Exit Animation) ── */
-          <motion.div key="form" variants={formVariants} initial="initial" animate="animate" exit="exit" className="max-w-3xl mx-auto">
-            {/* Back Button */}
-            <button
-              onClick={() => setView("list")}
-              className={`mb-6 flex items-center gap-2 text-sm font-semibold cursor-pointer transition-colors ${
-                isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-500 hover:text-emerald-600"
-              }`}
-            >
-              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" />
-              Back to Inventory List
+          /* Form View */
+          <motion.div key="form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="max-w-2xl mx-auto">
+            <button onClick={() => setView("list")} className="mb-6 flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white">
+              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" /> Back to Inventory
             </button>
 
-            {/* Form Container */}
-            <div className={`rounded-3xl border p-6 sm:p-8 backdrop-blur-xl shadow-2xl ${
-              isDark ? "bg-slate-900/80 border-slate-800/80 shadow-black/40" : "bg-white/90 border-slate-200 shadow-slate-200/50"
-            }`}>
-              <div className="flex items-center gap-4 mb-6 pb-5 border-b border-slate-200 dark:border-slate-800">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                  isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-100 text-emerald-600"
-                }`}>
-                  <Icon icon={editingCrop ? "ph:pencil-fill" : "ph:plus-bold"} className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold">
-                    {editingCrop ? `Edit ${editingCrop.name}` : "Register New Crop to Inventory"}
-                  </h2>
-                  <p className={`text-xs sm:text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                    {editingCrop
-                      ? "Update price offering and available stock quantity for this crop."
-                      : "Select a crop from directory, set procurement price, and optionally set initial stock."}
-                  </p>
-                </div>
-              </div>
-
-              <form onSubmit={handleSave} className="space-y-6">
-                {editingCrop ? (
-                  /* Read-only Master Crop info */
-                  <div className={`p-4 rounded-2xl border flex items-center gap-4 ${
-                    isDark ? "bg-slate-800/40 border-slate-800" : "bg-slate-50 border-slate-200"
-                  }`}>
-                    <CropImg image={editingCrop.image} category={editingCrop.category} season={editingCrop.season} cls="w-14 h-14 rounded-2xl" iconCls="w-7 h-7" />
-                    <div>
-                      <p className="font-bold text-base">{editingCrop.name}</p>
-                      <p className={`text-xs font-mono mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                        Code: {editingCrop.code} · Category: {editingCrop.category || "General"} · Season: {editingCrop.season}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  /* Crop Directory Selector */
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl">
+              <h2 className="text-xl font-bold mb-4">{editingCrop ? `Edit ${editingCrop.name}` : "Add Crop to Procurement Inventory"}</h2>
+              <form onSubmit={handleSave} className="space-y-3">
+                {!editingCrop && (
                   <div>
-                    <label className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                      Select Crop (Master Directory) *
-                    </label>
-                    <CropSelect
-                      crops={masterCrops}
-                      value={form.code}
-                      onChange={(code) => setForm((p) => ({ ...p, code }))}
-                      placeholder="Search and choose a crop..."
-                    />
+                    <label className="text-xs font-bold uppercase block mb-2 text-slate-300">Select Crop *</label>
+                    <CropSelect crops={masterCrops} value={form.code} onChange={(code) => setForm((p) => ({ ...p, code }))} placeholder="Choose crop..." />
                   </div>
                 )}
-
-                {/* Offering Price & Quantity inputs (Stock is optional in Add, editable in Edit, 0 allowed, negative prohibited) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                      Offering Price (₹ per kg) *
-                    </label>
-                    <div className="relative">
-                      <Icon icon="ph:currency-inr-bold" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0.1"
-                        value={form.price}
-                        onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))}
-                        placeholder="e.g. 28.50"
-                        className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-                          isDark
-                            ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        }`}
-                      />
-                    </div>
+                    <label className="text-xs font-bold uppercase block mb-1.5 text-slate-300">Offering Price (₹/kg) *</label>
+                    <input type="number" step="0.01" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-sm text-white outline-none focus:border-emerald-500" />
                   </div>
-
                   <div>
-                    <label className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                      {editingCrop ? "Current Inventory Stock (kg)" : "Initial Stock (kg, optional)"}
-                    </label>
-                    <div className="relative">
-                      <Icon icon="ph:package-fill" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-                      <input
-                        type="number"
-                        min="0"
-                        value={form.quantity}
-                        onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))}
-                        placeholder="0"
-                        className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-                          isDark
-                            ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        }`}
-                      />
-                    </div>
+                    <label className="text-xs font-bold uppercase block mb-1.5 text-slate-300">In-Stock Quantity (kg)</label>
+                    <input type="number" value={form.quantity} onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-sm text-white outline-none focus:border-emerald-500" />
                   </div>
                 </div>
-
-                {/* Form Actions */}
-                <div className="flex items-center gap-3 pt-6 border-t border-slate-200 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setView("list")}
-                    className={`flex-1 py-3 rounded-xl text-sm font-semibold border cursor-pointer transition-colors ${
-                      isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1 py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 text-white cursor-pointer flex items-center justify-center gap-2 hover:from-emerald-400 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-60"
-                  >
-                    {saving ? (
-                      <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" />
-                    ) : (
-                      <Icon icon="ph:check-bold" className="w-4 h-4" />
-                    )}
-                    {editingCrop ? "Save Changes" : "Save Crop"}
+                <div className="flex gap-2 pt-3 border-t border-slate-800">
+                  <button type="button" onClick={() => setView("list")} className="flex-1 py-2 rounded-lg text-sm font-semibold border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+                  <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-colors">
+                    {saving ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-4 h-4" /> : "Save Crop"}
                   </button>
                 </div>
               </form>
@@ -877,16 +600,16 @@ const CropInventory = () => {
         )}
       </AnimatePresence>
 
-      {/* ── Confirm Delete Modal ────────────────────────────────────────────────── */}
+
+
       <ConfirmModal
         isOpen={!!cropToDelete}
         onClose={() => setCropToDelete(null)}
         onConfirm={confirmDelete}
         title={`Remove ${cropToDelete?.name || "Crop"}?`}
-        description={`Are you sure you want to remove ${cropToDelete?.name || "this crop"} from your procurement inventory? This will set its status to inactive and update active deals.`}
+        description="Are you sure you want to remove this crop from inventory?"
         confirmLabel={isDeleting ? "Removing..." : "Remove Crop"}
         variant="danger"
-        loading={isDeleting}
         icon="ph:trash-bold"
       />
     </div>

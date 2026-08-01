@@ -6,7 +6,7 @@ import Collective from "../../models/collective.model.js";
 import throwErr from "../../utils/throwErr.js";
 import mongoose from "mongoose";
 
-const addCropData = async (code, yld, plantedDate, farmerId) => {
+const addCropData = async (code, yld, plantedDate, farmerId, farmland) => {
   const crop = await Crop.findOne({ code });
   if (!crop) {
     throwErr(404, `No Crop found with code ${code}`);
@@ -21,18 +21,11 @@ const addCropData = async (code, yld, plantedDate, farmerId) => {
       throwErr(400, `${crop.name} is already added !!`);
     } else {
       existingCrop.status = "ACTIVE";
-      if (yld !== undefined) {
-        existingCrop.yield = yld;
-      }
-      if (plantedDate !== undefined) {
-        existingCrop.plantedDate = plantedDate;
-      }
+      if (yld !== undefined) existingCrop.yield = yld;
+      if (plantedDate !== undefined) existingCrop.plantedDate = plantedDate;
+      if (farmland !== undefined) existingCrop.farmland = farmland;
       await existingCrop.save();
-      return {
-        success: true,
-        message: "Crop added successfully !!",
-        crop: existingCrop,
-      };
+      return { success: true, message: "Crop added successfully !!", crop: existingCrop };
     }
   }
 
@@ -40,61 +33,41 @@ const addCropData = async (code, yld, plantedDate, farmerId) => {
     farmer: farmerId,
     crop: crop._id,
     yield: yld !== undefined ? yld : 0,
+    farmland: farmland !== undefined ? farmland : 0,
   });
-  if (plantedDate != undefined) {
-    farmerCrop.plantedDate = plantedDate;
-  }
+  if (plantedDate != undefined) farmerCrop.plantedDate = plantedDate;
   await farmerCrop.save();
 
-  return {
-    success: true,
-    message: "Crop added successfully !!",
-    crop: farmerCrop,
-  };
+  return { success: true, message: "Crop added successfully !!", crop: farmerCrop };
 };
 
-const editCropData = async (id, yld, plantedDate, farmerId) => {
-  const farmerCrop = await FarmerCrop.findOne({
-    _id: id,
-    farmer: farmerId,
-  }).populate("crop");
-  if (!farmerCrop) {
-    throwErr(404, "Crop not found !!");
-  }
-  if (farmerCrop.status !== "ACTIVE") {
+const editCropData = async (id, yld, plantedDate, farmerId, farmland) => {
+  const farmerCrop = await FarmerCrop.findOne({ _id: id, farmer: farmerId }).populate("crop");
+  if (!farmerCrop) throwErr(404, "Crop not found !!");
+  if (farmerCrop.status !== "ACTIVE")
     throwErr(403, `You no longer grow this crop (${farmerCrop.crop.name}) !!`);
-  }
-  if (yld !== undefined) {
-    farmerCrop.yield = yld;
-  }
-  if (plantedDate !== undefined) {
-    farmerCrop.plantedDate = plantedDate;
-  }
+
+  if (yld !== undefined) farmerCrop.yield = yld;
+  if (plantedDate !== undefined) farmerCrop.plantedDate = plantedDate;
+  if (farmland !== undefined) farmerCrop.farmland = farmland;
 
   await farmerCrop.save();
-  return {
-    success: true,
-    message: "Crop updated successfully !!",
-    crop: farmerCrop,
-  };
+  return { success: true, message: "Crop updated successfully !!", crop: farmerCrop };
 };
 
 const getCropData = async (farmerId) => {
-  if (!farmerId) {
-    throwErr(404, "Farmer not found !!");
-  }
-  const farmerCrops = await FarmerCrop.find({ farmer: farmerId })
+  if (!farmerId) throwErr(404, "Farmer not found !!");
+
+  // Only return ACTIVE crops — inactive are treated as deleted
+  const farmerCrops = await FarmerCrop.find({ farmer: farmerId, status: "ACTIVE" })
     .select("-farmer -__v -createdAt -updatedAt")
     .populate({
       path: "crop",
       select: "-_id name code category season image",
     });
+
   if (!farmerCrops || farmerCrops.length === 0) {
-    return {
-      success: true,
-      message: "No crop data found !!",
-      crop: [],
-    };
+    return { success: true, message: "No crop data found !!", crop: [] };
   }
 
   const dealCrops = await CropDeal.find({

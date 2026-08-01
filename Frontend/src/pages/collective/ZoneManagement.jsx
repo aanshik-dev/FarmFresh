@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../components/ui";
 import EmptyState from "../../components/common/EmptyState";
+import ConfirmModal from "../../components/common/ConfirmModal";
 import { collectiveZoneAPI } from "../../services/api";
 
 const COLORS = [
@@ -25,6 +26,8 @@ const ZoneManagement = () => {
   const [view, setView] = useState("list"); // "list" | "form"
   const [editZone, setEditZone] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [zoneToDelete, setZoneToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [form, setForm] = useState({ name: "", area: "", direction: "", description: "", color: "#10b981" });
 
   const fetchZones = useCallback(async () => {
@@ -40,6 +43,16 @@ const ZoneManagement = () => {
   }, []);
 
   useEffect(() => { fetchZones(); }, [fetchZones]);
+
+  useEffect(() => {
+    if (zones.length > 0) {
+      if (!selected || !zones.some((z) => z._id === selected._id)) {
+        setSelected(zones[0]);
+      }
+    } else {
+      setSelected(null);
+    }
+  }, [zones, selected]);
 
   const openAdd = () => {
     setEditZone(null);
@@ -81,16 +94,19 @@ const ZoneManagement = () => {
     }
   };
 
-  const handleDelete = async (zone, e) => {
-    if (e) e.stopPropagation();
-    if (!window.confirm(`Delete zone "${zone.name}"? Farmer groups assigned to it will be unassigned.`)) return;
+  const handleDelete = async () => {
+    if (!zoneToDelete) return;
+    setIsDeleting(true);
     try {
-      await collectiveZoneAPI.delete(zone._id);
+      await collectiveZoneAPI.delete(zoneToDelete._id);
       toast.success("Zone deleted");
-      if (selected?._id === zone._id) setSelected(null);
+      if (selected?._id === zoneToDelete._id) setSelected(null);
+      setZoneToDelete(null);
       fetchZones();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete zone");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -204,7 +220,7 @@ const ZoneManagement = () => {
                             <Icon icon="ph:pencil-fill" className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={(e) => handleDelete(z, e)}
+                            onClick={(e) => { e.stopPropagation(); setZoneToDelete(z); }}
                             className={`p-2 rounded-xl cursor-pointer transition-colors ${isDark ? "text-slate-500 hover:text-red-400 hover:bg-red-500/10" : "text-slate-400 hover:text-red-500 hover:bg-red-50"}`}
                           >
                             <Icon icon="ph:trash-fill" className="w-4 h-4" />
@@ -421,6 +437,16 @@ const ZoneManagement = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        isOpen={!!zoneToDelete}
+        onClose={() => setZoneToDelete(null)}
+        onConfirm={handleDelete}
+        title="Delete Zone?"
+        description={`Delete "${zoneToDelete?.name}"? Farmer groups assigned to this zone will be unassigned.`}
+        confirmLabel={isDeleting ? "Deleting..." : "Delete Zone"}
+        variant="danger"
+        icon="ph:map-pin-bold"
+      />
     </div>
   );
 };

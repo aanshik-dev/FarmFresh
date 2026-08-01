@@ -17,6 +17,11 @@ const farmerCropSchema = new mongoose.Schema(
       default: 0,
       required: true,
     },
+    farmland: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
     plantedDate: {
       type: Date,
       default: null,

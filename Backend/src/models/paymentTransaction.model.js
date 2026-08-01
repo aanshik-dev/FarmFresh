@@ -2,6 +2,13 @@ import mongoose from "mongoose";
 
 const paymentTransactionSchema = new mongoose.Schema(
   {
+    // Human readable receipt id (PM1000001)
+    code: {
+      type: String,
+      trim: true,
+      unique: true,
+      sparse: true,
+    },
     collective: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Collective",
@@ -12,15 +19,38 @@ const paymentTransactionSchema = new mongoose.Schema(
       ref: "FarmerGroup",
       required: true,
     },
+    membership: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Membership",
+      default: null,
+    },
     schedule: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Schedule",
       required: true,
     },
+    // Exact schedule items settled by this payment
+    items: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ScheduleItem",
+      },
+    ],
     amount: {
       type: Number,
       required: true,
       min: 0,
+    },
+    // Membership balance left after this payment — proof trail for the farmer
+    balanceAfter: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    method: {
+      type: String,
+      enum: ["UPI", "BANK_TRANSFER", "CASH", "CHEQUE", "OTHER"],
+      default: "OTHER",
     },
     paymentProof: {
       type: String,

@@ -15,6 +15,10 @@ export const farmerCropAddSchema = z.object({
   code: z.string().trim().min(1, "Crop Code is required !!"),
   yld: z.coerce.number().min(0, "Yield must be non-negative !!").optional(),
   yield: z.coerce.number().min(0, "Yield must be non-negative !!").optional(),
+  farmland: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number().min(0, "Farmland area must be non-negative !!").optional(),
+  ),
   plantedDate: z.preprocess(
     (val) => (val === "" ? undefined : val),
     z
@@ -66,6 +70,10 @@ export const editFarmerCropSchema = z.object({
   yield: z.preprocess(
     (val) => (val === "" ? undefined : val),
     z.coerce.number().min(0, "Yield must be non-negative !!").optional(),
+  ),
+  farmland: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.coerce.number().min(0, "Farmland area must be non-negative !!").optional(),
   ),
   plantedDate: z.preprocess(
     (val) => (val === "" ? undefined : val),

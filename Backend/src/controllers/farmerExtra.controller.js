@@ -23,6 +23,15 @@ export const getDealStatusHistory = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+export const getDealPickupHistory = async (req, res, next) => {
+  try {
+    const { id: farmerId } = req.user;
+    const { dealId } = req.params;
+    const result = await dealService.getDealPickupHistory(farmerId, dealId);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
 export const getActiveDeals = async (req, res, next) => {
   try {
     const { id: farmerId } = req.user;
@@ -37,6 +46,15 @@ export const getFarmerPickups = async (req, res, next) => {
   try {
     const { id: farmerId } = req.user;
     const result = await pickupService.getFarmerPickups(farmerId);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
+export const getFarmerPickupDetail = async (req, res, next) => {
+  try {
+    const { id: farmerId } = req.user;
+    const { scheduleId } = req.params;
+    const result = await pickupService.getFarmerPickupDetail(farmerId, scheduleId);
     res.status(200).json(result);
   } catch (err) { next(err); }
 };
@@ -72,6 +90,15 @@ export const markAllNotificationsRead = async (req, res, next) => {
   try {
     const { id } = req.user;
     const result = await notificationService.markAllRead(id);
+    res.status(200).json(result);
+  } catch (err) { next(err); }
+};
+
+export const deleteNotification = async (req, res, next) => {
+  try {
+    const { id } = req.user;
+    const { notifId } = req.params;
+    const result = await notificationService.deleteNotification(id, notifId);
     res.status(200).json(result);
   } catch (err) { next(err); }
 };

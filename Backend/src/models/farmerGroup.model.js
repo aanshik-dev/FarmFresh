@@ -88,6 +88,24 @@ const farmerGroupSchema = new mongoose.Schema(
         default: 0,
       },
     },
+    // ── Money (aggregated across every collective this group deals with) ──────
+    // Kept in sync with the per-membership balance/earnings inside the same
+    // transaction that records a pickup completion or a payment.
+    totalEarnings: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    pendingBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalPickups: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true },
 );

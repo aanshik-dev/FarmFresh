@@ -71,12 +71,14 @@ export const farmerMemberAPI = {
 export const farmerDealAPI = {
   updateStatus: (dealId, data) => api.post(`/farmer/me/deals/${dealId}/update-status`, data),
   getHistory: (dealId) => api.get(`/farmer/me/deals/${dealId}/status-history`),
+  getPickupHistory: (dealId) => api.get(`/farmer/me/deals/${dealId}/pickup-history`),
   getActive: () => api.get("/farmer/me/deals/active"),
 };
 
 // ── Farmer Pickups & Balance ──────────────────────────────────────────────────
 export const farmerPickupAPI = {
   getPickups: () => api.get("/farmer/me/pickups"),
+  getPickupDetail: (scheduleId) => api.get(`/farmer/me/pickups/${scheduleId}`),
   getBalance: () => api.get("/farmer/me/balance"),
 };
 
@@ -85,6 +87,7 @@ export const farmerNotifAPI = {
   get: () => api.get("/farmer/me/notifications"),
   markRead: (notifId) => api.patch(`/farmer/me/notifications/${notifId}/read`),
   markAllRead: () => api.patch("/farmer/me/notifications/read-all"),
+  delete: (notifId) => api.delete(`/farmer/me/notifications/${notifId}`),
 };
 
 export const farmerAnnouncementAPI = {
@@ -140,10 +143,17 @@ export const collectiveDealAPI = {
 // ── Collective Schedules ──────────────────────────────────────────────────────
 export const collectiveScheduleAPI = {
   create: (data) => api.post("/collective/me/schedules", data),
+  update: (scheduleId, data) => api.patch(`/collective/me/schedules/${scheduleId}`, data),
   get: (params) => api.get("/collective/me/schedules", { params }),
   getDetail: (scheduleId) => api.get(`/collective/me/schedules/${scheduleId}`),
   updateStatus: (scheduleId, data) => api.patch(`/collective/me/schedules/${scheduleId}/status`, data),
   markItemPaid: (scheduleId, itemId, data) => api.patch(`/collective/me/schedules/${scheduleId}/items/${itemId}/pay`, data),
+  payFarmer: (scheduleId, farmerGroupId, data) => api.post(`/collective/me/schedules/${scheduleId}/farmers/${farmerGroupId}/pay`, data),
+  getReadyDeals: (params) => api.get("/collective/me/ready-deals", { params }),
+  getDashboard: () => api.get("/collective/me/pickup-dashboard"),
+  getPayments: (params) => api.get("/collective/me/payments", { params }),
+  getLedger: (farmerGroupId) => api.get(`/collective/me/farmers/${farmerGroupId}/ledger`),
+  uploadProof: (data) => api.post("/collective/me/payments/proof", data),
 };
 
 // ── Collective Notifications ──────────────────────────────────────────────────
@@ -151,6 +161,7 @@ export const collectiveNotifAPI = {
   get: () => api.get("/collective/me/notifications"),
   markRead: (notifId) => api.patch(`/collective/me/notifications/${notifId}/read`),
   markAllRead: () => api.patch("/collective/me/notifications/read-all"),
+  delete: (notifId) => api.delete(`/collective/me/notifications/${notifId}`),
 };
 
 // ── Collective Announcements ──────────────────────────────────────────────────

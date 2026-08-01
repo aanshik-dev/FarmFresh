@@ -106,7 +106,10 @@ const getMemberships = async (collectiveID) => {
 };
 
 // ── REJECT membership requests
-const rejectMemberRequest = async (collectiveId, { farmerId, dealIds, rejectedCrops, reason }) => {
+const rejectMemberRequest = async (
+  collectiveId,
+  { farmerId, dealIds, rejectedCrops, reason },
+) => {
   let rejectList = [];
   if (Array.isArray(rejectedCrops) && rejectedCrops.length > 0) {
     rejectList = rejectedCrops;
@@ -138,7 +141,9 @@ const rejectMemberRequest = async (collectiveId, { farmerId, dealIds, rejectedCr
     throwErr(403, "No valid requested deals found to reject !!");
 
   const targetFarmerId = farmerId || validDeals[0].membership.farmer._id;
-  const collective = await Collective.findById(collectiveId).select("name").lean();
+  const collective = await Collective.findById(collectiveId)
+    .select("name")
+    .lean();
   const collectiveName = collective?.name || "The collective";
 
   const session = await mongoose.startSession();
@@ -148,7 +153,10 @@ const rejectMemberRequest = async (collectiveId, { farmerId, dealIds, rejectedCr
         updateOne: {
           filter: { _id: dealId, status: "REQUESTED" },
           update: {
-            $set: { status: "REJECTED", rejectionReason: reason || "Rejected by collective" },
+            $set: {
+              status: "REJECTED",
+              rejectionReason: reason || "Rejected by collective",
+            },
           },
         },
       }));
@@ -169,12 +177,23 @@ const rejectMemberRequest = async (collectiveId, { farmerId, dealIds, rejectedCr
     sender: collectiveId,
   });
 
-  return { success: true, message: "Membership request(s) rejected successfully !!" };
+  return {
+    success: true,
+    message: "Membership request(s) rejected successfully !!",
+  };
 };
 
 // ── ACCEPT / REVIEW membership requests (with partial accept/reject, price & zone)
 const acceptMembershipRequest = async (collectiveId, payload) => {
-  const { farmerId, crops = [], rejectedCrops = [], zoneId, route, distance, estTime } = payload || {};
+  const {
+    farmerId,
+    crops = [],
+    rejectedCrops = [],
+    zoneId,
+    route,
+    distance,
+    estTime,
+  } = payload || {};
 
   if (!(await isProfileComplete(collectiveId, "COLLECTIVE")))
     throwErr(
@@ -197,31 +216,36 @@ const acceptMembershipRequest = async (collectiveId, payload) => {
   const rejectedDealIds = rejectedCrops.map((c) => c.dealId);
   const allDealIds = [...approvedDealIds, ...rejectedDealIds];
 
-  // Fetch all deals and verify membership
+  // Fetch membership first to reliably match farmer and collective
+  const membership = await Membership.findOne({
+    collective: collectiveId,
+    farmer: farmerId,
+  });
+  if (!membership) throwErr(404, "Farmer group membership request not found !!");
+
   const deals = await CropDeal.find({
     _id: { $in: allDealIds },
+    membership: membership._id,
     status: "REQUESTED",
-  })
-    .populate({
-      path: "membership",
-      match: { collective: collectiveId, farmer: farmerId },
-    })
-    .populate({ path: "crop", populate: { path: "crop", select: "name code" } });
+  });
 
-  const validDeals = deals.filter((d) => d.membership !== null);
-  if (validDeals.length !== allDealIds.length)
+  if (deals.length !== allDealIds.length)
     throwErr(403, "Some crop deals are invalid or not in REQUESTED state !!");
 
-  const membershipId = validDeals[0].membership._id;
+  const membershipId = membership._id;
 
   // Validate zone if provided
   let assignedZone = null;
   if (zoneId) {
-    assignedZone = await Zone.findOne({ _id: zoneId, collective: collectiveId });
+    assignedZone = await Zone.findOne({
+      _id: zoneId,
+      collective: collectiveId,
+    });
     if (!assignedZone) throwErr(404, "Selected zone not found !!");
   }
 
   const session = await mongoose.startSession();
+  const writeOptions = session && !session.isMock ? { session } : {};
   try {
     await session.withTransaction(async () => {
       // 1. Process Approved Crops
@@ -238,7 +262,7 @@ const acceptMembershipRequest = async (collectiveId, payload) => {
             },
           },
         }));
-        await CropDeal.bulkWrite(approveBulk, { session });
+        await CropDeal.bulkWrite(approveBulk, writeOptions);
       }
 
       // 2. Process Rejected Crops
@@ -254,15 +278,14 @@ const acceptMembershipRequest = async (collectiveId, payload) => {
             },
           },
         }));
-        await CropDeal.bulkWrite(rejectBulk, { session });
+        await CropDeal.bulkWrite(rejectBulk, writeOptions);
       }
 
       // 3. Update Membership status and zone
       const updateData = {};
       if (crops.length > 0) {
         updateData.status = "ACTIVE";
-        const currentMembership = validDeals[0].membership;
-        if (!currentMembership.memberSince) {
+        if (!membership.memberSince) {
           updateData.memberSince = new Date();
         }
       } else {
@@ -274,18 +297,26 @@ const acceptMembershipRequest = async (collectiveId, payload) => {
       if (distance !== undefined) updateData.distance = distance;
       if (estTime !== undefined) updateData.estTime = estTime;
 
-      await Membership.findByIdAndUpdate(membershipId, { $set: updateData }, { session });
+      await Membership.findByIdAndUpdate(
+        membershipId,
+        { $set: updateData },
+        writeOptions,
+      );
     });
   } finally {
     await session.endSession();
   }
 
   // Build notification body for farmer group
-  const collective = await Collective.findById(collectiveId).select("name").lean();
+  const collective = await Collective.findById(collectiveId)
+    .select("name")
+    .lean();
   const collectiveName = collective?.name || "The collective";
 
-  const approvedSummary = crops.length > 0 ? `${crops.length} crop(s) approved` : "";
-  const rejectedSummary = rejectedCrops.length > 0 ? `${rejectedCrops.length} crop(s) rejected` : "";
+  const approvedSummary =
+    crops.length > 0 ? `${crops.length} crop(s) approved` : "";
+  const rejectedSummary =
+    rejectedCrops.length > 0 ? `${rejectedCrops.length} crop(s) rejected` : "";
   const zoneSummary = assignedZone ? ` in zone ${assignedZone.name}` : "";
 
   const summary = [approvedSummary, rejectedSummary].filter(Boolean).join(", ");
@@ -296,7 +327,11 @@ const acceptMembershipRequest = async (collectiveId, payload) => {
     type: "REQUEST",
     title: `Membership Request Processed by ${collectiveName}`,
     body: `Your partnership request has been reviewed: ${summary}${zoneSummary}. Check your deals section for full details.`,
-    data: { approvedCount: crops.length, rejectedCount: rejectedCrops.length, zoneId },
+    data: {
+      approvedCount: crops.length,
+      rejectedCount: rejectedCrops.length,
+      zoneId,
+    },
     sender: collectiveId,
   });
 

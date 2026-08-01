@@ -5,11 +5,291 @@ import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../components/ui";
 import StatusBadge from "../../components/common/StatusBadge";
 import EmptyState from "../../components/common/EmptyState";
-import { collectiveScheduleAPI, collectiveDriverAPI, collectiveZoneAPI } from "../../services/api";
+import ConfirmModal from "../../components/common/ConfirmModal";
+import {
+  collectiveScheduleAPI,
+  collectiveDriverAPI,
+  collectiveZoneAPI,
+} from "../../services/api";
 
 const fmt = (date) =>
-  new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  date
+    ? new Date(date).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
 
+const fmtCurrency = (n) =>
+  n ? `₹${Number(n).toLocaleString("en-IN")}` : "₹0";
+
+// ── Field component ───────────────────────────────────────────────────────────
+const Field = ({ label, children, required }) => (
+  <div>
+    <label className="text-xs font-semibold block mb-1.5 text-slate-400">
+      {label}
+      {required && <span className="text-red-400 ml-0.5">*</span>}
+    </label>
+    {children}
+  </div>
+);
+
+const selectCls =
+  "w-full appearance-none rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all bg-slate-900 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500";
+const inputCls =
+  "w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all bg-slate-900 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500";
+
+// ── Schedule Detail View ──────────────────────────────────────────────────────────────
+const ScheduleDetailView = ({ data, onBack, isDark, onAction, onEdit }) => {
+  if (!data || !data.schedule) return null;
+  const { schedule, farmers } = data;
+
+  return (
+    <motion.div
+      key="detail"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      className="max-w-4xl mx-auto w-full"
+    >
+      <button
+        onClick={onBack}
+        className={`mb-6 flex items-center gap-2 text-sm font-semibold cursor-pointer transition-colors ${
+          isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-500 hover:text-emerald-600"
+        }`}
+      >
+        <Icon icon="ph:arrow-left-bold" className="w-4 h-4" /> Back to Schedules
+      </button>
+
+      <div className={`rounded-2xl border p-6 shadow-xl ${
+        isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"
+      }`}>
+        {/* Header Block */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-slate-800 gap-4">
+          <div>
+            <p className="text-xs text-slate-500 font-mono font-semibold uppercase tracking-wider mb-1">Schedule</p>
+            <h2 className="text-2xl font-bold text-white">{schedule.code || "—"}</h2>
+            <div className="mt-2 flex items-center gap-2">
+              <StatusBadge status={schedule.status?.toLowerCase()} />
+              {schedule.status === "SCHEDULED" && onEdit && (
+                <button
+                  onClick={() => onEdit(data)}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors cursor-pointer"
+                >
+                  <Icon icon="ph:pencil-simple-bold" className="w-3.5 h-3.5" /> Edit Schedule
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col items-start sm:items-end">
+            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Pickup Date</p>
+            <span className="text-lg font-semibold text-emerald-400">{fmt(schedule.pickupDate)}</span>
+          </div>
+        </div>
+
+        {/* 8 Smart Metrics Cards matching CropInventory details */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Zone</p>
+            <p className="text-sm font-bold text-white truncate">{schedule.zone?.name || "—"}</p>
+          </div>
+          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Pickup Time</p>
+            <p className="text-sm font-bold text-white">{schedule.time || "09:00"}</p>
+          </div>
+          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Vehicle</p>
+            <p className="text-sm font-bold text-white truncate">{schedule.driver?.vehicleNumber || "—"}</p>
+          </div>
+          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Capacity Limit</p>
+            <p className="text-sm font-bold text-white">{schedule.driver?.capacity ? `${schedule.driver.capacity} kg` : "—"}</p>
+          </div>
+
+          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Farmers Involved</p>
+            <p className="text-sm font-bold text-blue-400">{schedule.farmerCount ?? 0} Groups</p>
+          </div>
+          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Crops Count</p>
+            <p className="text-sm font-bold text-amber-400">{schedule.itemCount ?? 0} Varieties</p>
+          </div>
+          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Total Weight</p>
+            <p className="text-sm font-bold text-emerald-400">{schedule.totalQuantity ?? 0} kg</p>
+          </div>
+          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Est. Total Cost</p>
+            <p className="text-sm font-bold text-emerald-400">{fmtCurrency(schedule.totalAmount)}</p>
+          </div>
+        </div>
+
+        {/* Assigned Driver Card */}
+        <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <img 
+              src={`https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=${schedule.driver?.name || "driver"}`} 
+              alt="Driver" 
+              className="w-14 h-14 rounded-full object-cover bg-slate-850 border border-slate-700 shrink-0" 
+            />
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Assigned Driver</p>
+              <h4 className="font-bold text-base text-white">{schedule.driver?.name || "—"}</h4>
+              <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                <Icon icon="ph:phone-fill" className="w-3.5 h-3.5" /> {schedule.driver?.phone || "—"}
+              </p>
+            </div>
+          </div>
+          <div className="text-left sm:text-right">
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Vehicle Details</p>
+            <p className="text-sm font-bold text-white">{schedule.driver?.vehicleNumber || "—"}</p>
+            <p className="text-xs text-slate-400 mt-1">Capacity: {schedule.driver?.capacity || 0} kg</p>
+          </div>
+        </div>
+
+        {/* Crops scheduled list (designed like supply lines) */}
+        {farmers && farmers.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Icon icon="ph:plant-fill" className="w-5 h-5 text-emerald-400" />
+              Crops Scheduled for Pickup
+            </h3>
+            <div className="space-y-4">
+              {farmers.map((farmerGrp, idx) => (
+                <div key={idx} className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 transition-all hover:border-slate-700">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-800/40">
+                    <div>
+                      <h4 className="font-bold text-base text-white">{farmerGrp.farmerGroup?.name || "Farmer Group"}</h4>
+                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                        <Icon icon="ph:user-bold" /> {farmerGrp.farmerGroup?.leadFarmer || "Lead"} &middot; 
+                        <Icon icon="ph:phone-fill" /> {farmerGrp.farmerGroup?.phone || "—"}
+                      </p>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase">Farmer Group Total</p>
+                      <span className="text-base font-bold text-emerald-400">{fmtCurrency(farmerGrp.totalAmount)}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {farmerGrp.items.map((item, iIdx) => (
+                      <div key={iIdx} className="flex justify-between items-center py-2 border-b border-slate-800/20 last:border-0 text-sm">
+                        <div>
+                          <p className="font-semibold text-white">{item.cropName || "Crop"}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {item.collectedQuantity || 0} kg &times; ₹{item.agreedPrice || 0}/kg
+                          </p>
+                        </div>
+                        <span className="font-semibold text-emerald-450">{fmtCurrency(item.totalAmount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Notes */}
+        {schedule.notes && (
+          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/40 mb-6">
+            <p className="text-[10px] text-slate-500 font-bold uppercase mb-1.5 flex items-center gap-1">
+              <Icon icon="ph:note-pencil-bold" className="w-3.5 h-3.5" /> Remarks / Notes
+            </p>
+            <p className="text-sm text-slate-350 italic">"{schedule.notes}"</p>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-4 pt-4 border-t border-slate-800">
+          {schedule.status === "SCHEDULED" && (
+            <>
+              <button
+                onClick={() => onAction("start", schedule._id)}
+                className="flex-1 min-w-[200px] py-3.5 rounded-xl text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-blue-500/20"
+              >
+                <Icon icon="ph:truck-fill" className="w-5 h-5" />
+                Mark In Progress
+              </button>
+              <button
+                onClick={() => onAction("postpone", schedule._id)}
+                className="flex-1 min-w-[150px] py-3.5 rounded-xl text-sm font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Icon icon="ph:clock-clockwise-bold" className="w-5 h-5" />
+                Postpone
+              </button>
+              <button
+                onClick={() => onAction("cancel", schedule._id)}
+                className="flex-1 min-w-[150px] py-3.5 rounded-xl text-sm font-bold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Icon icon="ph:x-circle-bold" className="w-5 h-5" />
+                Cancel
+              </button>
+            </>
+          )}
+          {schedule.status === "IN_PROGRESS" && (
+            <button
+              onClick={() => onAction("complete", schedule._id)}
+              className="w-full py-4 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Icon icon="ph:check-circle-fill" className="w-5 h-5" />
+              Mark Completed
+            </button>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// ── Postpone Panel ────────────────────────────────────────────────────────────
+const PostponePanel = ({ scheduleId, onClose, onConfirm }) => {
+  const [newDate, setNewDate] = useState("");
+  const [reason, setReason] = useState("");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+        <h3 className="text-lg font-bold text-white mb-4">Postpone Pickup</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="text-xs font-semibold block mb-1.5 text-slate-400">New Pickup Date *</label>
+            <input
+              type="date"
+              value={newDate}
+              onChange={(e) => setNewDate(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold block mb-1.5 text-slate-400">Reason (optional)</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={2}
+              placeholder="Why is the pickup being postponed?"
+              className={`${inputCls} resize-none`}
+            />
+          </div>
+        </div>
+        <div className="flex gap-3 mt-5">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-slate-700 text-slate-300 hover:bg-slate-800 cursor-pointer transition-all">
+            Cancel
+          </button>
+          <button
+            onClick={() => newDate && onConfirm(scheduleId, newDate, reason)}
+            disabled={!newDate}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-white hover:bg-amber-400 cursor-pointer transition-all disabled:opacity-50"
+          >
+            Postpone
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Main Component ────────────────────────────────────────────────────────────
 const PickupScheduler = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
@@ -19,26 +299,44 @@ const PickupScheduler = () => {
   const [drivers, setDrivers] = useState([]);
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("upcoming"); // upcoming | past | all
-  
-  // Navigation State
-  const [view, setView] = useState("list"); // "list" | "form"
+  const [tab, setTab] = useState("all");
+  const [displayMode, setDisplayMode] = useState("card"); // "card" | "table"
+  const [sortKey, setSortKey] = useState("createdAt"); // "createdAt", "updatedAt", "status"
+  const [sortOrder, setSortOrder] = useState("desc"); // "asc" | "desc"
+
+  // View: list | form
+  const [view, setView] = useState("list");
   const [creating, setCreating] = useState(false);
+  const [dealsLoading, setDealsLoading] = useState(false);
+
+  // Form state
   const [form, setForm] = useState({
-    driverId: "", zoneId: "", pickupDate: "", time: "09:00", notes: "", items: [],
+    driverId: "",
+    zoneId: "",
+    pickupDate: "",
+    time: "09:00",
+    notes: "",
+    items: [],
   });
 
+  // Detail panel
+  const [detailSchedule, setDetailSchedule] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // Modals
+  const [confirmModal, setConfirmModal] = useState(null); // { type, scheduleId, label, description }
+  const [postponeModal, setPostponeModal] = useState(null); // scheduleId
+
+  // Fetch zones, drivers, schedules
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [schRes, dealRes, driverRes, zoneRes] = await Promise.all([
+      const [schRes, driverRes, zoneRes] = await Promise.all([
         collectiveScheduleAPI.get({ filter: "all" }),
-        collectiveScheduleAPI.getReadyDeals ? collectiveScheduleAPI.getReadyDeals() : Promise.resolve({ data: { deals: [] } }),
         collectiveDriverAPI.get(),
         collectiveZoneAPI.get(),
       ]);
       setSchedules(schRes.data.schedules || []);
-      setReadyDeals(dealRes.data?.deals || []);
       setDrivers(driverRes.data.drivers?.filter((d) => d.status !== "INACTIVE") || []);
       setZones(zoneRes.data.zones || []);
     } catch (err) {
@@ -48,221 +346,522 @@ const PickupScheduler = () => {
     }
   }, []);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  // Fetch ready deals when zone changes
+  useEffect(() => {
+    if (!form.zoneId) {
+      setReadyDeals([]);
+      return;
+    }
+    const load = async () => {
+      setDealsLoading(true);
+      try {
+        const res = await collectiveScheduleAPI.getReadyDeals({ 
+          zoneId: form.zoneId,
+          scheduleId: editingScheduleId || undefined
+        });
+        setReadyDeals(res.data?.deals || []);
+      } catch (err) {
+        toast.error("Failed to load ready crops");
+      } finally {
+        setDealsLoading(false);
+      }
+    };
+    load();
+  }, [form.zoneId, editingScheduleId]);
+
+  // Capacity tracking
+  const selectedDriver = drivers.find((d) => d._id === form.driverId);
+  const capacity = selectedDriver?.capacity || 0;
+  const totalSelectedQty = form.items.reduce(
+    (s, i) => s + (Number(i.collectedQuantity) || 0),
+    0
+  );
+  const capacityExceeded = capacity > 0 && totalSelectedQty > capacity;
+
+  const [editingScheduleId, setEditingScheduleId] = useState(null);
 
   const openForm = () => {
     setForm({ driverId: "", zoneId: "", pickupDate: "", time: "09:00", notes: "", items: [] });
+    setReadyDeals([]);
+    setEditingScheduleId(null);
+    setView("form");
+  };
+
+  const handleEdit = (detailedData) => {
+    const { schedule, items } = detailedData;
+    setForm({
+      driverId: schedule.driver?._id || schedule.driver,
+      zoneId: schedule.zone?._id || schedule.zone,
+      pickupDate: schedule.pickupDate ? new Date(schedule.pickupDate).toISOString().split('T')[0] : "",
+      time: schedule.time || "09:00",
+      notes: schedule.notes || "",
+      items: (items || []).map((i) => ({
+        cropDealId: i.cropDeal?._id || i.cropDeal,
+        collectedQuantity: i.collectedQuantity || 0,
+      })),
+    });
+    setEditingScheduleId(schedule._id);
     setView("form");
   };
 
   const toggleDeal = (deal) => {
     setForm((p) => {
       const exists = p.items.find((i) => i.cropDealId === deal._id);
-      if (exists) {
-        return { ...p, items: p.items.filter((i) => i.cropDealId !== deal._id) };
-      }
-      return { ...p, items: [...p.items, { cropDealId: deal._id, collectedQuantity: deal.expectedQuantity || 0 }] };
+      if (exists) return { ...p, items: p.items.filter((i) => i.cropDealId !== deal._id) };
+      return {
+        ...p,
+        items: [
+          ...p.items,
+          { cropDealId: deal._id, collectedQuantity: deal.expectedQuantity || 0 },
+        ],
+      };
     });
   };
 
   const updateQty = (dealId, qty) => {
     setForm((p) => ({
       ...p,
-      items: p.items.map((i) => i.cropDealId === dealId ? { ...i, collectedQuantity: Number(qty) } : i),
+      items: p.items.map((i) =>
+        i.cropDealId === dealId ? { ...i, collectedQuantity: qty } : i
+      ),
     }));
   };
 
   const handleCreate = async () => {
     if (!form.driverId || !form.zoneId || !form.pickupDate || form.items.length === 0) {
-      toast.error("Driver, zone, date, and at least one crop deal are required"); return;
+      toast.error("Driver, zone, date, and at least one crop are required");
+      return;
     }
+    if (capacityExceeded) {
+      toast.error(`Total quantity (${totalSelectedQty} kg) exceeds vehicle capacity (${capacity} kg)`);
+      return;
+    }
+    // Convert qty strings to numbers
+    const payload = {
+      ...form,
+      items: form.items.map((i) => ({
+        ...i,
+        collectedQuantity: Number(i.collectedQuantity) || 0,
+      })),
+    };
     setCreating(true);
     try {
-      await collectiveScheduleAPI.create(form);
-      toast.success("Pickup scheduled! Farmer groups have been notified.", { title: "Scheduled" });
-      setView("list");
+      if (editingScheduleId) {
+        await collectiveScheduleAPI.update(editingScheduleId, payload);
+        toast.success("Schedule updated successfully!");
+      } else {
+        await collectiveScheduleAPI.create(payload);
+        toast.success("Pickup scheduled successfully!");
+      }
       fetchAll();
+      setView("list");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to create schedule");
+      toast.error(err.response?.data?.message || "Operation failed");
     } finally {
       setCreating(false);
     }
   };
 
-  const updateStatus = async (scheduleId, status, newDate) => {
+  const handleAction = (type, scheduleId) => {
+    if (type === "postpone") {
+      setPostponeModal(scheduleId);
+      setDetailSchedule(null);
+      return;
+    }
+    const labels = {
+      start: { label: "Start Pickup", description: "Mark this pickup as In Progress? The driver will be notified.", confirm: "Start", color: "blue" },
+      complete: { label: "Complete Pickup", description: "Mark this pickup as Completed? Farmer balances will be updated.", confirm: "Complete", color: "emerald" },
+      cancel: { label: "Cancel Pickup", description: "This will cancel the pickup and release all selected crops back to the pool.", confirm: "Cancel Pickup", color: "red" },
+    };
+    setConfirmModal({ type, scheduleId, ...labels[type] });
+    setDetailSchedule(null);
+  };
+
+  const executeAction = async () => {
+    if (!confirmModal) return;
+    const { type, scheduleId } = confirmModal;
+    const statusMap = { start: "IN_PROGRESS", complete: "COMPLETED", cancel: "CANCELLED" };
+    setConfirmModal(null);
     try {
-      await collectiveScheduleAPI.updateStatus(scheduleId, { status, newDate });
-      toast.success(`Schedule ${status.toLowerCase()}`);
+      await collectiveScheduleAPI.updateStatus(scheduleId, { status: statusMap[type] });
+      toast.success(`Schedule ${type === "start" ? "started" : type === "complete" ? "completed" : "cancelled"}`);
       fetchAll();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update status");
+      toast.error(err.response?.data?.message || "Action failed");
+    }
+  };
+  const executePostpone = async (scheduleId, newDate, reason) => {
+    setPostponeModal(null);
+    try {
+      await collectiveScheduleAPI.updateStatus(scheduleId, { status: "POSTPONED", newDate, reason });
+      toast.success("Pickup postponed");
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to postpone");
     }
   };
 
-  const filtered = schedules.filter((s) => {
-    if (tab === "upcoming") return ["SCHEDULED", "IN_PROGRESS"].includes(s.status);
-    if (tab === "past") return ["COMPLETED", "CANCELLED", "POSTPONED"].includes(s.status);
-    return true;
-  });
-
-  // Animation variants
-  const listVariants = {
-    initial: { x: -50, opacity: 0 },
-    enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
-    exit: { x: -50, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }
+  const handleViewDetails = async (summarySchedule) => {
+    setDetailLoading(true);
+    setView("detail"); // switch view immediately so user sees loading
+    try {
+      const { data } = await collectiveScheduleAPI.getDetail(summarySchedule._id);
+      setDetailSchedule(data);
+    } catch (err) {
+      toast.error("Failed to load schedule details");
+      setView("list"); // go back on error
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
-  const formVariants = {
-    initial: { x: 50, opacity: 0 },
-    enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
-    exit: { x: 50, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }
-  };
+  const filtered = schedules
+    .filter((s) => {
+      if (tab === "upcoming") return ["SCHEDULED", "IN_PROGRESS", "POSTPONED"].includes(s.status);
+      if (tab === "past") return ["COMPLETED", "CANCELLED"].includes(s.status);
+      return true;
+    })
+    .sort((a, b) => {
+      let valA = a[sortKey];
+      let valB = b[sortKey];
+      
+      if (sortKey === "createdAt" || sortKey === "updatedAt") {
+        valA = new Date(valA || 0).getTime();
+        valB = new Date(valB || 0).getTime();
+      }
+      
+      if (valA < valB) return sortOrder === "asc" ? -1 : 1;
+      if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
 
   return (
     <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
       <AnimatePresence mode="wait">
         {view === "list" ? (
-          <motion.div key="list" variants={listVariants} initial="initial" animate="enter" exit="exit">
+          <motion.div
+            key="list"
+            initial={{ x: -40, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -40, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+          >
             {/* Header */}
             <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
               <div>
                 <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
                   Pickup Schedules
                 </h1>
-                <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  {schedules.filter((s) => s.status === "SCHEDULED").length} upcoming · {schedules.length} total
+                <p className="text-sm mt-1 text-slate-400">
+                  {schedules.filter((s) => ["SCHEDULED", "IN_PROGRESS"].includes(s.status)).length} active ·{" "}
+                  {schedules.length} total
                 </p>
               </div>
-              <button
-                onClick={openForm}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold cursor-pointer shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300"
-              >
-                <Icon icon="ph:calendar-plus-fill" className="w-4 h-4" />Schedule Pickup
-              </button>
+              <div className="flex items-center gap-3">
+                {/* View Switcher */}
+                <div className="flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800">
+                  <button
+                    onClick={() => setDisplayMode("card")}
+                    className={`p-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      displayMode === "card"
+                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Icon icon="ph:squares-four-fill" className="w-4 h-4" />
+                    <span className="hidden sm:inline">Cards</span>
+                  </button>
+                  <button
+                    onClick={() => setDisplayMode("table")}
+                    className={`p-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      displayMode === "table"
+                        ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    <Icon icon="ph:list-bullets-bold" className="w-4 h-4" />
+                    <span className="hidden sm:inline">List</span>
+                  </button>
+                </div>
+
+                <button
+                  id="btn-schedule-pickup"
+                  onClick={openForm}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold cursor-pointer shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300"
+                >
+                  <Icon icon="ph:calendar-plus-fill" className="w-4 h-4" />
+                  Schedule Pickup
+                </button>
+              </div>
             </div>
 
-            {/* Tabs */}
-            <div className={`flex gap-2 p-1.5 rounded-xl mb-8 max-w-full overflow-x-auto scrollbar-none backdrop-blur-md ${isDark ? "bg-slate-900/60 border border-slate-800" : "bg-white border border-slate-200 shadow-sm"}`}>
-              {[
-                { id: "upcoming", label: "Upcoming" },
-                { id: "past", label: "Past" },
-                { id: "all", label: "All" },
-              ].map((t) => (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              {/* Tabs */}
+              <div className="flex gap-1 p-1.5 rounded-xl backdrop-blur-md bg-slate-900/60 border border-slate-800 w-fit">
+                {[
+                  { id: "all", label: "All Schedules" },
+                  { id: "upcoming", label: "Upcoming" },
+                  { id: "past", label: "Past Schedules" },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    id={`tab-${t.id}`}
+                    onClick={() => setTab(t.id)}
+                    className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                      tab === t.id
+                        ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20"
+                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                    }`}
+                  >
+                    {t.label}
+                    {t.id === "upcoming" && schedules.filter((s) => ["SCHEDULED", "IN_PROGRESS"].includes(s.status)).length > 0 && (
+                      <span className="ml-2 text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full">
+                        {schedules.filter((s) => ["SCHEDULED", "IN_PROGRESS"].includes(s.status)).length}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sorting */}
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <select
+                    value={sortKey}
+                    onChange={(e) => setSortKey(e.target.value)}
+                    className="appearance-none pl-3 pr-8 py-2 rounded-xl border text-sm outline-none bg-slate-900/60 border-slate-800 text-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="createdAt">Created Date</option>
+                    <option value="updatedAt">Updated Date</option>
+                    <option value="status">Status</option>
+                  </select>
+                  <Icon icon="ph:caret-down-bold" className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                </div>
                 <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                    tab === t.id
-                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20"
-                      : isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
-                  }`}
+                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  className="p-2 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Toggle Sort Order"
                 >
-                  {t.label}
+                  <Icon icon={sortOrder === "asc" ? "ph:sort-ascending-bold" : "ph:sort-descending-bold"} className="w-5 h-5" />
                 </button>
-              ))}
+              </div>
             </div>
 
             {loading ? (
               <div className="flex items-center justify-center h-64">
-                <Icon icon="svg-spinners:12-dots-scale-rotate" className={`w-10 h-10 ${isDark ? "text-emerald-400" : "text-emerald-500"}`} />
+                <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-10 h-10 text-emerald-400" />
               </div>
             ) : filtered.length === 0 ? (
               <EmptyState
                 icon="ph:calendar-fill"
                 title="No schedules found"
-                description={tab === "upcoming" ? "No upcoming pickups. Schedule one now." : "No pickups match this filter."}
-                action={tab === "upcoming" && (
-                  <button onClick={openForm} className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-semibold cursor-pointer mt-4">
-                    Schedule Pickup
-                  </button>
-                )}
+                description={
+                  tab === "upcoming"
+                    ? "No upcoming pickups. Schedule one now."
+                    : "No pickups match this filter."
+                }
+                action={
+                  tab !== "past" && (
+                    <button
+                      onClick={openForm}
+                      className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-semibold cursor-pointer mt-4"
+                    >
+                      Schedule Pickup
+                    </button>
+                  )
+                }
               />
+            ) : displayMode === "table" ? (
+              /* ── Table View ────────────────────────────────────────────── */
+              <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 overflow-hidden shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 bg-slate-900/80 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <th className="py-4 px-5">Code</th>
+                        <th className="py-4 px-5">Zone</th>
+                        <th className="py-4 px-5">Date & Time</th>
+                        <th className="py-4 px-5">Driver</th>
+                        <th className="py-4 px-5 text-center">Crops / Qty</th>
+                        <th className="py-4 px-5 text-right">Estimated Total</th>
+                        <th className="py-4 px-5">Status</th>
+                        <th className="py-4 px-5 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-sm">
+                      {filtered.map((s) => (
+                        <tr
+                          key={s._id}
+                          className="hover:bg-slate-800/30 transition-colors cursor-pointer"
+                          onClick={() => handleViewDetails(s)}
+                        >
+                          <td className="py-4 px-5 font-bold font-mono text-emerald-400">{s.code || "—"}</td>
+                          <td className="py-4 px-5 font-medium text-white">{s.zone?.name || "—"}</td>
+                          <td className="py-4 px-5 text-slate-300">
+                            {fmt(s.pickupDate)} <span className="text-xs text-slate-500 ml-1">({s.time || "09:00"})</span>
+                          </td>
+                          <td className="py-4 px-5 text-slate-300">
+                            <p className="font-semibold text-white">{s.driver?.name || "—"}</p>
+                            <p className="text-xs text-slate-500">{s.driver?.phone || ""}</p>
+                          </td>
+                          <td className="py-4 px-5 text-center text-slate-300">
+                            <span className="font-semibold">{s.itemCount ?? 0}</span> crops · <span className="text-emerald-400 font-bold">{s.totalQuantity ?? 0} kg</span>
+                          </td>
+                          <td className="py-4 px-5 text-right font-bold text-emerald-400">
+                            {fmtCurrency(s.totalAmount)}
+                          </td>
+                          <td className="py-4 px-5">
+                            <StatusBadge status={s.status?.toLowerCase()} />
+                          </td>
+                          <td className="py-4 px-5 text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => handleViewDetails(s)}
+                                className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-all"
+                                title="View Details"
+                              >
+                                <Icon icon="ph:eye-bold" className="w-4 h-4" />
+                              </button>
+                              {["SCHEDULED", "POSTPONED"].includes(s.status) && (
+                                <button
+                                  onClick={() => setPostponeModal(s._id)}
+                                  className="p-2 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-all"
+                                  title="Postpone"
+                                >
+                                  <Icon icon="ph:clock-clockwise-bold" className="w-4 h-4" />
+                                </button>
+                              )}
+                              {s.status === "SCHEDULED" && (
+                                <button
+                                  onClick={() => handleAction("start", s._id)}
+                                  className="p-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all"
+                                  title="Start Pickup"
+                                >
+                                  <Icon icon="ph:play-bold" className="w-4 h-4" />
+                                </button>
+                              )}
+                              {s.status === "IN_PROGRESS" && (
+                                <button
+                                  onClick={() => handleAction("complete", s._id)}
+                                  className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                                  title="Complete Pickup"
+                                >
+                                  <Icon icon="ph:check-bold" className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             ) : (
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              /* ── Card View ─────────────────────────────────────────────── */
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filtered.map((s, i) => (
                   <motion.div
                     key={s._id}
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className={`rounded-2xl border p-5 backdrop-blur-xl ${isDark ? "bg-slate-900/40 border-slate-800/60 shadow-xl shadow-black/20" : "bg-white/80 border-slate-200 shadow-lg shadow-slate-200/50"}`}
+                    transition={{ delay: i * 0.04 }}
+                    className="rounded-xl border bg-slate-900/40 border-slate-800/60 shadow-lg p-4 hover:border-slate-700 transition-all cursor-pointer group flex flex-col justify-between"
+                    onClick={() => handleViewDetails(s)}
                   >
-                    <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-50 text-emerald-600"}`}>
-                            <Icon icon="ph:map-pin-fill" className="w-5 h-5" />
-                          </div>
-                          <h3 className="font-bold text-lg">
-                            {s.zone?.name || "Zone —"}
+                    <div className="flex-1">
+                      {/* Top: code + status */}
+                      <div className="flex items-start justify-between gap-2 mb-2.5">
+                        <div>
+                          <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
+                            {s.code || "—"}
                           </h3>
                         </div>
-                        <StatusBadge status={s.status?.toLowerCase()} />
+                        <StatusBadge status={s.status?.toLowerCase()} size="sm" />
                       </div>
-                      <div className={`shrink-0 text-right px-4 py-3 rounded-xl border ${isDark ? "bg-slate-950/50 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
-                        <p className="font-bold text-lg text-emerald-500">
-                          {fmt(s.pickupDate)}
-                        </p>
-                        <p className={`text-sm font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>{s.time || "09:00"}</p>
+
+                      {/* Zone + Date row */}
+                      <div className="flex items-center justify-between mb-2.5 text-xs">
+                        <div className="flex items-center gap-1">
+                          <Icon icon="ph:map-pin-fill" className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="font-medium text-slate-300">{s.zone?.name || "—"}</span>
+                        </div>
+                        <span className="font-semibold text-emerald-400">{fmt(s.pickupDate)}</span>
+                      </div>
+
+                      {/* Driver */}
+                      <div className="flex items-center gap-2 mb-2.5 p-1.5 rounded-lg bg-slate-800/25">
+                        <img 
+                          src={`https://api.dicebear.com/7.x/adventurer-neutral/svg?seed=${s.driver?.name || "driver"}`} 
+                          alt="Driver" 
+                          className="w-7 h-7 rounded-full object-cover bg-slate-800 border border-slate-700 shrink-0" 
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-semibold text-white truncate">{s.driver?.name || "—"}</p>
+                          <p className="text-[9px] text-slate-500 truncate">{s.driver?.vehicleNumber || s.driver?.phone || ""}</p>
+                        </div>
+                      </div>
+
+                      {/* Stats row */}
+                      <div className="flex gap-1.5 mb-2.5">
+                        <div className="flex-1 text-center bg-slate-800/20 rounded-md py-1">
+                          <p className="text-xs font-bold text-white">{s.itemCount ?? 0}</p>
+                          <p className="text-[9px] text-slate-500">Crops</p>
+                        </div>
+                        <div className="flex-1 text-center bg-slate-800/20 rounded-md py-1">
+                          <p className="text-xs font-bold text-white">{s.totalQuantity ?? 0} kg</p>
+                          <p className="text-[9px] text-slate-500">Qty</p>
+                        </div>
+                        <div className="flex-1 text-center bg-emerald-500/5 rounded-md py-1">
+                          <p className="text-xs font-bold text-emerald-400">
+                            {s.totalAmount ? `₹${(s.totalAmount / 1000).toFixed(1)}k` : "₹0"}
+                          </p>
+                          <p className="text-[9px] text-slate-500">Total</p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className={`flex items-center gap-3 p-3 rounded-xl mb-4 ${isDark ? "bg-slate-800/50" : "bg-slate-50"}`}>
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? "bg-slate-700 text-slate-300" : "bg-white text-slate-600 shadow-sm"}`}>
-                        <Icon icon="ph:truck-fill" className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">{s.driver?.name}</p>
-                        <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>{s.driver?.vehicleNumber}</p>
-                      </div>
-                    </div>
-
-                    {s.totalAmount > 0 && (
-                      <div className="flex justify-between items-center mb-2">
-                        <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Estimated Total:</span>
-                        <span className="text-sm font-bold text-emerald-500">₹{s.totalAmount.toLocaleString("en-IN")}</span>
-                      </div>
-                    )}
-                    
-                    {s.notes && (
-                      <p className={`text-xs mt-3 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                        <Icon icon="ph:note-fill" className="w-3.5 h-3.5 inline mr-1.5" />{s.notes}
-                      </p>
-                    )}
-
-                    <div className="flex gap-2 mt-5 pt-4 border-t border-slate-200 dark:border-slate-800 flex-wrap">
+                    {/* Actions - Uniform Height & Padding */}
+                    <div
+                      className="flex gap-2 pt-3 border-t border-slate-800 mt-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        id={`btn-detail-${s._id}`}
+                        onClick={() => { handleViewDetails(s); }}
+                        className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all cursor-pointer text-center"
+                      >
+                        Details
+                      </button>
+                      {["SCHEDULED", "POSTPONED"].includes(s.status) && (
+                        <button
+                          id={`btn-postpone-${s._id}`}
+                          onClick={() => setPostponeModal(s._id)}
+                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-all cursor-pointer text-center"
+                        >
+                          Postpone
+                        </button>
+                      )}
                       {s.status === "SCHEDULED" && (
-                        <>
-                          <button onClick={() => updateStatus(s._id, "IN_PROGRESS")} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                            isDark ? "bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20" : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-                          }`}>
-                            Mark In Progress
-                          </button>
-                          <button onClick={() => {
-                            const newDate = window.prompt("Enter new pickup date (YYYY-MM-DD):", s.pickupDate ? new Date(s.pickupDate).toISOString().split("T")[0] : "");
-                            if (newDate) updateStatus(s._id, "POSTPONED", newDate);
-                          }} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                            isDark ? "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20" : "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100"
-                          }`}>
-                            Postpone
-                          </button>
-                          <button onClick={() => {
-                            if (window.confirm("Are you sure you want to cancel this pickup schedule?")) {
-                              updateStatus(s._id, "CANCELLED");
-                            }
-                          }} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
-                            isDark ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20" : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-                          }`}>
-                            Cancel
-                          </button>
-                        </>
+                        <button
+                          id={`btn-start-${s._id}`}
+                          onClick={() => handleAction("start", s._id)}
+                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-all cursor-pointer text-center"
+                        >
+                          Start
+                        </button>
                       )}
                       {s.status === "IN_PROGRESS" && (
-                        <button onClick={() => updateStatus(s._id, "COMPLETED")} className={`w-full py-3 rounded-xl text-sm font-semibold border transition-all ${
-                          isDark ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20" : "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100"
-                        }`}>
-                          <Icon icon="ph:check-circle-fill" className="w-4 h-4 inline mr-2" />
-                          Mark Completed
+                        <button
+                          id={`btn-complete-${s._id}`}
+                          onClick={() => handleAction("complete", s._id)}
+                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all cursor-pointer text-center"
+                        >
+                          Complete
                         </button>
                       )}
                     </div>
@@ -271,113 +870,182 @@ const PickupScheduler = () => {
               </div>
             )}
           </motion.div>
+        ) : view === "detail" ? (
+          detailLoading ? (
+            <motion.div
+              key="detail-loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center h-64 gap-4"
+            >
+              <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-10 h-10 text-emerald-400" />
+              <p className="text-sm text-slate-400 font-medium">Loading schedule details…</p>
+            </motion.div>
+          ) : detailSchedule ? (
+            <ScheduleDetailView
+              key="detail"
+              data={detailSchedule}
+              isDark={isDark}
+              onAction={handleAction}
+              onEdit={handleEdit}
+              onBack={() => { setDetailSchedule(null); setView("list"); }}
+            />
+          ) : (
+            <motion.div key="detail-error" className="flex flex-col items-center justify-center h-64 gap-3">
+              <Icon icon="ph:warning-circle-bold" className="w-10 h-10 text-red-400" />
+              <p className="text-sm text-slate-400">Failed to load schedule details.</p>
+              <button onClick={() => setView("list")} className="text-sm text-emerald-400 hover:underline cursor-pointer">← Back to Schedules</button>
+            </motion.div>
+          )
         ) : (
-          <motion.div key="form" variants={formVariants} initial="initial" animate="enter" exit="exit" className="max-w-4xl mx-auto">
-            <button 
+          /* ── Create Schedule Form ─────────────────────────────────────── */
+          <motion.div
+            key="form"
+            initial={{ x: 40, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 40, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="max-w-2xl mx-auto"
+          >
+            <button
               onClick={() => setView("list")}
-              className={`mb-6 flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors ${
-                isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-500 hover:text-emerald-600"
-              }`}
+              className="mb-6 flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors text-slate-400 hover:text-emerald-400"
             >
               <Icon icon="ph:arrow-left-bold" className="w-4 h-4" />
               Back to Schedules
             </button>
 
-            <div className={`rounded-2xl border p-6 sm:p-8 backdrop-blur-xl ${
-              isDark ? "bg-slate-900/50 border-slate-800/60 shadow-2xl shadow-black/20" : "bg-white/80 border-slate-200 shadow-xl shadow-slate-200/50"
-            }`}>
-              <h2 className="text-2xl font-bold mb-2">
-                Schedule Pickup
-              </h2>
-              <p className={`text-sm mb-6 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                Assign a driver and zone for collecting crops that are in READY stage.
+            <div className="rounded-2xl border bg-slate-900/50 border-slate-800/60 shadow-2xl shadow-black/20 p-6 sm:p-8">
+              <h2 className="text-2xl font-bold mb-1">{editingScheduleId ? "Edit Pickup Schedule" : "Schedule Pickup"}</h2>
+              <p className="text-sm mb-6 text-slate-400">
+                {editingScheduleId ? "Update the details of this schedule." : "Select a zone first — only READY crops from that zone will appear."}
               </p>
 
               <div className="space-y-5">
+                {/* Zone + Driver */}
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {/* Driver */}
-                  <div>
-                    <label className={`text-xs font-semibold block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Driver *</label>
+                  <Field label="Zone" required>
                     <div className="relative">
                       <select
-                        value={form.driverId}
-                        onChange={(e) => setForm((p) => ({ ...p, driverId: e.target.value }))}
-                        className={`w-full appearance-none rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${
-                          isDark 
-                            ? "bg-slate-900 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" 
-                            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        }`}
-                      >
-                        <option value="">Select driver…</option>
-                        {drivers.map((d) => (
-                          <option key={d._id} value={d._id}>{d.name} ({d.capacity} kg)</option>
-                        ))}
-                      </select>
-                      <Icon icon="ph:caret-down-bold" className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-                    </div>
-                  </div>
-
-                  {/* Zone */}
-                  <div>
-                    <label className={`text-xs font-semibold block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Zone *</label>
-                    <div className="relative">
-                      <select
+                        id="form-zone"
                         value={form.zoneId}
-                        onChange={(e) => setForm((p) => ({ ...p, zoneId: e.target.value }))}
-                        className={`w-full appearance-none rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${
-                          isDark 
-                            ? "bg-slate-900 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" 
-                            : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                        }`}
+                        onChange={(e) => {
+                          setForm((p) => ({ ...p, zoneId: e.target.value, items: [] }));
+                        }}
+                        className={selectCls}
                       >
                         <option value="">Select zone…</option>
                         {zones.map((z) => (
-                          <option key={z._id} value={z._id}>{z.name}</option>
+                          <option key={z._id} value={z._id}>
+                            {z.name}
+                          </option>
                         ))}
                       </select>
-                      <Icon icon="ph:caret-down-bold" className={`absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+                      <Icon icon="ph:caret-down-bold" className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-slate-500" />
                     </div>
-                  </div>
+                  </Field>
+
+                  <Field label="Driver" required>
+                    <div className="relative">
+                      <select
+                        id="form-driver"
+                        value={form.driverId}
+                        onChange={(e) => setForm((p) => ({ ...p, driverId: e.target.value }))}
+                        className={selectCls}
+                      >
+                        <option value="">Select driver…</option>
+                        {drivers.map((d) => (
+                          <option key={d._id} value={d._id}>
+                            {d.name} — {d.capacity} kg capacity
+                          </option>
+                        ))}
+                      </select>
+                      <Icon icon="ph:caret-down-bold" className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-slate-500" />
+                    </div>
+                    {selectedDriver && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        Vehicle: {selectedDriver.vehicleNumber} · Capacity: {selectedDriver.capacity} kg
+                      </p>
+                    )}
+                  </Field>
                 </div>
 
+                {/* Date + Time */}
                 <div className="grid sm:grid-cols-2 gap-4">
-                  {/* Date */}
-                  <div>
-                    <label className={`text-xs font-semibold block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Date *</label>
+                  <Field label="Pickup Date" required>
                     <input
                       type="date"
+                      id="form-pickup-date"
                       value={form.pickupDate}
                       onChange={(e) => setForm((p) => ({ ...p, pickupDate: e.target.value }))}
-                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${
-                        isDark 
-                          ? "bg-slate-900/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" 
-                          : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                      }`}
+                      className={inputCls}
                     />
-                  </div>
-                  {/* Time */}
-                  <div>
-                    <label className={`text-xs font-semibold block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Time</label>
+                  </Field>
+                  <Field label="Pickup Time">
                     <input
-                      type="time"
+                      type="text"
+                      id="form-pickup-time"
                       value={form.time}
                       onChange={(e) => setForm((p) => ({ ...p, time: e.target.value }))}
-                      className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${
-                        isDark 
-                          ? "bg-slate-900/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" 
-                          : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                      }`}
+                      placeholder="09:00"
+                      className={inputCls}
                     />
-                  </div>
+                  </Field>
                 </div>
 
-                {/* Ready deals */}
-                {readyDeals.length > 0 ? (
-                  <div>
-                    <label className={`text-xs font-semibold block mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
-                      Select Crops to Pickup (READY stage) *
-                    </label>
-                    <div className="space-y-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+                {/* Capacity Tracker */}
+                {capacity > 0 && (
+                  <div className={`p-3.5 rounded-xl border transition-all ${capacityExceeded ? "bg-red-500/10 border-red-500/30" : "bg-slate-800/40 border-slate-700"}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-semibold text-slate-400">Vehicle Capacity Meter</span>
+                      <span className={`text-xs font-bold ${capacityExceeded ? "text-red-400" : "text-emerald-400"}`}>
+                        {totalSelectedQty} / {capacity} kg
+                      </span>
+                    </div>
+                    <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${capacityExceeded ? "bg-red-500" : "bg-emerald-500"}`}
+                        style={{ width: `${Math.min((totalSelectedQty / capacity) * 100, 100)}%` }}
+                      />
+                    </div>
+                    {capacityExceeded && (
+                      <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1 font-semibold">
+                        <Icon icon="ph:warning-circle-fill" className="w-4 h-4 shrink-0" />
+                        Selected crops total {totalSelectedQty} kg which exceeds driver vehicle capacity ({capacity} kg)!
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Ready Deals */}
+                <div>
+                  <label className="text-xs font-semibold block mb-2 text-slate-400">
+                    Select Crops to Pickup *
+                    {form.zoneId && !dealsLoading && (
+                      <span className="ml-2 font-normal text-slate-500">
+                        ({readyDeals.length} available in this zone)
+                      </span>
+                    )}
+                  </label>
+
+                  {!form.zoneId ? (
+                    <div className="p-5 rounded-xl border border-dashed border-slate-700 text-center bg-slate-900/30">
+                      <Icon icon="ph:map-pin-bold" className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+                      <p className="text-sm text-slate-400">Select a zone to see available crops</p>
+                    </div>
+                  ) : dealsLoading ? (
+                    <div className="flex items-center justify-center h-24">
+                      <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-6 h-6 text-emerald-400" />
+                    </div>
+                  ) : readyDeals.length === 0 ? (
+                    <div className="p-5 rounded-xl border border-dashed border-slate-700 text-center bg-slate-900/30">
+                      <Icon icon="ph:leaf-fill" className="w-8 h-8 mx-auto mb-2 text-slate-600" />
+                      <p className="text-sm font-medium text-slate-400">No READY crops in this zone yet</p>
+                      <p className="text-xs mt-1 text-slate-500">Farmers must mark crops as READY first.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                       {readyDeals.map((deal) => {
                         const selected = form.items.find((i) => i.cropDealId === deal._id);
                         return (
@@ -385,55 +1053,55 @@ const PickupScheduler = () => {
                             key={deal._id}
                             className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                               selected
-                                ? isDark ? "border-emerald-500/50 bg-emerald-500/10 shadow-lg shadow-emerald-500/5" : "border-emerald-400 bg-emerald-50 shadow-md"
-                                : isDark ? "border-slate-700 hover:border-slate-600 bg-slate-900/40" : "border-slate-200 hover:border-slate-300 bg-white"
+                                ? "border-emerald-500/50 bg-emerald-500/10"
+                                : "border-slate-700 hover:border-slate-600 bg-slate-900/40"
                             }`}
                           >
-                            <div className="flex items-start justify-between gap-4">
-                              <div onClick={() => toggleDeal(deal)} className="flex-1 cursor-pointer">
-                                <p className={`font-bold text-base ${isDark ? "text-slate-200" : "text-slate-800"}`}>
+                            <div className="flex items-center justify-between gap-3">
+                              <div onClick={() => toggleDeal(deal)} className="flex-1 min-w-0">
+                                <p className="font-bold text-sm text-white truncate">
                                   {deal.crop?.name || "Crop"}
                                 </p>
-                                <p className={`text-sm font-medium flex items-center gap-1.5 mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                                  <Icon icon="ph:user-bold" className="w-3.5 h-3.5" />
-                                  {deal.membership?.farmer?.groupName || deal.membership?.farmer?.name}
-                                </p>
-                                <p className={`text-xs mt-1.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                                  Agreed Price: ₹{deal.agreedPrice}/kg
+                                <p className="text-xs text-slate-400 mt-0.5">
+                                  {deal.membership?.farmer?.groupName || deal.membership?.farmer?.name} · ₹{deal.agreedPrice}/kg
                                 </p>
                               </div>
                               <button
                                 onClick={() => toggleDeal(deal)}
-                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 mt-1 transition-all ${
+                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
                                   selected
-                                    ? "bg-emerald-500 border-emerald-500 shadow-md shadow-emerald-500/30"
-                                    : isDark ? "border-slate-600 hover:border-slate-500" : "border-slate-300 hover:border-slate-400"
+                                    ? "bg-emerald-500 border-emerald-500"
+                                    : "border-slate-600 hover:border-slate-500"
                                 }`}
                               >
-                                {selected && <Icon icon="ph:check-bold" className="w-3.5 h-3.5 text-white" />}
+                                {selected && (
+                                  <Icon icon="ph:check-bold" className="w-3.5 h-3.5 text-white" />
+                                )}
                               </button>
                             </div>
-                            
+
                             <AnimatePresence>
                               {selected && (
-                                <motion.div 
+                                <motion.div
                                   initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                                  animate={{ height: "auto", opacity: 1, marginTop: 12 }}
+                                  animate={{ height: "auto", opacity: 1, marginTop: 10 }}
                                   exit={{ height: 0, opacity: 0, marginTop: 0 }}
                                   className="overflow-hidden"
                                 >
-                                  <div className="flex items-center gap-3 pt-3 border-t border-slate-200 dark:border-slate-700/50">
-                                    <label className={`text-xs font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>Collection Qty (kg):</label>
+                                  <div className="flex items-center gap-3 pt-3 border-t border-slate-700/50">
+                                    <label className="text-xs font-medium text-slate-300 whitespace-nowrap">
+                                      Qty Collected (kg):
+                                    </label>
                                     <input
-                                      type="number"
+                                      type="text"
+                                      inputMode="numeric"
                                       value={selected.collectedQuantity}
                                       onChange={(e) => updateQty(deal._id, e.target.value)}
-                                      className={`w-28 rounded-xl border px-3 py-1.5 text-sm outline-none transition-all ${
-                                        isDark 
-                                          ? "bg-slate-900 border-slate-600 text-white focus:border-emerald-500" 
-                                          : "bg-white border-slate-300 text-slate-900 focus:border-emerald-500"
-                                      }`}
+                                      className="w-28 rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1.5 text-sm text-white outline-none focus:border-emerald-500 transition-all"
                                     />
+                                    <span className="text-xs text-slate-500">
+                                      ≈ ₹{((Number(selected.collectedQuantity) || 0) * deal.agreedPrice).toLocaleString("en-IN")}
+                                    </span>
                                   </div>
                                 </motion.div>
                               )}
@@ -442,46 +1110,58 @@ const PickupScheduler = () => {
                         );
                       })}
                     </div>
-                  </div>
-                ) : (
-                  <div className={`p-5 rounded-2xl text-center border border-dashed ${isDark ? "bg-slate-900/30 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                    <Icon icon="ph:leaf-fill" className={`w-8 h-8 mx-auto mb-2 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
-                    <p className={`text-sm font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>No deals are in READY stage yet.</p>
-                    <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Farmers must mark their crops as ready before you can schedule a pickup.</p>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Notes */}
-                <div>
-                  <label className={`text-xs font-semibold block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Driver Notes</label>
+                <Field label="Driver Notes">
                   <textarea
                     value={form.notes}
                     onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-                    placeholder="Special instructions for the driver or farmers..."
-                    rows={3}
-                    className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none resize-none transition-all ${
-                      isDark 
-                        ? "bg-slate-900/50 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" 
-                        : "bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                    }`}
+                    placeholder="Special instructions…"
+                    rows={2}
+                    className={`${inputCls} resize-none`}
                   />
-                </div>
+                </Field>
 
-                <div className="flex gap-4 pt-5 border-t border-slate-200 dark:border-slate-800">
+                {/* Summary */}
+                {form.items.length > 0 && (
+                  <div className="bg-slate-800/40 border border-slate-700 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {form.items.length} crop{form.items.length !== 1 ? "s" : ""} selected
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">{totalSelectedQty} kg total</p>
+                    </div>
+                    <p className="text-lg font-bold text-emerald-400">
+                      {fmtCurrency(
+                        form.items.reduce((s, item) => {
+                          const deal = readyDeals.find((d) => d._id === item.cropDealId);
+                          return s + (Number(item.collectedQuantity) || 0) * (deal?.agreedPrice || 0);
+                        }, 0)
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-4 pt-3 border-t border-slate-800">
                   <button
                     onClick={() => setView("list")}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-colors ${
-                      isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-colors border-slate-700 text-slate-300 hover:bg-slate-800"
                   >
                     Cancel
                   </button>
                   <button
+                    id="btn-confirm-pickup"
                     onClick={handleCreate}
-                    disabled={creating || form.items.length === 0}
+                    disabled={creating || form.items.length === 0 || capacityExceeded}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-emerald-600 text-white cursor-pointer flex items-center justify-center gap-2 hover:from-emerald-400 transition-all shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
                   >
-                    {creating ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" /> : <Icon icon="ph:calendar-plus-bold" className="w-4 h-4" />}
+                    {creating ? (
+                      <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5" />
+                    ) : (
+                      <Icon icon="ph:calendar-plus-bold" className="w-4 h-4" />
+                    )}
                     Confirm Pickup
                   </button>
                 </div>
@@ -490,6 +1170,31 @@ const PickupScheduler = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+
+
+      {/* Postpone Modal */}
+      <AnimatePresence>
+        {postponeModal && (
+          <PostponePanel
+            scheduleId={postponeModal}
+            onClose={() => setPostponeModal(null)}
+            onConfirm={executePostpone}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Confirm Modal */}
+      {confirmModal && (
+        <ConfirmModal
+          isOpen={!!confirmModal}
+          title={confirmModal.label}
+          message={confirmModal.description}
+          confirmLabel={confirmModal.confirm}
+          onConfirm={executeAction}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
     </div>
   );
 };

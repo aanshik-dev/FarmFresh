@@ -3,7 +3,7 @@ import throwErr from "../utils/throwErr.js";
 
 // ── Get notifications for any user ───────────────────────────────────────────
 const getNotifications = async (userId, limit = 50) => {
-  const notifications = await Notification.find({ recipient: userId })
+  const notifications = await Notification.find({ recipient: userId, isDeleted: { $ne: true } })
     .sort({ createdAt: -1 })
     .limit(limit)
     .lean();
@@ -35,4 +35,16 @@ const markAllRead = async (userId) => {
   return { success: true, message: "All notifications marked as read !!" };
 };
 
-export default { getNotifications, markRead, markAllRead };
+// ── Soft-delete a read notification (user clicked ✕) ─────────────────────────
+const deleteNotification = async (userId, notificationId) => {
+  const notif = await Notification.findOne({ _id: notificationId, recipient: userId });
+  if (!notif) throwErr(404, "Notification not found !!");
+  if (!notif.isRead) throwErr(400, "Only read notifications can be deleted !!");
+
+  notif.isDeleted = true;
+  await notif.save();
+
+  return { success: true, message: "Notification removed !!" };
+};
+
+export default { getNotifications, markRead, markAllRead, deleteNotification };

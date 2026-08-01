@@ -1,10 +1,11 @@
 import CropDeal from "../../models/cropDeal.model.js";
+import ScheduleItem from "../../models/scheduleItem.model.js";
 import Membership from "../../models/membership.model.js";
 import Notification from "../../models/notification.model.js";
 import throwErr from "../../utils/throwErr.js";
 
 // ── Update crop status (farmer posts an update) ───────────────────────────────
-const updateCropStatus = async (farmerId, dealId, { stage, message, imgUrl }) => {
+const updateCropStatus = async (farmerId, dealId, { stage, message, imgUrl, images }) => {
   if (!stage) throwErr(400, "Crop stage is required !!");
 
   const deal = await CropDeal.findById(dealId).populate({
@@ -19,23 +20,17 @@ const updateCropStatus = async (farmerId, dealId, { stage, message, imgUrl }) =>
 
   const isQueryResponse = deal.growth.queryStatus === "OPEN";
 
-  // Create status update record
-  const update = {
-    stage,
-    message: message?.trim() || "",
-    imgUrl,
-    updatedBy: farmerId,
-    isQueryResponse,
-  };
-  deal.updates.push(update);
+  const newImages = Array.isArray(images) && images.length > 0
+    ? images
+    : imgUrl ? [imgUrl] : [];
 
-  // Update crop deal stage and close query status
+  // Update crop deal stage and growth object (REPLACES old images and note with new ones)
   deal.growth.stage = stage;
   deal.growth.queryStatus = "CLOSED";
   deal.growth.lastUpdated = new Date();
-  if (imgUrl) {
-    deal.growth.cropImage = imgUrl;
-  }
+  deal.growth.images = newImages;
+  deal.growth.message = message?.trim() || "";
+
   await deal.save();
 
   // Notify collective
@@ -50,7 +45,7 @@ const updateCropStatus = async (farmerId, dealId, { stage, message, imgUrl }) =>
     sender: farmerId,
   });
 
-  return { success: true, message: "Crop status updated successfully !!", update };
+  return { success: true, message: "Crop status updated successfully !!", growth: deal.growth };
 };
 
 // ── Get status history for a deal (farmer view) ────────────────────────────────
@@ -63,11 +58,47 @@ const getStatusHistory = async (farmerId, dealId) => {
   if (!deal || !deal.membership)
     throwErr(404, "Deal not found or does not belong to you !!");
 
-  const history = (deal.updates || []).sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-  );
+  return { success: true, message: "Status fetched !!", deal, growth: deal.growth };
+};
 
-  return { success: true, message: "Status history fetched !!", deal, history };
+// ── Get pickup history for a specific deal (per-crop pickup ledger) ───────────
+const getDealPickupHistory = async (farmerId, dealId) => {
+  // Verify deal belongs to farmer
+  const deal = await CropDeal.findById(dealId).populate({
+    path: "membership",
+    match: { farmer: farmerId },
+  });
+  if (!deal || !deal.membership)
+    throwErr(404, "Deal not found or does not belong to you !!");
+
+  const items = await ScheduleItem.find({ cropDeal: dealId })
+    .populate({
+      path: "schedule",
+      select: "code pickupDate status completedAt collective",
+      populate: { path: "collective", select: "name phone" },
+    })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return {
+    success: true,
+    message: "Pickup history fetched !!",
+    history: items.map((item) => ({
+      _id: item._id,
+      scheduleId: item.schedule?._id,
+      scheduleCode: item.schedule?.code,
+      pickupDate: item.schedule?.pickupDate,
+      completedAt: item.schedule?.completedAt,
+      collective: item.schedule?.collective,
+      collectedQuantity: item.collectedQuantity,
+      agreedPrice: item.agreedPrice,
+      totalAmount: item.totalAmount,
+      status: item.status,
+      paymentStatus: item.paymentStatus,
+      paymentProof: item.paymentProof,
+      paidAt: item.paidAt,
+    })),
+  };
 };
 
 // ── Get all active deals for a farmer ─────────────────────────────────────────
@@ -86,4 +117,4 @@ const getActiveDeals = async (farmerId) => {
   return { success: true, message: "Active deals fetched !!", deals };
 };
 
-export default { updateCropStatus, getStatusHistory, getActiveDeals };
+export default { updateCropStatus, getStatusHistory, getDealPickupHistory, getActiveDeals };

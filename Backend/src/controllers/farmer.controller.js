@@ -15,9 +15,9 @@ const addCrop = async (req, res, next) => {
   try {
     const data = farmerCropAddSchema.parse(req.body);
     const yld = data.yield !== undefined ? data.yield : data.yld;
-    const { code, plantedDate } = data;
+    const { code, plantedDate, farmland } = data;
     const { id: farmerId } = req.user;
-    const response = await addCropData(code, yld, plantedDate, farmerId);
+    const response = await addCropData(code, yld, plantedDate, farmerId, farmland);
     res.status(201).json(response);
   } catch (err) {
     next(err);
@@ -28,9 +28,9 @@ const editCrop = async (req, res, next) => {
   try {
     const data = editFarmerCropSchema.parse(req.body);
     const yld = data.yield !== undefined ? data.yield : data.yld;
-    const { id, plantedDate } = data;
+    const { id, plantedDate, farmland } = data;
     const { id: farmerId } = req.user;
-    const response = await editCropData(id, yld, plantedDate, farmerId);
+    const response = await editCropData(id, yld, plantedDate, farmerId, farmland);
     res.status(200).json(response);
   } catch (err) {
     next(err);

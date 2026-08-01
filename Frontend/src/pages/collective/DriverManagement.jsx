@@ -5,6 +5,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../components/ui";
 import StatusBadge from "../../components/common/StatusBadge";
 import EmptyState from "../../components/common/EmptyState";
+import ConfirmModal from "../../components/common/ConfirmModal";
 import { collectiveDriverAPI, collectiveZoneAPI } from "../../services/api";
 
 const DriverManagement = () => {
@@ -14,6 +15,8 @@ const DriverManagement = () => {
   const [drivers, setDrivers] = useState([]);
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [driverToDelete, setDriverToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Navigation State
   const [view, setView] = useState("list"); // "list" | "form"
@@ -86,14 +89,18 @@ const DriverManagement = () => {
     }
   };
 
-  const handleDelete = async (driver) => {
-    if (!window.confirm(`Remove driver "${driver.name}"? This is a soft delete.`)) return;
+  const handleDelete = async () => {
+    if (!driverToDelete) return;
+    setIsDeleting(true);
     try {
-      await collectiveDriverAPI.delete(driver._id);
+      await collectiveDriverAPI.delete(driverToDelete._id);
       toast.success("Driver removed");
+      setDriverToDelete(null);
       fetchAll();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to remove driver");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -154,34 +161,34 @@ const DriverManagement = () => {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className={`group relative overflow-hidden rounded-2xl border p-5 backdrop-blur-xl transition-all duration-300 ${
+                    className={`group relative overflow-hidden rounded-2xl border p-4 backdrop-blur-xl transition-all duration-300 flex flex-col ${
                       isDark 
                         ? "bg-slate-900/40 border-slate-800/60 hover:bg-slate-800/60 hover:border-emerald-500/30 shadow-xl shadow-black/20" 
                         : "bg-white/80 border-slate-200 hover:border-emerald-400/50 hover:shadow-xl shadow-slate-200/50"
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold shadow-sm ${
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shadow-sm shrink-0 ${
                           isDark ? "bg-slate-800 text-emerald-400" : "bg-emerald-50 text-emerald-600"
                         }`}>
                           {(d.name || "?").charAt(0)}
                         </div>
                         <div>
-                          <p className="font-bold text-lg">{d.name}</p>
-                          <p className={`text-xs font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>{d.phone}</p>
+                          <p className="font-bold text-base truncate">{d.name}</p>
+                          <p className={`text-[11px] font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>{d.phone}</p>
                         </div>
                       </div>
                       <StatusBadge status={d.status?.toLowerCase()} size="sm" />
                     </div>
 
-                    <div className="space-y-2 mb-5">
-                      <div className={`flex items-center gap-2 text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                        <Icon icon="ph:identification-badge-fill" className="w-4 h-4 shrink-0 text-amber-500" />
+                    <div className="space-y-1.5 mb-4 flex-1">
+                      <div className={`flex items-center gap-2 text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                        <Icon icon="ph:identification-badge-fill" className="w-3.5 h-3.5 shrink-0 text-amber-500" />
                         {d.license}
                       </div>
-                      <div className={`flex items-center gap-2 text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                        <Icon icon="ph:car-fill" className="w-4 h-4 shrink-0 text-blue-500" />
+                      <div className={`flex items-center gap-2 text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                        <Icon icon="ph:car-fill" className="w-3.5 h-3.5 shrink-0 text-blue-500" />
                         {d.vehicleNumber} · <span className="font-semibold">{d.capacity} kg</span>
                       </div>
                       {d.zones && d.zones.length > 0 && (
@@ -197,25 +204,25 @@ const DriverManagement = () => {
                     </div>
 
                     {/* Stats */}
-                    <div className={`flex gap-2 mb-5 text-center text-sm p-3 rounded-xl ${isDark ? "bg-slate-800/50" : "bg-slate-50"}`}>
+                    <div className={`flex gap-2 mb-4 text-center p-2 rounded-lg ${isDark ? "bg-slate-800/50" : "bg-slate-50"}`}>
                       <div className="flex-1">
-                        <p className="text-xl font-bold">{d.totalDeliveries || 0}</p>
-                        <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Deliveries</p>
+                        <p className="text-base font-bold">{d.totalDeliveries || 0}</p>
+                        <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Deliveries</p>
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-auto pt-2 border-t border-slate-200 dark:border-slate-800">
                       <button
                         onClick={() => openEdit(d)}
-                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-colors ${
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-colors ${
                           isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600" : "border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
                         }`}
                       >
-                        <Icon icon="ph:pencil-fill" className="w-4 h-4 inline mr-1" />Edit
+                        <Icon icon="ph:pencil-fill" className="w-3.5 h-3.5 inline mr-1" />Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(d)}
-                        className={`px-4 py-2.5 rounded-xl border cursor-pointer transition-colors ${
+                        onClick={() => setDriverToDelete(d)}
+                        className={`px-3 py-1.5 rounded-lg border cursor-pointer transition-colors ${
                           isDark ? "border-red-900/30 text-red-400 hover:bg-red-900/50 hover:border-red-800/50" : "border-red-100 text-red-500 hover:bg-red-50 hover:border-red-200"
                         }`}
                       >
@@ -390,6 +397,16 @@ const DriverManagement = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <ConfirmModal
+        isOpen={!!driverToDelete}
+        onClose={() => setDriverToDelete(null)}
+        onConfirm={handleDelete}
+        title="Remove Driver?"
+        description={`Remove "${driverToDelete?.name}"? They will be marked inactive and removed from future schedules.`}
+        confirmLabel={isDeleting ? "Removing..." : "Remove Driver"}
+        variant="danger"
+        icon="ph:trash-bold"
+      />
     </div>
   );
 };

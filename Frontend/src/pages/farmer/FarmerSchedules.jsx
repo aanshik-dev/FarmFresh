@@ -8,30 +8,87 @@ import EmptyState from "../../components/common/EmptyState";
 import { farmerPickupAPI } from "../../services/api";
 
 const fmt = (date) =>
-  new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  date
+    ? new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+    : "—";
+
+const fmtCur = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+
+// ── Receipt Modal Component ───────────────────────────────────────────────────
+const ReceiptModal = ({ receiptUrl, onClose }) => {
+  if (!receiptUrl) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <Icon icon="ph:receipt-bold" className="text-emerald-400 w-5 h-5" />
+            Payment Receipt
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer"
+          >
+            <Icon icon="ph:x-bold" className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto flex-1 flex items-center justify-center bg-slate-950/60 rounded-xl p-2 mb-4 border border-slate-800">
+          <img src={receiptUrl} alt="Receipt Proof" className="max-h-96 w-auto object-contain rounded-lg shadow-md" />
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-slate-700 text-slate-300 hover:bg-slate-800 cursor-pointer transition-all"
+          >
+            Close
+          </button>
+          <a
+            href={receiptUrl}
+            target="_blank"
+            rel="noreferrer"
+            download
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-emerald-500 hover:bg-emerald-400 text-white cursor-pointer transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+          >
+            <Icon icon="ph:download-simple-bold" className="w-4 h-4" />
+            Download Receipt
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const FarmerSchedules = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
 
   const [pickups, setPickups] = useState([]);
-  const [balanceData, setBalanceData] = useState({ totalBalance: 0, balances: [] });
+  const [balanceData, setBalanceData] = useState({ totalBalance: 0, totalEarnings: 0, balances: [] });
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState("upcoming"); // upcoming | past | all
+  const [tab, setTab] = useState("all"); // Default to "all"
 
-  // Navigation State
-  const [view, setView] = useState("list"); // "list" | "detail"
+  const [view, setView] = useState("list");
   const [selectedPickup, setSelectedPickup] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [pickupDetail, setPickupDetail] = useState(null);
+  const [activeReceiptUrl, setActiveReceiptUrl] = useState(null);
 
   const fetchPickups = useCallback(async () => {
     setLoading(true);
     try {
       const [pickRes, balRes] = await Promise.all([
         farmerPickupAPI.getPickups(),
-        farmerPickupAPI.getBalance ? farmerPickupAPI.getBalance() : Promise.resolve({ data: { totalBalance: 0, balances: [] } }),
+        farmerPickupAPI.getBalance(),
       ]);
-      setPickups(pickRes.data.pickups || pickRes.data.upcoming || []);
-      setBalanceData(balRes.data || { totalBalance: 0, balances: [] });
+      const data = pickRes.data;
+      const all = data.pickups || [...(data.live || []), ...(data.upcoming || []), ...(data.past || [])];
+      setPickups(all);
+      setBalanceData(balRes.data || { totalBalance: 0, totalEarnings: 0, balances: [] });
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load pickups");
     } finally {
@@ -39,98 +96,96 @@ const FarmerSchedules = () => {
     }
   }, [toast]);
 
-  useEffect(() => {
-    fetchPickups();
-  }, [fetchPickups]);
+  useEffect(() => { fetchPickups(); }, [fetchPickups]);
 
-  const openDetail = (pickup) => {
+  const openDetail = async (pickup) => {
     setSelectedPickup(pickup);
+    setPickupDetail(null);
     setView("detail");
+    setDetailLoading(true);
+    try {
+      const { data } = await farmerPickupAPI.getPickupDetail(pickup._id);
+      setPickupDetail(data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to load pickup details");
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const filtered = pickups.filter((s) => {
-    if (tab === "upcoming") return ["SCHEDULED", "IN_PROGRESS"].includes(s.status);
-    if (tab === "past") return ["COMPLETED", "CANCELLED", "POSTPONED"].includes(s.status);
+    if (tab === "upcoming") return ["SCHEDULED", "IN_PROGRESS", "POSTPONED"].includes(s.status);
+    if (tab === "past") return ["COMPLETED", "CANCELLED"].includes(s.status);
     return true;
   });
 
-  // Animation variants
-  const listVariants = {
-    initial: { x: -50, opacity: 0 },
-    enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
-    exit: { x: -50, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }
+  const totalEarnings = balanceData.totalEarnings ||
+    (balanceData.balances || []).reduce((sum, b) => sum + (b.totalEarnings || 0), 0);
+
+  const payChip = (status) => {
+    const cfg = {
+      PAID: { cls: isDark ? "bg-emerald-500/15 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200 text-emerald-700", icon: "ph:check-circle-fill" },
+      PARTIAL: { cls: isDark ? "bg-blue-500/15 border-blue-500/20 text-blue-400" : "bg-blue-50 border-blue-200 text-blue-700", icon: "ph:minus-circle-fill" },
+      PENDING: { cls: isDark ? "bg-amber-500/15 border-amber-500/20 text-amber-400" : "bg-amber-50 border-amber-200 text-amber-700", icon: "ph:clock-fill" },
+    };
+    const c = cfg[status] || cfg.PENDING;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold uppercase tracking-wide ${c.cls}`}>
+        <Icon icon={c.icon} className="w-3 h-3" />{status}
+      </span>
+    );
   };
 
-  const detailVariants = {
-    initial: { x: 50, opacity: 0 },
-    enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: "easeOut" } },
-    exit: { x: 50, opacity: 0, transition: { duration: 0.2, ease: "easeIn" } }
-  };
+  const detail = pickupDetail?.pickup;
+  const receipts = pickupDetail?.receipts || [];
+  const items = detail?.items || selectedPickup?.items || [];
+  const postponeHistory = detail?.postponeHistory || selectedPickup?.postponeHistory || [];
 
   return (
     <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
       <AnimatePresence mode="wait">
         {view === "list" ? (
-          <motion.div key="list" variants={listVariants} initial="initial" animate="enter" exit="exit">
-            <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
-                  My Pickups
-                </h1>
-                <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                  {pickups.filter((s) => s.status === "SCHEDULED").length} upcoming · {pickups.length} total
-                </p>
-              </div>
+          <motion.div key="list" initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }}>
+            {/* Header */}
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
+                My Pickups
+              </h1>
+              <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                {pickups.filter((s) => ["SCHEDULED", "IN_PROGRESS"].includes(s.status)).length} upcoming &middot; {pickups.length} total
+              </p>
             </div>
 
-            {/* Financial Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-              <div className={`p-5 rounded-2xl border backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center font-bold">
-                    <Icon icon="ph:wallet-bold" className="w-5 h-5" />
-                  </div>
-                  <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                    Pending Balance Due
-                  </span>
-                </div>
-                <p className="text-2xl font-black text-amber-500">
-                  ₹{(balanceData.totalBalance || 0).toLocaleString("en-IN")}
-                </p>
-                <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                  Amount awaiting payment from collectives
-                </p>
-              </div>
-
-              <div className={`p-5 rounded-2xl border backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-bold">
-                    <Icon icon="ph:currency-inr-bold" className="w-5 h-5" />
-                  </div>
-                  <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                    Total Lifetime Earnings
-                  </span>
-                </div>
-                <p className="text-2xl font-black text-emerald-500">
-                  ₹{(balanceData.balances || []).reduce((sum, b) => sum + (b.totalEarnings || 0), 0).toLocaleString("en-IN")}
-                </p>
-                <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>
-                  Total received across all completed pickups
-                </p>
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div className={`flex gap-2 p-1.5 rounded-xl mb-8 w-fit backdrop-blur-md ${isDark ? "bg-slate-900/60 border border-slate-800" : "bg-white border border-slate-200 shadow-sm"}`}>
+            {/* Compact Balance & Earnings Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-6">
               {[
+                { label: "Pending Balance Due", value: fmtCur(balanceData.totalBalance || 0), sub: "Awaiting payment from collectives", icon: "ph:wallet-bold", color: "text-amber-400", bg: "bg-amber-500/10" },
+                { label: "Total Lifetime Earnings", value: fmtCur(totalEarnings), sub: "Settled across all pickups", icon: "ph:currency-inr-bold", color: "text-emerald-400", bg: "bg-emerald-500/10" },
+              ].map((c) => (
+                <div key={c.label} className={`p-4 rounded-xl border ${isDark ? "bg-slate-900/60 border-slate-800/60 shadow-md" : "bg-white border-slate-200 shadow-sm"}`}>
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <div className={`w-7 h-7 rounded-lg ${c.bg} ${c.color} flex items-center justify-center`}>
+                      <Icon icon={c.icon} className="w-4 h-4" />
+                    </div>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>{c.label}</span>
+                  </div>
+                  <p className={`text-xl font-black ${c.color}`}>{c.value}</p>
+                  <p className={`text-xs mt-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}>{c.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Tabs: Default to "All Pickups" */}
+            <div className={`flex gap-1 p-1.5 rounded-xl mb-6 w-fit ${isDark ? "bg-slate-900/60 border border-slate-800" : "bg-white border border-slate-200 shadow-sm"}`}>
+              {[
+                { id: "all", label: "All Pickups" },
                 { id: "upcoming", label: "Upcoming" },
-                { id: "past", label: "Past Pickups" },
-                { id: "all", label: "All" },
+                { id: "past", label: "Past Pickups" }
               ].map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
-                  className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                  className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                     tab === t.id
                       ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20"
                       : isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
@@ -146,69 +201,74 @@ const FarmerSchedules = () => {
                 <Icon icon="svg-spinners:12-dots-scale-rotate" className={`w-10 h-10 ${isDark ? "text-emerald-400" : "text-emerald-500"}`} />
               </div>
             ) : filtered.length === 0 ? (
-              <EmptyState 
-                icon="ph:truck-fill" 
-                title="No pickups found" 
-                description={tab === "upcoming" ? "No upcoming pickups scheduled by the collective." : "No pickups match this filter."} 
+              <EmptyState
+                icon="ph:truck-fill"
+                title="No pickups found"
+                description={tab === "upcoming" ? "No upcoming pickups scheduled." : "No pickups match this filter."}
               />
             ) : (
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
                 {filtered.map((s, i) => (
                   <motion.div
                     key={s._id}
-                    initial={{ opacity: 0, y: 16 }}
+                    initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
+                    transition={{ delay: i * 0.04 }}
                     onClick={() => openDetail(s)}
-                    className={`group relative overflow-hidden rounded-2xl border p-5 cursor-pointer backdrop-blur-xl transition-all duration-300 ${isDark ? "bg-slate-900/40 border-slate-800/60 shadow-xl shadow-black/20 hover:border-emerald-500/40 hover:bg-slate-800/80" : "bg-white/80 border-slate-200 shadow-lg shadow-slate-200/50 hover:border-emerald-300 hover:bg-white"}`}
+                    className={`group relative overflow-hidden rounded-2xl border p-5 cursor-pointer transition-all duration-200 flex flex-col justify-between ${
+                      isDark
+                        ? "bg-slate-900/40 border-slate-800/60 shadow-lg hover:border-emerald-500/40 hover:bg-slate-800/60"
+                        : "bg-white border-slate-200 shadow-sm hover:border-emerald-300 hover:bg-slate-50"
+                    }`}
                   >
-                    <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-50 text-emerald-600"}`}>
-                            <Icon icon="ph:map-pin-fill" className="w-5 h-5" />
-                          </div>
-                          <h3 className="font-bold text-lg">
-                            {s.schedule?.zone?.name || "Zone —"}
+                    <div>
+                      {/* Heading: Schedule Code */}
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                          <p className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wide">
+                            {s.code || "SCHEDULE"}
+                          </p>
+                          <h3 className="font-bold text-base text-white group-hover:text-emerald-400 transition-colors mt-0.5">
+                            {s.collective?.name || "Collective Scheduled"}
                           </h3>
                         </div>
-                        <StatusBadge status={s.schedule?.status?.toLowerCase() || s.status?.toLowerCase()} />
+                        <StatusBadge status={s.status?.toLowerCase()} size="sm" />
                       </div>
-                      <div className={`shrink-0 text-right px-4 py-3 rounded-xl border ${isDark ? "bg-slate-950/50 border-slate-800" : "bg-slate-50 border-slate-100"}`}>
-                        <p className="font-bold text-lg text-emerald-500">
-                          {fmt(s.schedule?.pickupDate || s.pickupDate)}
-                        </p>
-                        <p className={`text-sm font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                          {s.schedule?.time || s.time || "09:00"}
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className={`grid grid-cols-2 gap-3 p-3 rounded-xl mb-4 ${isDark ? "bg-slate-800/50" : "bg-slate-50"}`}>
-                      <div className="flex items-center gap-2">
-                        <Icon icon="ph:truck-fill" className={`w-4 h-4 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
-                        <div className="truncate">
-                          <p className="text-xs text-slate-500">Driver</p>
-                          <p className="text-sm font-semibold truncate">{s.schedule?.driver?.name || s.driver?.name || "—"}</p>
+                      {/* Pickup Info */}
+                      <div className={`p-3 rounded-xl mb-3 space-y-2 text-xs ${isDark ? "bg-slate-800/40 border border-slate-800" : "bg-slate-50 border border-slate-100"}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 flex items-center gap-1">
+                            <Icon icon="ph:calendar-blank-bold" className="w-3.5 h-3.5 text-emerald-400" /> Date & Time
+                          </span>
+                          <span className="font-semibold text-white">{fmt(s.pickupDate)} ({s.time || "09:00"})</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 flex items-center gap-1">
+                            <Icon icon="ph:phone-fill" className="w-3.5 h-3.5 text-blue-400" /> Driver Phone
+                          </span>
+                          <span className="font-mono font-semibold text-white">{s.driver?.phone || "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 flex items-center gap-1">
+                            <Icon icon="ph:user-bold" className="w-3.5 h-3.5 text-slate-400" /> Driver Name
+                          </span>
+                          <span className="font-semibold text-white">{s.driver?.name || "—"}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Icon icon="ph:scales-fill" className={`w-4 h-4 ${isDark ? "text-slate-400" : "text-slate-500"}`} />
-                        <div>
-                          <p className="text-xs text-slate-500">Collection</p>
-                          <p className="text-sm font-semibold">{s.collectedQuantity || 0} kg</p>
-                        </div>
+
+                      {/* Quantity & Payout summary */}
+                      <div className="flex justify-between items-center mb-3 text-xs">
+                        <span className="text-slate-400">Total Value:</span>
+                        <span className="font-bold text-sm text-emerald-400">{fmtCur(s.totalAmount)}</span>
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center mt-2">
-                      <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Amount Expected:</span>
-                      <span className="text-sm font-bold text-emerald-500">₹{(s.totalAmount || 0).toLocaleString("en-IN")}</span>
-                    </div>
-
-                    <div className={`mt-4 pt-3 flex items-center justify-between text-xs font-semibold uppercase tracking-wider border-t ${isDark ? "border-slate-800 text-emerald-400" : "border-slate-100 text-emerald-600"}`}>
-                      View Details
-                      <Icon icon="ph:arrow-right-bold" className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+                      {payChip(s.paymentStatus || "PENDING")}
+                      <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                        View Details <Icon icon="ph:arrow-right-bold" className="w-3.5 h-3.5" />
+                      </span>
                     </div>
                   </motion.div>
                 ))}
@@ -216,132 +276,160 @@ const FarmerSchedules = () => {
             )}
           </motion.div>
         ) : (
-          <motion.div key="detail" variants={detailVariants} initial="initial" animate="enter" exit="exit" className="max-w-3xl mx-auto">
-            <button 
-              onClick={() => {
-                setView("list");
-                setSelectedPickup(null);
-              }}
-              className={`mb-6 flex items-center gap-2 text-sm font-medium cursor-pointer transition-colors ${
-                isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-500 hover:text-emerald-600"
-              }`}
+          /* ── Slim Pickup Details View ───────────────────────────────── */
+          <motion.div key="detail" initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 30, opacity: 0 }} className="max-w-2xl mx-auto">
+            <button
+              onClick={() => { setView("list"); setPickupDetail(null); }}
+              className={`mb-5 flex items-center gap-2 text-xs font-semibold cursor-pointer transition-colors ${isDark ? "text-slate-400 hover:text-emerald-400" : "text-slate-500 hover:text-emerald-600"}`}
             >
-              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" />
-              Back to Pickups
+              <Icon icon="ph:arrow-left-bold" className="w-4 h-4" /> Back to Pickups
             </button>
 
-            {selectedPickup && (
-              <div className={`rounded-2xl border p-6 sm:p-8 backdrop-blur-xl ${
-                isDark ? "bg-slate-900/50 border-slate-800/60 shadow-2xl shadow-black/20" : "bg-white/80 border-slate-200 shadow-xl shadow-slate-200/50"
-              }`}>
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-bold">
-                    Pickup Details
-                  </h2>
-                  <StatusBadge status={selectedPickup.schedule?.status?.toLowerCase() || selectedPickup.status?.toLowerCase()} />
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
-                  <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-blue-500/20 text-blue-400" : "bg-blue-50 text-blue-600"}`}>
-                        <Icon icon="ph:calendar-blank-fill" className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Schedule</p>
-                        <p className="font-bold">{fmt(selectedPickup.schedule?.pickupDate || selectedPickup.pickupDate)}</p>
-                      </div>
+            {detailLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <Icon icon="svg-spinners:12-dots-scale-rotate" className={`w-10 h-10 ${isDark ? "text-emerald-400" : "text-emerald-500"}`} />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Header card */}
+                <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800/60 shadow-xl" : "bg-white border-slate-200 shadow-md"}`}>
+                  <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div>
+                      <p className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wide">
+                        {detail?.code || selectedPickup?.code || "SCHEDULE"}
+                      </p>
+                      <h2 className="text-xl font-bold text-white">{detail?.collective?.name || "Collective Scheduled"}</h2>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Time:</span>
-                        <span className="text-sm font-semibold">{selectedPickup.schedule?.time || selectedPickup.time || "09:00"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Zone:</span>
-                        <span className="text-sm font-semibold">{selectedPickup.schedule?.zone?.name || "—"}</span>
-                      </div>
+                    <StatusBadge status={(detail?.status || selectedPickup?.status || "").toLowerCase()} size="sm" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+                      <p className="text-slate-400 mb-0.5">Pickup Date & Time</p>
+                      <p className="font-bold text-sm text-white">{fmt(detail?.pickupDate || selectedPickup?.pickupDate)}</p>
+                      <p className="text-slate-400">{detail?.time || selectedPickup?.time || "09:00"}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
+                      <p className="text-slate-400 mb-0.5">Assigned Driver</p>
+                      <p className="font-bold text-sm text-white">{detail?.driver?.name || selectedPickup?.driver?.name || "—"}</p>
+                      <p className="font-mono text-emerald-400">{detail?.driver?.phone || selectedPickup?.driver?.phone || "—"}</p>
                     </div>
                   </div>
 
-                  <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-800/50 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-amber-500/20 text-amber-400" : "bg-amber-50 text-amber-600"}`}>
-                        <Icon icon="ph:truck-fill" className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className={`text-xs uppercase tracking-wider font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Driver</p>
-                        <p className="font-bold">{selectedPickup.schedule?.driver?.name || selectedPickup.driver?.name || "—"}</p>
-                      </div>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="p-2.5 rounded-xl bg-slate-800/30 border border-slate-800">
+                      <p className="text-[11px] text-slate-400">Total Qty</p>
+                      <p className="font-bold text-sm text-white">{(detail?.totalQuantity || selectedPickup?.totalQuantity || 0)} kg</p>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Vehicle:</span>
-                        <span className="text-sm font-semibold">{selectedPickup.schedule?.driver?.vehicleNumber || selectedPickup.driver?.vehicleNumber || "—"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Phone:</span>
-                        <span className="text-sm font-semibold">{selectedPickup.schedule?.driver?.phone || selectedPickup.driver?.phone || "—"}</span>
-                      </div>
+                    <div className="p-2.5 rounded-xl bg-slate-800/30 border border-slate-800">
+                      <p className="text-[11px] text-slate-400">Total Payout</p>
+                      <p className="font-bold text-sm text-emerald-400">{fmtCur(detail?.totalAmount || selectedPickup?.totalAmount)}</p>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-800/30 border border-slate-800 flex items-center justify-center">
+                      {payChip(detail?.paymentStatus || selectedPickup?.paymentStatus || "PENDING")}
                     </div>
                   </div>
                 </div>
 
-                <h3 className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>Crop Information</h3>
-                
-                <div className={`p-5 rounded-2xl border ${isDark ? "bg-slate-900/50 border-slate-700" : "bg-white border-slate-200 shadow-sm"}`}>
-                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-dashed border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-emerald-500/20 text-emerald-400" : "bg-emerald-50 text-emerald-600"}`}>
-                        <Icon icon="ph:plant-fill" className="w-5 h-5" />
+                {/* Crop items */}
+                <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+                  <h3 className="text-sm font-bold mb-4 text-white flex items-center gap-2">
+                    <Icon icon="ph:plant-fill" className="text-emerald-400 w-4 h-4" />
+                    Crops Collected ({items.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {items.map((item) => (
+                      <div key={item._id} className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-800 text-xs">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-bold text-sm text-white">{item.cropName || "Crop"}</p>
+                          {payChip(item.paymentStatus || "PENDING")}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center py-2 bg-slate-900/50 rounded-lg">
+                          <div>
+                            <p className="text-slate-400">Collected</p>
+                            <p className="font-bold text-white">{item.collectedQuantity || 0} kg</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-400">Agreed Rate</p>
+                            <p className="font-bold text-white">₹{item.agreedPrice || 0}/kg</p>
+                          </div>
+                          <div>
+                            <p className="text-slate-400">Amount</p>
+                            <p className="font-bold text-emerald-400">{fmtCur(item.totalAmount)}</p>
+                          </div>
+                        </div>
+
+                        {item.paymentStatus === "PAID" && item.paymentProof && (
+                          <div className="mt-2.5 pt-2 border-t border-slate-800 flex justify-end">
+                            <button
+                              onClick={() => setActiveReceiptUrl(item.paymentProof)}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"
+                            >
+                              <Icon icon="ph:receipt-bold" className="w-3.5 h-3.5" /> View Receipt
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <p className="font-bold text-lg">{selectedPickup.cropDeal?.crop?.name || "Crop"}</p>
-                        <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>Code: {selectedPickup.cropDeal?.crop?.code}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-xs uppercase tracking-wider font-semibold mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Payment Status</p>
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-bold tracking-wide uppercase ${
-                        selectedPickup.paymentStatus === "PAID"
-                          ? isDark ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" : "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                          : isDark ? "bg-amber-500/15 text-amber-400 border border-amber-500/20" : "bg-amber-50 text-amber-600 border border-amber-200"
-                      }`}>
-                        {selectedPickup.paymentStatus}
-                      </span>
-                    </div>
+                    ))}
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className={`text-xs mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Collection Qty</p>
-                      <p className="text-lg font-bold">{selectedPickup.collectedQuantity || 0} kg</p>
-                    </div>
-                    <div>
-                      <p className={`text-xs mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Rate</p>
-                      <p className="text-lg font-bold">₹{selectedPickup.agreedPrice || 0}/kg</p>
-                    </div>
-                    <div>
-                      <p className={`text-xs mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Amount</p>
-                      <p className="text-lg font-bold text-emerald-500">₹{(selectedPickup.totalAmount || 0).toLocaleString("en-IN")}</p>
-                    </div>
-                  </div>
-                  
-                  {selectedPickup.paymentStatus === "PAID" && selectedPickup.paymentProof && (
-                    <div className="mt-5 pt-5 border-t border-slate-200 dark:border-slate-700 flex justify-center">
-                      <a href={selectedPickup.paymentProof} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors">
-                        <Icon icon="ph:file-pdf-fill" className="w-5 h-5" />
-                        View Payment Receipt
-                      </a>
-                    </div>
-                  )}
                 </div>
+
+                {/* Receipts list */}
+                {receipts.length > 0 && (
+                  <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+                    <h3 className="text-sm font-bold mb-3 text-white flex items-center gap-2">
+                      <Icon icon="ph:receipt-fill" className="text-blue-400 w-4 h-4" />
+                      Payment Receipts
+                    </h3>
+                    <div className="space-y-3">
+                      {receipts.map((r) => (
+                        <div key={r._id} className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-800 text-xs flex items-center justify-between">
+                          <div>
+                            <p className="font-bold text-sm text-emerald-400">{fmtCur(r.amount)}</p>
+                            <p className="text-slate-400 mt-0.5">{fmt(r.paymentDate)} · {r.method || "OTHER"}</p>
+                            {r.utrNumber && <p className="text-slate-500 font-mono mt-0.5">UTR: {r.utrNumber}</p>}
+                          </div>
+                          {r.paymentProof && (
+                            <button
+                              onClick={() => setActiveReceiptUrl(r.paymentProof)}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"
+                            >
+                              <Icon icon="ph:eye-bold" className="w-3.5 h-3.5" /> View Receipt
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Postpone history */}
+                {postponeHistory.length > 0 && (
+                  <div className={`rounded-2xl border p-4 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
+                    <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-amber-400 flex items-center gap-1.5">
+                      <Icon icon="ph:clock-clockwise-fill" className="w-4 h-4" /> Postpone History
+                    </h3>
+                    <div className="space-y-2 text-xs">
+                      {postponeHistory.map((ph, idx) => (
+                        <div key={idx} className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10 text-amber-300">
+                          Moved from <strong>{fmt(ph.from)}</strong> to <strong>{fmt(ph.to)}</strong>
+                          {ph.reason ? ` — "${ph.reason}"` : ""}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Receipt Viewer Modal */}
+      <ReceiptModal
+        receiptUrl={activeReceiptUrl}
+        onClose={() => setActiveReceiptUrl(null)}
+      />
     </div>
   );
 };

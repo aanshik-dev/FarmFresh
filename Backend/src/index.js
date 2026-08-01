@@ -40,7 +40,29 @@ app.use("/api/data", commonRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/collective", collectiveRoutes);
 app.use("/api/farmer", farmerGroupRoutes);
-app.use("/api/ai", aiRoutes);
+import uploadFile from "./utils/uploadFile.js";
+import { docUpload, singleFile } from "./middlewares/uploader.js";
+
+// Upload endpoint for Cloudinary
+app.post("/api/upload", singleFile(docUpload, "image"), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: "A file is required for upload !!" });
+
+    const folder = req.body.folder || "Farmfresh/cropStatus";
+    const fileName = req.body.fileName || `file_${Date.now()}`;
+
+    const result = await uploadFile(req.file.buffer, folder, fileName, { overwrite: true });
+
+    res.status(200).json({
+      success: true,
+      message: "File uploaded successfully !!",
+      url: result.secure_url,
+      publicId: result.public_id,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 app.get("/", (req, res) => {
   res.json({ message: "FarmFresh backend is running" });
