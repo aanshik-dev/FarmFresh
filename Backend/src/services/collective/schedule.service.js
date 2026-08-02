@@ -301,11 +301,21 @@ const getSchedules = async (collectiveId, filter = "all") => {
     .sort({ pickupDate: -1 })
     .lean();
 
+  const scheduleIds = schedules.map((s) => s._id);
+  const items = await ScheduleItem.find({ schedule: { $in: scheduleIds } }).lean();
+  const itemsMap = new Map();
+  items.forEach((item) => {
+    const sid = item.schedule.toString();
+    if (!itemsMap.has(sid)) itemsMap.set(sid, []);
+    itemsMap.get(sid).push(item);
+  });
+
   return {
     success: true,
     message: "Schedules fetched !!",
     schedules: schedules.map((s) => ({
       ...s,
+      items: itemsMap.get(s._id.toString()) || [],
       pendingAmount: round2((s.totalAmount || 0) - (s.paidAmount || 0)),
       isFullyPaid: (s.paidAmount || 0) >= (s.totalAmount || 0),
     })),
@@ -610,7 +620,7 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
               "schedule.activeSchedule": null,
               "schedule.collectedQuantity": item.collectedQuantity,
               "schedule.lastPickupDate": schedule.pickupDate,
-              "growth.stage": item.status === "COLLECTED" ? "HARVESTED" : "READY",
+              "growth.stage": item.status === "COLLECTED" ? "OTHER" : "READY",
             },
             $inc: {
               "schedule.totalCollected": item.collectedQuantity,

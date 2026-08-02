@@ -121,26 +121,34 @@ const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, myReviews = 
   const [prices, setPrices] = useState({});
   const [note, setNote] = useState('');
 
-  // Existing review for this collective (if any) — prefill the form on mount.
-  const myReview = (myReviews || []).find(r => String(r.cid?._id || r.cid) === String(coll?._id));
-  const [rating, setRating] = useState(() => myReview?.rating || 0);
+  const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
-  const [comment, setComment] = useState(() => myReview?.comment || '');
+  const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { setTab('overview'); setSelectedCrops({}); setPrices({}); setNote(''); }, [coll?._id]);
+  useEffect(() => {
+    setTab('overview');
+    setSelectedCrops({});
+    setPrices({});
+    setNote('');
+    const existing = (myReviews || []).find(r => String(r.cid?._id || r.cid) === String(coll?._id));
+    if (existing) {
+      setRating(existing.rating || 0);
+      setComment(existing.comment || '');
+    } else {
+      setRating(0);
+      setComment('');
+    }
+  }, [coll?._id, myReviews]);
 
   if (!coll) return null;
 
   const activeMyCrops = (myCrops || []).filter(fc => fc && fc.status === 'ACTIVE');
   const collCropCodes = new Set((coll.crops || []).map(c => c.code));
-  const collCropPriceByCode = {};
-  for (const c of (coll.crops || [])) { collCropPriceByCode[c.code] = c.price || 0; }
 
   const approvedMembers = Array.isArray(memberData?.approved) ? memberData.approved : [];
   const requestMembers = Array.isArray(memberData?.requests) ? memberData.requests : [];
-
-  const isPartner = approvedMembers.some(m => String(m._id) === String(coll._id));
+  const isPartner = approvedMembers.some(m => String(m._id || m.collective?._id || m.collective) === String(coll._id));
 
   const myDeals = [...approvedMembers, ...requestMembers]
     .filter(m => m && (m.collective?._id === coll._id || m.collective === coll._id || m._id === coll._id))
@@ -178,7 +186,7 @@ const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, myReviews = 
     { key: 'overview', label: 'Overview', icon: 'ph:info-bold' },
     { key: 'request', label: 'Request', icon: 'ph:paper-plane-tilt-bold' },
     ...(myDeals.length > 0 ? [{ key: 'deals', label: 'My Deals', icon: 'ph:handshake-bold' }] : []),
-    { key: 'review', label: 'Review', icon: 'ph:star-fill' },
+    { key: 'review', label: 'Reviews', icon: 'ph:star-bold' },
   ];
 
   return (
@@ -335,7 +343,7 @@ const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, myReviews = 
                       </div>
                       {checked && !disabled && (
                         <input type="number" placeholder="₹/kg" value={prices[fc._id] || ''} onChange={(e) => setPrices(p => ({ ...p, [fc._id]: e.target.value }))}
-                          className="w-24 px-2.5 py-1.5 rounded-lg text-xs font-semibold border outline-none bg-slate-900 border-slate-700 text-white focus:border-emerald-500" />
+                          className={`w-24 px-2.5 py-1.5 rounded-lg text-xs font-semibold border outline-none ${isDark ? "bg-slate-900 border-slate-700 text-white focus:border-emerald-500" : "bg-white border-slate-300 text-slate-900 focus:border-emerald-500 shadow-sm"}`} />
                       )}
                     </div>
                   );
@@ -359,14 +367,14 @@ const DetailPanel = ({ coll, isDark, myCrops = [], memberData = {}, myReviews = 
                 const isApproved = deal.status === 'APPROVED';
 
                 return (
-                  <div key={deal._id} className="rounded-xl p-4 border border-slate-800 bg-slate-900/60 space-y-3">
+                  <div key={deal._id} className={`rounded-xl p-4 border space-y-3 ${isDark ? "border-slate-800 bg-slate-900/60" : "border-slate-200 bg-white shadow-sm"}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
                           <Icon icon="ph:plant-fill" className="w-4 h-4" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-sm text-white">{deal.crop?.crop?.name || deal.crop?.name || 'Crop'}</h4>
+                          <h4 className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{deal.crop?.crop?.name || deal.crop?.name || 'Crop'}</h4>
                           <p className="text-[10px] text-slate-400">Code: {deal.crop?.crop?.code || '—'}</p>
                         </div>
                       </div>
@@ -653,7 +661,7 @@ const CollectiveBrowse = () => {
   };
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+    <div className={`min-h-screen p-5 sm:p-7 transition-colors duration-200 ${isDark ? 'bg-slate-950 text-white' : 'bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900'}`}>
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">
@@ -665,13 +673,13 @@ const CollectiveBrowse = () => {
       </div>
 
       {/* Top Tabs: Explore & My Partners */}
-      <div className="flex gap-2 p-1.5 rounded-xl mb-6 w-fit backdrop-blur-md bg-slate-900/60 border border-slate-800">
+      <div className={`flex gap-2 p-1.5 rounded-xl mb-6 w-fit backdrop-blur-md ${isDark ? 'bg-slate-900/60 border border-slate-800' : 'bg-white border border-slate-200 shadow-sm'}`}>
         <button
           onClick={() => setMainTab("explore")}
           className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
             mainTab === "explore"
               ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              : isDark ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
           Explore

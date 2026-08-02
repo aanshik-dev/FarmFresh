@@ -5,6 +5,7 @@ import dbConnect from "./config/dbConnect.js";
 import seedCounters from "./scripts/seedCounters.js";
 import seedCrops from "./scripts/seedData.js";
 import seedAdmin from "./scripts/seedAdmin.js";
+import seedIssues from "./scripts/seedIssues.js";
 
 import authRoutes from "./routes/auth.route.js";
 import collectiveRoutes from "./routes/collective.route.js";
@@ -12,11 +13,13 @@ import farmerGroupRoutes from "./routes/farmerGroup.route.js";
 import commonRoutes from "./routes/common.route.js";
 import userRoutes from "./routes/user.route.js";
 import aiRoutes from "./routes/ai.route.js";
+import adminRoutes from "./routes/admin.route.js";
 
 await dbConnect();
 await seedCounters();
 await seedCrops();
 await seedAdmin();
+await seedIssues();
 
 const app = express();
 
@@ -40,6 +43,7 @@ app.use("/api/data", commonRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/collective", collectiveRoutes);
 app.use("/api/farmer", farmerGroupRoutes);
+app.use("/api/admin", adminRoutes);
 import uploadFile from "./utils/uploadFile.js";
 import { docUpload, singleFile } from "./middlewares/uploader.js";
 

@@ -395,7 +395,7 @@ const CropInventory = () => {
   }, [activeCrops]);
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden transition-colors duration-200 ${isDark ? "bg-slate-950 text-white" : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"}`}>
       <AnimatePresence mode="wait">
         {view === "list" ? (
           <motion.div key="list" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>

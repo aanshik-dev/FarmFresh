@@ -124,9 +124,9 @@ const FarmerSchedules = () => {
 
   const payChip = (status) => {
     const cfg = {
-      PAID: { cls: isDark ? "bg-emerald-500/15 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200 text-emerald-700", icon: "ph:check-circle-fill" },
-      PARTIAL: { cls: isDark ? "bg-blue-500/15 border-blue-500/20 text-blue-400" : "bg-blue-50 border-blue-200 text-blue-700", icon: "ph:minus-circle-fill" },
-      PENDING: { cls: isDark ? "bg-amber-500/15 border-amber-500/20 text-amber-400" : "bg-amber-50 border-amber-200 text-amber-700", icon: "ph:clock-fill" },
+      PAID: { cls: isDark ? "bg-emerald-500/15 border-emerald-500/20 text-emerald-400" : "bg-emerald-50 border-emerald-200 text-emerald-700 font-bold", icon: "ph:check-circle-fill" },
+      PARTIAL: { cls: isDark ? "bg-blue-500/15 border-blue-500/20 text-blue-400" : "bg-blue-50 border-blue-200 text-blue-700 font-bold", icon: "ph:minus-circle-fill" },
+      PENDING: { cls: isDark ? "bg-amber-500/15 border-amber-500/20 text-amber-400" : "bg-amber-50 border-amber-200 text-amber-700 font-bold", icon: "ph:clock-fill" },
     };
     const c = cfg[status] || cfg.PENDING;
     return (
@@ -142,7 +142,7 @@ const FarmerSchedules = () => {
   const postponeHistory = detail?.postponeHistory || selectedPickup?.postponeHistory || [];
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden transition-colors duration-200 ${isDark ? "bg-slate-950 text-white" : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"}`}>
       <AnimatePresence mode="wait">
         {view === "list" ? (
           <motion.div key="list" initial={{ x: -30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }}>
@@ -159,8 +159,8 @@ const FarmerSchedules = () => {
             {/* Compact Balance & Earnings Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-6">
               {[
-                { label: "Pending Balance Due", value: fmtCur(balanceData.totalBalance || 0), sub: "Awaiting payment from collectives", icon: "ph:wallet-bold", color: "text-amber-400", bg: "bg-amber-500/10" },
-                { label: "Total Lifetime Earnings", value: fmtCur(totalEarnings), sub: "Settled across all pickups", icon: "ph:currency-inr-bold", color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                { label: "Pending Balance Due", value: fmtCur(balanceData.totalBalance || 0), sub: "Awaiting payment from collectives", icon: "ph:wallet-bold", color: "text-amber-500 dark:text-amber-400", bg: "bg-amber-500/10" },
+                { label: "Total Lifetime Earnings", value: fmtCur(totalEarnings), sub: "Settled across all pickups", icon: "ph:currency-inr-bold", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
               ].map((c) => (
                 <div key={c.label} className={`p-4 rounded-xl border ${isDark ? "bg-slate-900/60 border-slate-800/60 shadow-md" : "bg-white border-slate-200 shadow-sm"}`}>
                   <div className="flex items-center gap-2.5 mb-1.5">
@@ -225,48 +225,54 @@ const FarmerSchedules = () => {
                       {/* Heading: Schedule Code */}
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div>
-                          <p className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wide">
+                          <p className="text-xs font-mono text-emerald-500 font-bold uppercase tracking-wide">
                             {s.code || "SCHEDULE"}
                           </p>
-                          <h3 className="font-bold text-base text-white group-hover:text-emerald-400 transition-colors mt-0.5">
+                          <h3 className={`font-bold text-base group-hover:text-emerald-500 transition-colors mt-0.5 ${isDark ? "text-white" : "text-slate-900"}`}>
                             {s.collective?.name || "Collective Scheduled"}
                           </h3>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Icon icon="ph:plant-bold" className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className={`text-xs font-semibold truncate ${isDark ? "text-emerald-300" : "text-emerald-700"}`}>
+                              {s.items?.map((item) => item.cropName || item.cropCode).filter(Boolean).join(", ") || "Scheduled Crop"}
+                            </span>
+                          </div>
                         </div>
                         <StatusBadge status={s.status?.toLowerCase()} size="sm" />
                       </div>
 
                       {/* Pickup Info */}
-                      <div className={`p-3 rounded-xl mb-3 space-y-2 text-xs ${isDark ? "bg-slate-800/40 border border-slate-800" : "bg-slate-50 border border-slate-100"}`}>
+                      <div className={`p-3 rounded-xl mb-3 space-y-2 text-xs ${isDark ? "bg-slate-800/40 border border-slate-800" : "bg-slate-50 border border-slate-200"}`}>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-400 flex items-center gap-1">
-                            <Icon icon="ph:calendar-blank-bold" className="w-3.5 h-3.5 text-emerald-400" /> Date & Time
+                          <span className={`flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            <Icon icon="ph:calendar-blank-bold" className="w-3.5 h-3.5 text-emerald-500" /> Date & Time
                           </span>
-                          <span className="font-semibold text-white">{fmt(s.pickupDate)} ({s.time || "09:00"})</span>
+                          <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{fmt(s.pickupDate)} ({s.time || "09:00"})</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-400 flex items-center gap-1">
-                            <Icon icon="ph:phone-fill" className="w-3.5 h-3.5 text-blue-400" /> Driver Phone
+                          <span className={`flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            <Icon icon="ph:phone-fill" className="w-3.5 h-3.5 text-blue-500" /> Driver Phone
                           </span>
-                          <span className="font-mono font-semibold text-white">{s.driver?.phone || "—"}</span>
+                          <span className={`font-mono font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{s.driver?.phone || "—"}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-400 flex items-center gap-1">
-                            <Icon icon="ph:user-bold" className="w-3.5 h-3.5 text-slate-400" /> Driver Name
+                          <span className={`flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            <Icon icon="ph:user-bold" className={`w-3.5 h-3.5 ${isDark ? "text-slate-400" : "text-slate-500"}`} /> Driver Name
                           </span>
-                          <span className="font-semibold text-white">{s.driver?.name || "—"}</span>
+                          <span className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{s.driver?.name || "—"}</span>
                         </div>
                       </div>
 
                       {/* Quantity & Payout summary */}
                       <div className="flex justify-between items-center mb-3 text-xs">
-                        <span className="text-slate-400">Total Value:</span>
-                        <span className="font-bold text-sm text-emerald-400">{fmtCur(s.totalAmount)}</span>
+                        <span className={isDark ? "text-slate-400" : "text-slate-500"}>Total Value:</span>
+                        <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400">{fmtCur(s.totalAmount)}</span>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+                    <div className={`pt-3 border-t flex items-center justify-between ${isDark ? "border-slate-800" : "border-slate-200"}`}>
                       {payChip(s.paymentStatus || "PENDING")}
-                      <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      <span className="text-xs font-semibold text-emerald-500 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                         View Details <Icon icon="ph:arrow-right-bold" className="w-3.5 h-3.5" />
                       </span>
                     </div>
@@ -295,37 +301,37 @@ const FarmerSchedules = () => {
                 <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800/60 shadow-xl" : "bg-white border-slate-200 shadow-md"}`}>
                   <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <div>
-                      <p className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wide">
+                      <p className="text-xs font-mono font-bold text-emerald-500 uppercase tracking-wide">
                         {detail?.code || selectedPickup?.code || "SCHEDULE"}
                       </p>
-                      <h2 className="text-xl font-bold text-white">{detail?.collective?.name || "Collective Scheduled"}</h2>
+                      <h2 className={`text-xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{detail?.collective?.name || "Collective Scheduled"}</h2>
                     </div>
                     <StatusBadge status={(detail?.status || selectedPickup?.status || "").toLowerCase()} size="sm" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
-                    <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
-                      <p className="text-slate-400 mb-0.5">Pickup Date & Time</p>
-                      <p className="font-bold text-sm text-white">{fmt(detail?.pickupDate || selectedPickup?.pickupDate)}</p>
-                      <p className="text-slate-400">{detail?.time || selectedPickup?.time || "09:00"}</p>
+                    <div className={`p-3 rounded-xl border ${isDark ? "bg-slate-800/40 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                      <p className={`mb-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Pickup Date & Time</p>
+                      <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{fmt(detail?.pickupDate || selectedPickup?.pickupDate)}</p>
+                      <p className={isDark ? "text-slate-400" : "text-slate-500"}>{detail?.time || selectedPickup?.time || "09:00"}</p>
                     </div>
-                    <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-800">
-                      <p className="text-slate-400 mb-0.5">Assigned Driver</p>
-                      <p className="font-bold text-sm text-white">{detail?.driver?.name || selectedPickup?.driver?.name || "—"}</p>
-                      <p className="font-mono text-emerald-400">{detail?.driver?.phone || selectedPickup?.driver?.phone || "—"}</p>
+                    <div className={`p-3 rounded-xl border ${isDark ? "bg-slate-800/40 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                      <p className={`mb-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Assigned Driver</p>
+                      <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{detail?.driver?.name || selectedPickup?.driver?.name || "—"}</p>
+                      <p className="font-mono text-emerald-500 font-bold">{detail?.driver?.phone || selectedPickup?.driver?.phone || "—"}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="p-2.5 rounded-xl bg-slate-800/30 border border-slate-800">
-                      <p className="text-[11px] text-slate-400">Total Qty</p>
-                      <p className="font-bold text-sm text-white">{(detail?.totalQuantity || selectedPickup?.totalQuantity || 0)} kg</p>
+                    <div className={`p-2.5 rounded-xl border ${isDark ? "bg-slate-800/30 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                      <p className={`text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Qty</p>
+                      <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{(detail?.totalQuantity || selectedPickup?.totalQuantity || 0)} kg</p>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-slate-800/30 border border-slate-800">
-                      <p className="text-[11px] text-slate-400">Total Payout</p>
-                      <p className="font-bold text-sm text-emerald-400">{fmtCur(detail?.totalAmount || selectedPickup?.totalAmount)}</p>
+                    <div className={`p-2.5 rounded-xl border ${isDark ? "bg-slate-800/30 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
+                      <p className={`text-[11px] ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Payout</p>
+                      <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400">{fmtCur(detail?.totalAmount || selectedPickup?.totalAmount)}</p>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-slate-800/30 border border-slate-800 flex items-center justify-center">
+                    <div className={`p-2.5 rounded-xl border flex items-center justify-center ${isDark ? "bg-slate-800/30 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
                       {payChip(detail?.paymentStatus || selectedPickup?.paymentStatus || "PENDING")}
                     </div>
                   </div>
@@ -333,37 +339,37 @@ const FarmerSchedules = () => {
 
                 {/* Crop items */}
                 <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
-                  <h3 className="text-sm font-bold mb-4 text-white flex items-center gap-2">
-                    <Icon icon="ph:plant-fill" className="text-emerald-400 w-4 h-4" />
+                  <h3 className={`text-sm font-bold mb-4 flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
+                    <Icon icon="ph:plant-fill" className="text-emerald-500 w-4 h-4" />
                     Crops Collected ({items.length})
                   </h3>
                   <div className="space-y-3">
                     {items.map((item) => (
-                      <div key={item._id} className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-800 text-xs">
+                      <div key={item._id} className={`p-3.5 rounded-xl border text-xs ${isDark ? "bg-slate-800/40 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="font-bold text-sm text-white">{item.cropName || "Crop"}</p>
+                          <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{item.cropName || "Crop"}</p>
                           {payChip(item.paymentStatus || "PENDING")}
                         </div>
-                        <div className="grid grid-cols-3 gap-2 text-center py-2 bg-slate-900/50 rounded-lg">
+                        <div className={`grid grid-cols-3 gap-2 text-center py-2 rounded-lg ${isDark ? "bg-slate-900/50" : "bg-white border border-slate-200"}`}>
                           <div>
-                            <p className="text-slate-400">Collected</p>
-                            <p className="font-bold text-white">{item.collectedQuantity || 0} kg</p>
+                            <p className={isDark ? "text-slate-400" : "text-slate-500"}>Collected</p>
+                            <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{item.collectedQuantity || 0} kg</p>
                           </div>
                           <div>
-                            <p className="text-slate-400">Agreed Rate</p>
-                            <p className="font-bold text-white">₹{item.agreedPrice || 0}/kg</p>
+                            <p className={isDark ? "text-slate-400" : "text-slate-500"}>Agreed Rate</p>
+                            <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>₹{item.agreedPrice || 0}/kg</p>
                           </div>
                           <div>
-                            <p className="text-slate-400">Amount</p>
-                            <p className="font-bold text-emerald-400">{fmtCur(item.totalAmount)}</p>
+                            <p className={isDark ? "text-slate-400" : "text-slate-500"}>Amount</p>
+                            <p className="font-bold text-emerald-600 dark:text-emerald-400">{fmtCur(item.totalAmount)}</p>
                           </div>
                         </div>
 
                         {item.paymentStatus === "PAID" && item.paymentProof && (
-                          <div className="mt-2.5 pt-2 border-t border-slate-800 flex justify-end">
+                          <div className={`mt-2.5 pt-2 border-t flex justify-end ${isDark ? "border-slate-800" : "border-slate-200"}`}>
                             <button
                               onClick={() => setActiveReceiptUrl(item.paymentProof)}
-                              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"
                             >
                               <Icon icon="ph:receipt-bold" className="w-3.5 h-3.5" /> View Receipt
                             </button>
@@ -377,22 +383,22 @@ const FarmerSchedules = () => {
                 {/* Receipts list */}
                 {receipts.length > 0 && (
                   <div className={`rounded-2xl border p-5 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
-                    <h3 className="text-sm font-bold mb-3 text-white flex items-center gap-2">
-                      <Icon icon="ph:receipt-fill" className="text-blue-400 w-4 h-4" />
+                    <h3 className={`text-sm font-bold mb-3 flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}>
+                      <Icon icon="ph:receipt-fill" className="text-blue-500 w-4 h-4" />
                       Payment Receipts
                     </h3>
                     <div className="space-y-3">
                       {receipts.map((r) => (
-                        <div key={r._id} className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-800 text-xs flex items-center justify-between">
+                        <div key={r._id} className={`p-3.5 rounded-xl border text-xs flex items-center justify-between ${isDark ? "bg-slate-800/40 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
                           <div>
-                            <p className="font-bold text-sm text-emerald-400">{fmtCur(r.amount)}</p>
-                            <p className="text-slate-400 mt-0.5">{fmt(r.paymentDate)} · {r.method || "OTHER"}</p>
+                            <p className="font-bold text-sm text-emerald-600 dark:text-emerald-400">{fmtCur(r.amount)}</p>
+                            <p className={`mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{fmt(r.paymentDate)} &middot; {r.method || "OTHER"}</p>
                             {r.utrNumber && <p className="text-slate-500 font-mono mt-0.5">UTR: {r.utrNumber}</p>}
                           </div>
                           {r.paymentProof && (
                             <button
                               onClick={() => setActiveReceiptUrl(r.paymentProof)}
-                              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"
                             >
                               <Icon icon="ph:eye-bold" className="w-3.5 h-3.5" /> View Receipt
                             </button>
@@ -406,12 +412,12 @@ const FarmerSchedules = () => {
                 {/* Postpone history */}
                 {postponeHistory.length > 0 && (
                   <div className={`rounded-2xl border p-4 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200 shadow-sm"}`}>
-                    <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-amber-400 flex items-center gap-1.5">
+                    <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-amber-500 flex items-center gap-1.5">
                       <Icon icon="ph:clock-clockwise-fill" className="w-4 h-4" /> Postpone History
                     </h3>
                     <div className="space-y-2 text-xs">
                       {postponeHistory.map((ph, idx) => (
-                        <div key={idx} className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/10 text-amber-300">
+                        <div key={idx} className={`p-2.5 rounded-lg border ${isDark ? "bg-amber-500/5 border-amber-500/10 text-amber-300" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
                           Moved from <strong>{fmt(ph.from)}</strong> to <strong>{fmt(ph.to)}</strong>
                           {ph.reason ? ` — "${ph.reason}"` : ""}
                         </div>

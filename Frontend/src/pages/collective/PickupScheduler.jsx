@@ -37,9 +37,9 @@ const Field = ({ label, children, required }) => (
 );
 
 const selectCls =
-  "w-full appearance-none rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all bg-slate-900 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500";
+  "w-full appearance-none rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500";
 const inputCls =
-  "w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all bg-slate-900 border-slate-700 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500";
+  "w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500";
 
 // ── Schedule Detail View ──────────────────────────────────────────────────────────────
 const ScheduleDetailView = ({ data, onBack, isDark, onAction, onEdit }) => {
@@ -486,7 +486,6 @@ const PickupScheduler = () => {
   const handleAction = (type, scheduleId) => {
     if (type === "postpone") {
       setPostponeModal(scheduleId);
-      setDetailSchedule(null);
       return;
     }
     const labels = {
@@ -495,7 +494,6 @@ const PickupScheduler = () => {
       cancel: { label: "Cancel Pickup", description: "This will cancel the pickup and release all selected crops back to the pool.", confirm: "Cancel Pickup", color: "red" },
     };
     setConfirmModal({ type, scheduleId, ...labels[type] });
-    setDetailSchedule(null);
   };
 
   const executeAction = async () => {
@@ -506,7 +504,10 @@ const PickupScheduler = () => {
     try {
       await collectiveScheduleAPI.updateStatus(scheduleId, { status: statusMap[type] });
       toast.success(`Schedule ${type === "start" ? "started" : type === "complete" ? "completed" : "cancelled"}`);
-      fetchAll();
+      await fetchAll();
+      if (view === "detail" && detailSchedule?.schedule?._id === scheduleId) {
+        handleViewDetails({ _id: scheduleId });
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Action failed");
     }
@@ -516,7 +517,10 @@ const PickupScheduler = () => {
     try {
       await collectiveScheduleAPI.updateStatus(scheduleId, { status: "POSTPONED", newDate, reason });
       toast.success("Pickup postponed");
-      fetchAll();
+      await fetchAll();
+      if (view === "detail" && detailSchedule?.schedule?._id === scheduleId) {
+        handleViewDetails({ _id: scheduleId });
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to postpone");
     }
@@ -557,7 +561,7 @@ const PickupScheduler = () => {
     });
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+    <div className={`min-h-screen p-5 sm:p-7 overflow-x-hidden transition-colors duration-200 ${isDark ? "bg-slate-950 text-white" : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"}`}>
       <AnimatePresence mode="wait">
         {view === "list" ? (
           <motion.div

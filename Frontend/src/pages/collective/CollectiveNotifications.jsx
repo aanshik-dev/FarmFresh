@@ -96,7 +96,7 @@ const CollectiveNotifications = () => {
   const unread = notifs.filter((n) => !n.isRead).length;
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+    <div className={`min-h-screen p-5 sm:p-7 transition-colors duration-200 ${isDark ? "bg-slate-950 text-white" : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"}`}>
       <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 to-teal-400 bg-clip-text text-transparent">

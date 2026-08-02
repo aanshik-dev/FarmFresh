@@ -420,7 +420,7 @@ const CollectionHistory = () => {
   );
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}>
+    <div className={`min-h-screen p-5 sm:p-7 transition-colors duration-200 ${isDark ? "bg-slate-950 text-white" : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"}`}>
       <AnimatePresence mode="wait">
         {payPanel ? (
           <FarmerPaymentView
@@ -462,7 +462,11 @@ const CollectionHistory = () => {
                   <select
                     value={sortKey}
                     onChange={(e) => setSortKey(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-2 rounded-xl border text-sm outline-none bg-slate-900/60 border-slate-800 text-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                    className={`appearance-none pl-3 pr-8 py-2 rounded-xl border text-sm outline-none cursor-pointer ${
+                      isDark
+                        ? "bg-slate-900/60 border-slate-800 text-slate-300 focus:border-emerald-500"
+                        : "bg-white border-slate-200 text-slate-800 focus:border-emerald-500 shadow-sm"
+                    }`}
                   >
                     <option value="createdAt">Created Date</option>
                     <option value="updatedAt">Updated Date</option>

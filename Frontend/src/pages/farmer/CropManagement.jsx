@@ -164,6 +164,12 @@ const CropCard = ({
               <h3 className="font-bold text-sm leading-snug truncate">
                 {crop.crop?.name}
               </h3>
+              {deal?.schedule?.activeSchedule && (
+                <span className="shrink-0 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1 shadow-sm">
+                  <Icon icon="ph:truck-fill" className="w-3 h-3" />
+                  Scheduled
+                </span>
+              )}
               {isActionNeeded && (
                 <span className="shrink-0 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full bg-red-500 text-white flex items-center gap-0.5 shadow-sm">
                   <Icon icon="ph:warning-circle-fill" className="w-3 h-3" />
@@ -363,6 +369,8 @@ const DetailPanel = ({
   const deal = crop?.dealCrop;
   const collective = deal?.membership?.collective ?? deal?.collective ?? null;
   const isLinked = !!deal;
+  const activeSched = deal?.schedule?.activeSchedule;
+  const isScheduledForPickup = !!activeSched;
   const isQueryOpen = deal?.growth?.queryStatus === "OPEN";
   const meta = getSeasonMeta(crop?.crop?.season);
   const [panelTab, setPanelTab] = useState("overview");
@@ -406,6 +414,30 @@ const DetailPanel = ({
     setSelectedFiles([]);
     setPreviews([]);
   }, [crop?._id, deal?._id, panelTab]);
+
+  // Fetch pickup history when the Pickup History tab opens
+  useEffect(() => {
+    if (panelTab !== "history" || !deal?._id) return;
+    let cancelled = false;
+    setHistoryLoading(true);
+    farmerDealAPI
+      .getPickupHistory(deal._id)
+      .then((res) => {
+        if (!cancelled) setPickupHistory(res.data?.history || []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPickupHistory([]);
+          toast.error("Failed to load pickup history");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [panelTab, deal?._id, toast]);
 
   // Handle multi-image file selection with 2MB size limit per image
   const handleFileChange = (e) => {
@@ -492,7 +524,7 @@ const DetailPanel = ({
           {
             key: "update",
             label: "Send Update",
-            icon: "ph:paper-plane-tilt-bold",
+            icon: isScheduledForPickup ? "ph:lock-key-bold" : "ph:paper-plane-tilt-bold",
             badge: isQueryOpen,
           },
           {
@@ -623,21 +655,54 @@ const DetailPanel = ({
                     <div
                       className={`rounded-xl p-3.5 border ${isDark ? "bg-emerald-950/30 border-emerald-500/20" : "bg-emerald-50 border-emerald-200/70"}`}
                     >
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mb-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mb-2.5">
                         Linked Collective
                       </p>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 shrink-0">
-                          {collective.name?.charAt(0) || "C"}
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm text-white">
+                      <div className="flex items-start gap-3 mb-2.5">
+                        {collective.profile ? (
+                          <img
+                            src={collective.profile}
+                            alt={collective.name}
+                            className="w-10 h-10 rounded-xl object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 shrink-0">
+                            {collective.name?.charAt(0) || "C"}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"} truncate`}>
                             {collective.name}
                           </p>
-                          <p className="text-xs text-slate-400">
-                            {collective.phone || "—"}
-                          </p>
+                          {(collective.leadFarmer || collective.manager) && (
+                            <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                              Manager: {collective.manager || collective.leadFarmer}
+                            </p>
+                          )}
                         </div>
+                      </div>
+
+                      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs border-t pt-2.5 ${isDark ? "border-slate-800 text-slate-300" : "border-slate-200 text-slate-600"}`}>
+                        {collective.phone && (
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Icon icon="ph:phone-bold" className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className="truncate">{collective.phone}</span>
+                          </div>
+                        )}
+                        {collective.email && (
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Icon icon="ph:envelope-bold" className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className="truncate">{collective.email}</span>
+                          </div>
+                        )}
+                        {(collective.address?.town || collective.address?.district) && (
+                          <div className="flex items-center gap-1.5 min-w-0 sm:col-span-2">
+                            <Icon icon="ph:map-pin-bold" className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <span className="truncate">
+                              {[collective.address?.locality, collective.address?.town || collective.address?.district, collective.address?.state].filter(Boolean).join(", ")}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -669,6 +734,54 @@ const DetailPanel = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Scheduled Pickup Section */}
+                  {activeSched && (
+                    <div
+                      className={`rounded-xl p-3.5 border ${
+                        isDark
+                          ? "bg-amber-950/20 border-amber-500/30 text-slate-200"
+                          : "bg-amber-50 border-amber-200 text-slate-800"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                          <Icon icon="ph:truck-bold" className="w-4 h-4 shrink-0" />
+                          <span>Scheduled for Pickup</span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          {activeSched.status || "SCHEDULED"}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Schedule Code:</span>
+                          <span className="font-mono font-bold text-emerald-400">{activeSched.code || "—"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Pickup Date:</span>
+                          <span className="font-semibold text-white">
+                            {activeSched.pickupDate
+                              ? new Date(activeSched.pickupDate).toLocaleDateString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "—"}{" "}
+                            ({activeSched.time || "09:00"})
+                          </span>
+                        </div>
+                        {activeSched.driver?.name && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Driver:</span>
+                            <span className="font-semibold text-white">
+                              {activeSched.driver.name} ({activeSched.driver.phone || "—"})
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div
@@ -717,7 +830,30 @@ const DetailPanel = ({
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              {/* TOP: Image Upload & Previous Image View Area */}
+              {isScheduledForPickup ? (
+                <div
+                  className={`p-5 rounded-2xl border text-center space-y-2 ${
+                    isDark
+                      ? "bg-amber-950/20 border-amber-500/30 text-amber-200"
+                      : "bg-amber-50 border-amber-200 text-amber-900"
+                  }`}
+                >
+                  <Icon
+                    icon="ph:lock-key-fill"
+                    className="w-10 h-10 mx-auto text-amber-400"
+                  />
+                  <h4 className="font-bold text-sm">Status Update Locked</h4>
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                    This crop is currently scheduled for pickup (
+                    <span className="font-mono font-bold text-emerald-400">
+                      {activeSched?.code || "Active Pickup"}
+                    </span>
+                    ). You cannot update the crop status while it is in a scheduled pickup state.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* TOP: Image Upload & Previous Image View Area */}
               <div>
                 {/* Existing Uploaded Photos (Read-Only) when no new file selected */}
                 {selectedFiles.length === 0 && existingImages.length > 0 && (
@@ -852,8 +988,9 @@ const DetailPanel = ({
                 ) : (
                   <Icon icon="ph:paper-plane-tilt-fill" className="w-4 h-4" />
                 )}
-                Send Crop Status Update
-              </button>
+                </button>
+                </>
+              )}
             </motion.div>
           )}
 
@@ -891,42 +1028,42 @@ const DetailPanel = ({
                   {pickupHistory.map((item) => (
                     <div
                       key={item._id}
-                      className="p-3.5 rounded-xl border border-slate-800 bg-slate-900/50 space-y-2 text-xs"
+                      className={`p-3.5 rounded-xl border space-y-2 text-xs ${isDark ? "border-slate-800 bg-slate-900/50" : "border-slate-200 bg-white shadow-sm"}`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-mono font-bold text-emerald-400">
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                           {item.scheduleCode || "SCHEDULE"}
                         </span>
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.paymentStatus === "PAID" ? "bg-emerald-500/20 text-emerald-400" : "bg-amber-500/20 text-amber-400"}`}
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${item.paymentStatus === "PAID" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400" : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400"}`}
                         >
                           {item.paymentStatus || "PENDING"}
                         </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 py-2 bg-slate-950/60 rounded-lg text-center">
+                      <div className={`grid grid-cols-3 gap-2 py-2 rounded-lg text-center ${isDark ? "bg-slate-950/60" : "bg-slate-50 border border-slate-200/80"}`}>
                         <div>
-                          <p className="text-slate-500">Collected</p>
-                          <p className="font-bold text-white">
+                          <p className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Collected</p>
+                          <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
                             {item.collectedQuantity || 0} kg
                           </p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Agreed Rate</p>
-                          <p className="font-bold text-white">
+                          <p className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Agreed Rate</p>
+                          <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
                             ₹{item.agreedPrice || 0}/kg
                           </p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Total Money</p>
-                          <p className="font-bold text-emerald-400">
+                          <p className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Money</p>
+                          <p className="font-bold text-emerald-600 dark:text-emerald-400">
                             ₹{(item.totalAmount || 0).toLocaleString("en-IN")}
                           </p>
                         </div>
                       </div>
-                      <div className="flex justify-between text-slate-400 text-[11px]">
+                      <div className={`flex justify-between text-[11px] ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                         <span>
                           Collective:{" "}
-                          <strong className="text-white">
+                          <strong className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
                             {item.collective?.name || "—"}
                           </strong>
                         </span>
@@ -1089,7 +1226,7 @@ const CropManagement = () => {
 
   return (
     <div
-      className={`min-h-screen p-5 sm:p-7 overflow-x-hidden ${isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900"}`}
+      className={`min-h-screen p-5 sm:p-7 overflow-x-hidden transition-colors duration-200 ${isDark ? "bg-slate-950 text-white" : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"}`}
     >
       <AnimatePresence mode="wait">
         {view === "list" ? (
@@ -1171,7 +1308,7 @@ const CropManagement = () => {
               />
             ) : (
               <div className="relative flex justify-end min-h-[calc(100vh-200px)] w-full">
-                <div className="w-full lg:w-auto lg:absolute lg:top-0 lg:left-0 lg:bottom-0 lg:right-[calc(38%+1.25rem)] lg:overflow-y-auto lg:pr-1">
+                <div className="w-full lg:w-auto lg:absolute lg:top-0 lg:left-0 lg:bottom-0 lg:right-[calc(38%+1.25rem)] lg:overflow-y-auto lg:pr-1 custom-scrollbar">
                   <div className="grid sm:grid-cols-2 gap-4 pb-4">
                     {filteredCrops.map((crop, i) => (
                       <CropCard

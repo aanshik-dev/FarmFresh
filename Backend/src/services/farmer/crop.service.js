@@ -80,8 +80,12 @@ const getCropData = async (farmerId) => {
       select: "collective",
       populate: {
         path: "collective",
-        select: "name manager profile",
+        select: "name phone email manager leadFarmer address profile",
       },
+    })
+    .populate({
+      path: "schedule.activeSchedule",
+      select: "code pickupDate time status driver notes",
     })
     .lean();
 

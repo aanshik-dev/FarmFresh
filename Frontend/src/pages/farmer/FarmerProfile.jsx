@@ -89,7 +89,7 @@ const FarmerProfile = () => {
   }`;
 
   return (
-    <div className={`min-h-screen p-5 sm:p-7 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+    <div className={`min-h-screen p-5 sm:p-7 transition-colors duration-200 ${isDark ? "bg-slate-950 text-white" : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"}`}>
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Profile card */}
