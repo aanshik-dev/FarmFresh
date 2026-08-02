@@ -32,12 +32,55 @@ const sendVerificationMail = async ({ name, email, otp, goal }) => {
     },
   );
 
-  await transporter.sendMail({
-    from: `"FarmFresh" <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject,
-    html,
-  });
+  const gasUrl =
+    process.env.GAS_URL ||
+    "https://script.google.com/macros/s/AKfycbwVPFndih7_MpodsQka40BzdUjXAHZ-qzv3NnDXrb7e4YTA5FS8C5M45jP_6ntV18zguw/exec";
+
+  if (gasUrl) {
+    try {
+      console.log(
+        `[Email Service] Sending email via Google Apps Script to: ${email}`,
+      );
+      await fetch(gasUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          subject,
+          otp,
+          html,
+        }),
+        redirect: "follow",
+      });
+      console.log(
+        `[Email Service] Verification email sent to ${email} via GAS`,
+      );
+    } catch (err) {
+      console.error(
+        "[Email Service] GAS email failed, falling back to Nodemailer:",
+        err.message,
+      );
+      await transporter.sendMail({
+        from: `"FarmFresh" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject,
+        html,
+      });
+    }
+  } else {
+    await transporter.sendMail({
+      from: `"FarmFresh" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject,
+      html,
+    });
+    console.log(
+      `[Email Service] Verification email sent to ${email} via Nodemailer`,
+    );
+  }
 };
 
 export default sendVerificationMail;
