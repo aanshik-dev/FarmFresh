@@ -91,84 +91,84 @@ const ScheduleDetailView = ({ data, onBack, isDark, onAction, onEdit }) => {
 
         {/* 8 Smart Metrics Cards matching CropInventory details */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3.5 rounded-xl border flex flex-col justify-center ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Zone</p>
-            <p className="text-sm font-bold text-white truncate">{schedule.zone?.name || "—"}</p>
+            <p className={`text-sm font-bold truncate ${isDark ? "text-white" : "text-slate-900"}`}>{schedule.zone?.name || "—"}</p>
           </div>
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3.5 rounded-xl border flex flex-col justify-center ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Pickup Time</p>
-            <p className="text-sm font-bold text-white">{schedule.time || "09:00"}</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{schedule.time || "09:00"}</p>
           </div>
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3.5 rounded-xl border flex flex-col justify-center ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Vehicle</p>
-            <p className="text-sm font-bold text-white truncate">{schedule.driver?.vehicleNumber || "—"}</p>
+            <p className={`text-sm font-bold truncate ${isDark ? "text-white" : "text-slate-900"}`}>{schedule.driver?.vehicleNumber || "—"}</p>
           </div>
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3.5 rounded-xl border flex flex-col justify-center ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Capacity Limit</p>
-            <p className="text-sm font-bold text-white">{schedule.driver?.capacity ? `${schedule.driver.capacity} kg` : "—"}</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{schedule.driver?.capacity ? `${schedule.driver.capacity} kg` : "—"}</p>
           </div>
 
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3.5 rounded-xl border flex flex-col justify-center ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Farmers Involved</p>
             <p className="text-sm font-bold text-blue-400">{schedule.farmerCount ?? 0} Groups</p>
           </div>
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3.5 rounded-xl border flex flex-col justify-center ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Crops Count</p>
             <p className="text-sm font-bold text-amber-400">{schedule.itemCount ?? 0} Varieties</p>
           </div>
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3.5 rounded-xl border flex flex-col justify-center ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Total Weight</p>
             <p className="text-sm font-bold text-emerald-400">{schedule.totalQuantity ?? 0} kg</p>
           </div>
-          <div className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3.5 rounded-xl border flex flex-col justify-center ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Est. Total Cost</p>
             <p className="text-sm font-bold text-emerald-400">{fmtCurrency(schedule.totalAmount)}</p>
           </div>
         </div>
 
         {/* Assigned Driver Card */}
-        <div className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className={`p-5 rounded-xl border mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isDark ? "border-slate-800 bg-slate-950/60" : "border-slate-200 bg-white"}`}>
           <div className="flex items-center gap-4">
             {schedule.driver?.profile ? (
               <img
                 src={schedule.driver.profile}
                 alt={schedule.driver.name || "Driver"}
-                className="w-14 h-14 rounded-full object-cover bg-slate-850 border border-slate-700 shrink-0"
+                className={`w-14 h-14 rounded-full object-cover border shrink-0 ${isDark ? "bg-slate-850 border-slate-700" : "bg-slate-50 border-slate-200"}`}
               />
             ) : (
-              <div className="w-14 h-14 rounded-full flex items-center justify-center bg-slate-800 border border-slate-700 shrink-0">
-                <Icon icon="ph:user-fill" className="w-6 h-6 text-slate-500" />
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center border shrink-0 ${isDark ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
+                <Icon icon="ph:user-fill" className="w-6 h-6 text-slate-400" />
               </div>
             )}
             <div>
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Assigned Driver</p>
-              <h4 className="font-bold text-base text-white">{schedule.driver?.name || "—"}</h4>
-              <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+              <h4 className={`font-bold text-base ${isDark ? "text-white" : "text-slate-900"}`}>{schedule.driver?.name || "—"}</h4>
+              <p className={`text-xs mt-1 flex items-center gap-1.5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                 <Icon icon="ph:phone-fill" className="w-3.5 h-3.5" /> {schedule.driver?.phone || "—"}
               </p>
             </div>
           </div>
           <div className="text-left sm:text-right">
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Vehicle Details</p>
-            <p className="text-sm font-bold text-white">{schedule.driver?.vehicleNumber || "—"}</p>
-            <p className="text-xs text-slate-400 mt-1">Capacity: {schedule.driver?.capacity || 0} kg</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{schedule.driver?.vehicleNumber || "—"}</p>
+            <p className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-slate-600"}`}>Capacity: {schedule.driver?.capacity || 0} kg</p>
           </div>
         </div>
 
         {/* Crops scheduled list (designed like supply lines) */}
         {farmers && farmers.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+            <h3 className={`text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
               <Icon icon="ph:plant-fill" className="w-5 h-5 text-emerald-400" />
               Crops Scheduled for Pickup
             </h3>
             <div className="space-y-4">
               {farmers.map((farmerGrp, idx) => (
-                <div key={idx} className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 transition-all hover:border-slate-700">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-800/40">
+                <div key={idx} className={`p-5 rounded-xl border transition-all ${isDark ? "border-slate-800 bg-slate-950/60 hover:border-slate-700" : "border-slate-200 bg-white hover:border-slate-300"}`}>
+                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b ${isDark ? "border-slate-800/40" : "border-slate-200"}`}>
                     <div>
-                      <h4 className="font-bold text-base text-white">{farmerGrp.farmerGroup?.name || "Farmer Group"}</h4>
-                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
+                      <h4 className={`font-bold text-base ${isDark ? "text-white" : "text-slate-900"}`}>{farmerGrp.farmerGroup?.name || "Farmer Group"}</h4>
+                      <p className={`text-xs mt-1 flex items-center gap-1.5 ${isDark ? "text-slate-400" : "text-slate-600"}`}>
                         <Icon icon="ph:user-bold" /> {farmerGrp.farmerGroup?.leadFarmer || "Lead"} &middot; 
                         <Icon icon="ph:phone-fill" /> {farmerGrp.farmerGroup?.phone || "—"}
                       </p>
@@ -181,14 +181,14 @@ const ScheduleDetailView = ({ data, onBack, isDark, onAction, onEdit }) => {
 
                   <div className="space-y-2">
                     {farmerGrp.items.map((item, iIdx) => (
-                      <div key={iIdx} className="flex justify-between items-center py-2 border-b border-slate-800/20 last:border-0 text-sm">
+                      <div key={iIdx} className={`flex justify-between items-center py-2 border-b last:border-0 text-sm ${isDark ? "border-slate-800/20" : "border-slate-100"}`}>
                         <div>
-                          <p className="font-semibold text-white">{item.cropName || "Crop"}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">
+                          <p className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{item.cropName || "Crop"}</p>
+                          <p className={`text-xs mt-0.5 ${isDark ? "text-slate-500" : "text-slate-600"}`}>
                             {item.collectedQuantity || 0} kg &times; ₹{item.agreedPrice || 0}/kg
                           </p>
                         </div>
-                        <span className="font-semibold text-emerald-450">{fmtCurrency(item.totalAmount)}</span>
+                        <span className="font-semibold text-emerald-500">{fmtCurrency(item.totalAmount)}</span>
                       </div>
                     ))}
                   </div>
@@ -200,11 +200,11 @@ const ScheduleDetailView = ({ data, onBack, isDark, onAction, onEdit }) => {
 
         {/* Notes */}
         {schedule.notes && (
-          <div className="p-4 rounded-xl border border-slate-800 bg-slate-950/40 mb-6">
+          <div className={`p-4 rounded-xl border mb-6 ${isDark ? "border-slate-800 bg-slate-950/40" : "border-slate-200 bg-slate-50"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-1.5 flex items-center gap-1">
               <Icon icon="ph:note-pencil-bold" className="w-3.5 h-3.5" /> Remarks / Notes
             </p>
-            <p className="text-sm text-slate-350 italic">"{schedule.notes}"</p>
+            <p className={`text-sm italic ${isDark ? "text-slate-300" : "text-slate-700"}`}>"{schedule.notes}"</p>
           </div>
         )}
 
@@ -257,8 +257,8 @@ const PostponePanel = ({ scheduleId, onClose, onConfirm }) => {
   const [minISO] = useState(() => new Date().toISOString().slice(0, 10));
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-        <h3 className="text-lg font-bold text-white mb-4">Postpone Pickup</h3>
+      <div className={`w-full max-w-sm rounded-2xl p-6 shadow-2xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
+        <h3 className={`text-lg font-bold mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>Postpone Pickup</h3>
         <div className="space-y-4">
           <div>
             <label className="text-xs font-semibold block mb-1.5 text-slate-400">New Pickup Date *</label>
@@ -282,7 +282,7 @@ const PostponePanel = ({ scheduleId, onClose, onConfirm }) => {
           </div>
         </div>
         <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-slate-700 text-slate-300 hover:bg-slate-800 cursor-pointer transition-all">
+          <button onClick={onClose} className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}>
             Cancel
           </button>
           <button
@@ -584,7 +584,7 @@ const PickupScheduler = () => {
               </div>
               <div className="flex items-center gap-3">
                 {/* View Switcher */}
-                <div className="flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800">
+                <div className={`flex items-center p-1 rounded-xl border ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}>
                   <button
                     onClick={() => setDisplayMode("card")}
                     className={`p-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -622,7 +622,7 @@ const PickupScheduler = () => {
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
               {/* Tabs */}
-              <div className="flex gap-1 p-1.5 rounded-xl backdrop-blur-md bg-slate-900/60 border border-slate-800 w-fit">
+              <div className={`flex gap-1 p-1.5 rounded-xl backdrop-blur-md border w-fit ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
                 {[
                   { id: "all", label: "All Schedules" },
                   { id: "upcoming", label: "Upcoming" },
@@ -654,7 +654,7 @@ const PickupScheduler = () => {
                   <select
                     value={sortKey}
                     onChange={(e) => setSortKey(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-2 rounded-xl border text-sm outline-none bg-slate-900/60 border-slate-800 text-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                    className={`appearance-none pl-3 pr-8 py-2 rounded-xl border text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 cursor-pointer ${isDark ? "bg-slate-900/60 border-slate-800 text-slate-300" : "bg-white border-slate-200 text-slate-700 shadow-sm"}`}
                   >
                     <option value="createdAt">Created Date</option>
                     <option value="updatedAt">Updated Date</option>
@@ -664,7 +664,7 @@ const PickupScheduler = () => {
                 </div>
                 <button
                   onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                  className="p-2 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  className={`p-2 rounded-xl border transition-colors cursor-pointer ${isDark ? "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800" : "border-slate-200 bg-white text-slate-500 hover:text-slate-800 hover:bg-slate-100 shadow-sm"}`}
                   title="Toggle Sort Order"
                 >
                   <Icon icon={sortOrder === "asc" ? "ph:sort-ascending-bold" : "ph:sort-descending-bold"} className="w-5 h-5" />
@@ -698,11 +698,11 @@ const PickupScheduler = () => {
               />
             ) : displayMode === "table" ? (
               /* ── Table View ────────────────────────────────────────────── */
-              <div className="rounded-2xl border border-slate-800/60 bg-slate-900/40 overflow-hidden shadow-xl">
+              <div className={`rounded-2xl border overflow-hidden shadow-xl ${isDark ? "border-slate-800/60 bg-slate-900/40" : "border-slate-200 bg-white"}`}>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-800 bg-slate-900/80 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      <tr className={`border-b text-xs font-semibold uppercase tracking-wider ${isDark ? "border-slate-800 bg-slate-900/80 text-slate-400" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
                         <th className="py-4 px-5">Code</th>
                         <th className="py-4 px-5">Zone</th>
                         <th className="py-4 px-5">Date & Time</th>
@@ -713,23 +713,23 @@ const PickupScheduler = () => {
                         <th className="py-4 px-5 text-center">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-sm">
+                    <tbody className={`divide-y text-sm ${isDark ? "divide-slate-800/60" : "divide-slate-200"}`}>
                       {filtered.map((s) => (
                         <tr
                           key={s._id}
-                          className="hover:bg-slate-800/30 transition-colors cursor-pointer"
+                          className={`transition-colors cursor-pointer ${isDark ? "hover:bg-slate-800/30" : "hover:bg-slate-50"}`}
                           onClick={() => handleViewDetails(s)}
                         >
                           <td className="py-4 px-5 font-bold font-mono text-emerald-400">{s.code || "—"}</td>
-                          <td className="py-4 px-5 font-medium text-white">{s.zone?.name || "—"}</td>
-                          <td className="py-4 px-5 text-slate-300">
+                          <td className={`py-4 px-5 font-medium ${isDark ? "text-white" : "text-slate-900"}`}>{s.zone?.name || "—"}</td>
+                          <td className={`py-4 px-5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                             {fmt(s.pickupDate)} <span className="text-xs text-slate-500 ml-1">({s.time || "09:00"})</span>
                           </td>
-                          <td className="py-4 px-5 text-slate-300">
-                            <p className="font-semibold text-white">{s.driver?.name || "—"}</p>
+                          <td className={`py-4 px-5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>
+                            <p className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>{s.driver?.name || "—"}</p>
                             <p className="text-xs text-slate-500">{s.driver?.phone || ""}</p>
                           </td>
-                          <td className="py-4 px-5 text-center text-slate-300">
+                          <td className={`py-4 px-5 text-center ${isDark ? "text-slate-300" : "text-slate-700"}`}>
                             <span className="font-semibold">{s.itemCount ?? 0}</span> crops · <span className="text-emerald-400 font-bold">{s.totalQuantity ?? 0} kg</span>
                           </td>
                           <td className="py-4 px-5 text-right font-bold text-emerald-400">
@@ -742,7 +742,7 @@ const PickupScheduler = () => {
                             <div className="flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => handleViewDetails(s)}
-                                className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-all"
+                                className={`p-2 rounded-lg transition-all ${isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"}`}
                                 title="View Details"
                               >
                                 <Icon icon="ph:eye-bold" className="w-4 h-4" />
@@ -791,7 +791,7 @@ const PickupScheduler = () => {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="group relative rounded-2xl border bg-slate-900/40 border-slate-800/60 shadow-lg p-5 transition-all cursor-pointer flex flex-col justify-between"
+                    className={`group relative rounded-2xl border shadow-lg p-5 transition-all cursor-pointer flex flex-col justify-between ${isDark ? "bg-slate-900/40 border-slate-800/60" : "bg-white border-slate-200 hover:border-slate-300"}`}
                     onClick={() => handleViewDetails(s)}
                   >
                     <div className="flex-1">
@@ -810,37 +810,37 @@ const PickupScheduler = () => {
                       </div>
 
                       {/* Driver */}
-                      <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-800/25 mb-3">
+                      <div className={`flex items-center gap-2.5 p-2 rounded-xl border mb-3 ${isDark ? "bg-slate-800/25 border-transparent" : "bg-slate-50 border-slate-200"}`}>
                         {s.driver?.profile ? (
                           <img
                             src={s.driver.profile}
                             alt={s.driver.name || "Driver"}
-                            className="w-10 h-10 rounded-full object-cover border border-slate-700 shrink-0"
+                            className={`w-10 h-10 rounded-full object-cover border shrink-0 ${isDark ? "border-slate-700" : "border-slate-200 bg-white"}`}
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-800 border border-slate-700 shrink-0">
-                            <Icon icon="ph:user-fill" className="w-4 h-4 text-slate-500" />
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center border shrink-0 ${isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+                            <Icon icon="ph:user-fill" className="w-4 h-4 text-slate-400" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-white truncate">{s.driver?.name || "Driver not assigned"}</p>
-                          <p className="text-xs text-slate-500 truncate">{s.driver?.vehicleNumber || s.driver?.phone || ""}</p>
+                          <p className={`text-sm font-semibold truncate ${isDark ? "text-white" : "text-slate-900"}`}>{s.driver?.name || "Driver not assigned"}</p>
+                          <p className={`text-xs truncate ${isDark ? "text-slate-500" : "text-slate-600"}`}>{s.driver?.vehicleNumber || s.driver?.phone || ""}</p>
                         </div>
-                        <span className="text-xs font-bold text-emerald-400">{fmt(s.pickupDate)}</span>
+                        <span className="text-xs font-bold text-emerald-500">{fmt(s.pickupDate)}</span>
                       </div>
 
                       {/* Stats row */}
                       <div className="flex gap-1.5 mb-3">
-                        <div className="flex-1 text-center bg-slate-800/20 rounded-md py-1.5">
-                          <p className="text-sm font-bold text-white">{s.itemCount ?? 0}</p>
+                        <div className={`flex-1 text-center border rounded-md py-1.5 ${isDark ? "bg-slate-800/20 border-transparent" : "bg-slate-50 border-slate-200"}`}>
+                          <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{s.itemCount ?? 0}</p>
                           <p className="text-xs text-slate-500">Crops</p>
                         </div>
-                        <div className="flex-1 text-center bg-slate-800/20 rounded-md py-1.5">
-                          <p className="text-sm font-bold text-white">{s.totalQuantity ?? 0} kg</p>
+                        <div className={`flex-1 text-center border rounded-md py-1.5 ${isDark ? "bg-slate-800/20 border-transparent" : "bg-slate-50 border-slate-200"}`}>
+                          <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{s.totalQuantity ?? 0} kg</p>
                           <p className="text-xs text-slate-500">Qty</p>
                         </div>
-                        <div className="flex-1 text-center bg-emerald-500/5 rounded-md py-1.5">
-                          <p className="text-sm font-bold text-emerald-400">
+                        <div className={`flex-1 text-center border rounded-md py-1.5 ${isDark ? "bg-emerald-500/5 border-emerald-500/10" : "bg-emerald-50 border-emerald-200"}`}>
+                          <p className="text-sm font-bold text-emerald-500">
                             {s.totalAmount ? `₹${(s.totalAmount / 1000).toFixed(1)}k` : "₹0"}
                           </p>
                           <p className="text-xs text-slate-500">Total</p>
@@ -937,9 +937,9 @@ const PickupScheduler = () => {
               Back to Schedules
             </button>
 
-            <div className="rounded-2xl border bg-slate-900/50 border-slate-800/60 shadow-2xl shadow-black/20 p-6 sm:p-8">
-              <h2 className="text-2xl font-bold mb-1">{editingScheduleId ? "Edit Pickup Schedule" : "Schedule Pickup"}</h2>
-              <p className="text-sm mb-6 text-slate-400">
+            <div className={`rounded-2xl border shadow-2xl p-6 sm:p-8 ${isDark ? "bg-slate-900/50 border-slate-800/60 shadow-black/20" : "bg-white border-slate-200 shadow-slate-200/50"}`}>
+              <h2 className={`text-2xl font-bold mb-1 ${isDark ? "text-white" : "text-slate-900"}`}>{editingScheduleId ? "Edit Pickup Schedule" : "Schedule Pickup"}</h2>
+              <p className={`text-sm mb-6 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                 {editingScheduleId ? "Update the details of this schedule." : "Select a zone first — only READY crops from that zone will appear."}
               </p>
 
@@ -1019,14 +1019,14 @@ const PickupScheduler = () => {
 
                 {/* Capacity Tracker */}
                 {capacity > 0 && (
-                  <div className={`p-3.5 rounded-xl border transition-all ${capacityExceeded ? "bg-red-500/10 border-red-500/30" : "bg-slate-800/40 border-slate-700"}`}>
+                  <div className={`p-3.5 rounded-xl border transition-all ${capacityExceeded ? "bg-red-500/10 border-red-500/30" : isDark ? "bg-slate-800/40 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-slate-400">Vehicle Capacity Meter</span>
-                      <span className={`text-xs font-bold ${capacityExceeded ? "text-red-400" : "text-emerald-400"}`}>
+                      <span className={`text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Vehicle Capacity Meter</span>
+                      <span className={`text-xs font-bold ${capacityExceeded ? "text-red-400" : "text-emerald-500"}`}>
                         {totalSelectedQty} / {capacity} kg
                       </span>
                     </div>
-                    <div className="h-2.5 bg-slate-700 rounded-full overflow-hidden">
+                    <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? "bg-slate-700" : "bg-slate-200"}`}>
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${capacityExceeded ? "bg-red-500" : "bg-emerald-500"}`}
                         style={{ width: `${Math.min((totalSelectedQty / capacity) * 100, 100)}%` }}
@@ -1053,19 +1053,19 @@ const PickupScheduler = () => {
                   </label>
 
                   {!form.zoneId ? (
-                    <div className="p-5 rounded-xl border border-dashed border-slate-700 text-center bg-slate-900/30">
-                      <Icon icon="ph:map-pin-bold" className="w-8 h-8 mx-auto mb-2 text-slate-600" />
-                      <p className="text-sm text-slate-400">Select a zone to see available crops</p>
+                    <div className={`p-5 rounded-xl border border-dashed text-center ${isDark ? "border-slate-700 bg-slate-900/30" : "border-slate-300 bg-slate-50"}`}>
+                      <Icon icon="ph:map-pin-bold" className={`w-8 h-8 mx-auto mb-2 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
+                      <p className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>Select a zone to see available crops</p>
                     </div>
                   ) : dealsLoading ? (
                     <div className="flex items-center justify-center h-24">
                       <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-6 h-6 text-emerald-400" />
                     </div>
                   ) : readyDeals.length === 0 ? (
-                    <div className="p-5 rounded-xl border border-dashed border-slate-700 text-center bg-slate-900/30">
-                      <Icon icon="ph:leaf-fill" className="w-8 h-8 mx-auto mb-2 text-slate-600" />
-                      <p className="text-sm font-medium text-slate-400">No READY crops in this zone yet</p>
-                      <p className="text-xs mt-1 text-slate-500">Farmers must mark crops as READY first.</p>
+                    <div className={`p-5 rounded-xl border border-dashed text-center ${isDark ? "border-slate-700 bg-slate-900/30" : "border-slate-300 bg-slate-50"}`}>
+                      <Icon icon="ph:leaf-fill" className={`w-8 h-8 mx-auto mb-2 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
+                      <p className={`text-sm font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>No READY crops in this zone yet</p>
+                      <p className={`text-xs mt-1 ${isDark ? "text-slate-500" : "text-slate-400"}`}>Farmers must mark crops as READY first.</p>
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -1077,15 +1077,15 @@ const PickupScheduler = () => {
                             className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
                               selected
                                 ? "border-emerald-500/50 bg-emerald-500/10"
-                                : "border-slate-700 hover:border-slate-600 bg-slate-900/40"
+                                : isDark ? "border-slate-700 hover:border-slate-600 bg-slate-900/40" : "border-slate-200 hover:border-slate-300 bg-white"
                             }`}
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div onClick={() => toggleDeal(deal)} className="flex-1 min-w-0">
-                                <p className="font-bold text-sm text-white truncate">
+                                <p className={`font-bold text-sm truncate ${isDark ? "text-white" : "text-slate-900"}`}>
                                   {deal.crop?.name || "Crop"}
                                 </p>
-                                <p className="text-xs text-slate-400 mt-0.5">
+                                <p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                                   {deal.membership?.farmer?.groupName || deal.membership?.farmer?.name} · ₹{deal.agreedPrice}/kg
                                 </p>
                               </div>
@@ -1094,7 +1094,7 @@ const PickupScheduler = () => {
                                 className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all cursor-pointer ${
                                   selected
                                     ? "bg-emerald-500 border-emerald-500"
-                                    : "border-slate-600 hover:border-slate-500"
+                                    : isDark ? "border-slate-600 hover:border-slate-500 bg-slate-800" : "border-slate-300 hover:border-slate-400 bg-white"
                                 }`}
                               >
                                 {selected && (

@@ -52,12 +52,13 @@ const UserManagement = () => {
       </div>
 
       <div className={`rounded-2xl border overflow-hidden ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
-        <table className="w-full text-sm">
-          <thead className={isDark ? "bg-slate-800/50" : "bg-slate-50"}>
-            <tr>
-              {["User", "Role", "Email", "Status", "Actions"].map(h => <th key={h} className={`text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"}`}>{h}</th>)}
-            </tr>
-          </thead>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className={isDark ? "bg-slate-800/50" : "bg-slate-50"}>
+              <tr>
+                {["User", "Role", "Email", "Status", "Actions"].map(h => <th key={h} className={`text-left px-5 py-3.5 text-xs font-semibold uppercase tracking-wider ${isDark ? "text-slate-500" : "text-slate-400"} ${h === "Email" ? "hidden md:table-cell" : ""}`}>{h}</th>)}
+              </tr>
+            </thead>
           <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-slate-100"}`}>
             {filtered.map((u, i) => (
               <motion.tr key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }} className={isDark ? "hover:bg-slate-800/30" : "hover:bg-slate-50"}>
@@ -71,7 +72,7 @@ const UserManagement = () => {
                   </div>
                 </td>
                 <td className="px-5 py-4"><span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${ROLE_COLORS[u.role]}`}>{u.role.replace("_", " ")}</span></td>
-                <td className={`px-5 py-4 ${isDark ? "text-slate-400" : "text-slate-600"}`}>{u.email}</td>
+                <td className={`px-5 py-4 hidden md:table-cell ${isDark ? "text-slate-400" : "text-slate-600"}`}>{u.email}</td>
                 <td className="px-5 py-4"><StatusBadge status={u.status} size="sm" /></td>
                 <td className="px-5 py-4">
                   <div className="flex gap-1">
@@ -82,7 +83,8 @@ const UserManagement = () => {
               </motion.tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
         {filtered.length === 0 && <div className={`text-center py-10 text-sm ${isDark ? "text-slate-500" : "text-slate-400"}`}>No users match this filter.</div>}
       </div>
     </div>

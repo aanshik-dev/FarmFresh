@@ -27,11 +27,11 @@ const Login = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [role, setRole] = useState("FARMER_GROUP");
-  const [email, setEmail] = useState("raman@ff.in");
-  useEffect(() => {
-    setEmail(role === "FARMER_GROUP" ? "raman@ff.in" : "garima@ff.in");
-  }, [role]);
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("");
+  // useEffect(() => {
+  //   setEmail(role === "FARMER_GROUP" ? "raman@ff.in" : "garima@ff.in");
+  // }, [role]);
+  const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [Remember, setRemember] = useState(false);

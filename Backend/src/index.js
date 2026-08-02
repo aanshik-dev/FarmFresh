@@ -6,6 +6,7 @@ import seedCounters from "./scripts/seedCounters.js";
 import seedCrops from "./scripts/seedData.js";
 import seedAdmin from "./scripts/seedAdmin.js";
 import seedIssues from "./scripts/seedIssues.js";
+import { seedWorld } from "../backend-scripts/seedWorld.js";
 
 import authRoutes from "./routes/auth.route.js";
 import collectiveRoutes from "./routes/collective.route.js";
@@ -20,6 +21,7 @@ await seedCounters();
 await seedCrops();
 await seedAdmin();
 await seedIssues();
+await seedWorld();
 
 const app = express();
 

@@ -127,38 +127,38 @@ const CropDetailView = ({ crop, isDark, memberData, onBack }) => {
 
         {/* 8 Smart Metrics Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
-          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3 rounded-lg border flex flex-col justify-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-white border-slate-200"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Code</p>
-            <p className="text-sm font-mono font-bold text-white">{crop.code}</p>
+            <p className={`text-sm font-mono font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{crop.code}</p>
           </div>
-          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3 rounded-lg border flex flex-col justify-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-white border-slate-200"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Category</p>
-            <p className="text-sm font-bold text-white truncate">{crop.category || "General"}</p>
+            <p className={`text-sm font-bold truncate ${isDark ? "text-white" : "text-slate-900"}`}>{crop.category || "General"}</p>
           </div>
-          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3 rounded-lg border flex flex-col justify-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-white border-slate-200"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">In-Stock Qty</p>
-            <p className="text-sm font-bold text-white">{crop.quantity || 0} kg</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{crop.quantity || 0} kg</p>
           </div>
-          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3 rounded-lg border flex flex-col justify-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-white border-slate-200"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Stock Value</p>
-            <p className="text-sm font-bold text-white">₹{(crop.price * (crop.quantity || 0)).toLocaleString("en-IN")}</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>₹{(crop.price * (crop.quantity || 0)).toLocaleString("en-IN")}</p>
           </div>
 
-          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3 rounded-lg border flex flex-col justify-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-white border-slate-200"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Suppliers</p>
-            <p className="text-sm font-bold text-white">{supplyingGroups.length} Groups</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{supplyingGroups.length} Groups</p>
           </div>
-          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3 rounded-lg border flex flex-col justify-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-white border-slate-200"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Aggr. Weight</p>
-            <p className="text-sm font-bold text-white">{aggregateYield} kg</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{aggregateYield} kg</p>
           </div>
-          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3 rounded-lg border flex flex-col justify-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-white border-slate-200"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Season</p>
-            <p className="text-sm font-bold text-white">{crop.season}</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{crop.season}</p>
           </div>
-          <div className="p-3 rounded-lg border border-slate-800 bg-slate-950/60 flex flex-col justify-center">
+          <div className={`p-3 rounded-lg border flex flex-col justify-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-white border-slate-200"}`}>
             <p className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Status</p>
-            <p className="text-sm font-bold text-white">{crop.status}</p>
+            <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{crop.status}</p>
           </div>
         </div>
 
@@ -170,18 +170,18 @@ const CropDetailView = ({ crop, isDark, memberData, onBack }) => {
           </h3>
 
           {supplyingGroups.length === 0 ? (
-            <div className="p-8 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 text-center">
-              <Icon icon="ph:users-three" className="w-10 h-10 mx-auto mb-3 text-slate-600" />
-              <p className="text-sm text-slate-400 font-medium">No farmer groups currently supply this crop.</p>
+            <div className={`p-8 rounded-xl border border-dashed text-center ${isDark ? "border-slate-800 bg-slate-950/40" : "border-slate-300 bg-slate-50"}`}>
+              <Icon icon="ph:users-three" className={`w-10 h-10 mx-auto mb-3 ${isDark ? "text-slate-600" : "text-slate-400"}`} />
+              <p className={`text-sm font-medium ${isDark ? "text-slate-400" : "text-slate-500"}`}>No farmer groups currently supply this crop.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {supplyingGroups.map((fg, idx) => (
-                <div key={idx} className="p-5 rounded-xl border border-slate-800 bg-slate-950/60 transition-all hover:border-slate-700">
+                <div key={idx} className={`p-5 rounded-xl border transition-all ${isDark ? "border-slate-800 bg-slate-950/60 hover:border-slate-700" : "border-slate-200 bg-white hover:border-slate-300"}`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                     <div>
-                      <h4 className="font-bold text-base text-white">{fg.farmerGroup}</h4>
-                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                      <h4 className={`font-bold text-base ${isDark ? "text-white" : "text-slate-900"}`}>{fg.farmerGroup}</h4>
+                      <p className={`text-xs mt-1 flex items-center gap-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                         <Icon icon="ph:user-bold" /> {fg.leadFarmer} &middot; <Icon icon="ph:phone-fill" /> {fg.phone}
                       </p>
                     </div>
@@ -194,14 +194,14 @@ const CropDetailView = ({ crop, isDark, memberData, onBack }) => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 px-4 bg-slate-900/60 rounded-xl border border-slate-800/60 text-center">
+                  <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 px-4 rounded-xl border text-center ${isDark ? "bg-slate-900/60 border-slate-800/60" : "bg-slate-50 border-slate-200"}`}>
                     <div>
                       <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Growth Stage</p>
                       <p className="font-bold text-sm text-emerald-400">{fg.growthStage}</p>
                     </div>
                     <div>
                       <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Planted Date</p>
-                      <p className="font-bold text-sm text-white">{fmtDate(fg.plantedDate)}</p>
+                      <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{fmtDate(fg.plantedDate)}</p>
                     </div>
                     <div>
                       <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Est. Yield</p>
@@ -209,7 +209,7 @@ const CropDetailView = ({ crop, isDark, memberData, onBack }) => {
                     </div>
                     <div>
                       <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">Farmland</p>
-                      <p className="font-bold text-sm text-white">{fg.farmland} ac</p>
+                      <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"}`}>{fg.farmland} ac</p>
                     </div>
                   </div>
                 </div>
@@ -428,7 +428,7 @@ const CropInventory = () => {
                 <div key={card.label} className={`rounded-2xl border p-4 backdrop-blur-xl ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
                   <div className="flex items-center justify-between mb-2">
                     <Icon icon={card.icon} className={`w-5 h-5 ${card.color}`} />
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">{card.unit}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${isDark ? "bg-slate-800 text-slate-400 border-slate-700" : "bg-slate-100 text-slate-500 border-slate-200"}`}>{card.unit}</span>
                   </div>
                   <p className="text-2xl font-extrabold">{card.value}</p>
                   <p className={`text-xs font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>{card.label}</p>
@@ -437,28 +437,26 @@ const CropInventory = () => {
             </div>
 
             {/* Toolbar */}
-            <div className={`rounded-2xl border p-4 mb-6 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-white border-slate-200"}`}>
-              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-                <div className="relative flex-1">
-                  <Icon icon="ph:magnifying-glass-bold" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by crop name or code..."
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500" : "bg-slate-50 border-slate-200 text-slate-900"}`}
-                  />
-                </div>
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-6">
+              <div className="relative flex-1">
+                <Icon icon="ph:magnifying-glass-bold" className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? "text-slate-500" : "text-slate-400"}`} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by crop name or code..."
+                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm outline-none ${isDark ? "bg-slate-800/50 border-slate-700 text-white focus:border-emerald-500" : "bg-slate-50 border-slate-200 text-slate-900"}`}
+                />
+              </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center p-1 rounded-xl border border-slate-800 bg-slate-900">
-                    <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-lg ${viewMode === "grid" ? "bg-slate-800 text-emerald-400" : "text-slate-500"}`}>
-                      <Icon icon="ph:squares-four-bold" className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setViewMode("table")} className={`p-1.5 rounded-lg ${viewMode === "table" ? "bg-slate-800 text-emerald-400" : "text-slate-500"}`}>
-                      <Icon icon="ph:table-bold" className="w-4 h-4" />
-                    </button>
-                  </div>
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center p-1 rounded-xl border ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-slate-100"}`}>
+                  <button onClick={() => setViewMode("grid")} className={`p-1.5 rounded-lg ${viewMode === "grid" ? (isDark ? "bg-slate-800 text-emerald-400" : "bg-white text-emerald-600 shadow-sm") : "text-slate-500 hover:text-slate-700"}`}>
+                    <Icon icon="ph:squares-four-bold" className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setViewMode("table")} className={`p-1.5 rounded-lg ${viewMode === "table" ? (isDark ? "bg-slate-800 text-emerald-400" : "bg-white text-emerald-600 shadow-sm") : "text-slate-500 hover:text-slate-700"}`}>
+                    <Icon icon="ph:table-bold" className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -486,28 +484,28 @@ const CropInventory = () => {
                         <div>
                           <h3 className="font-bold text-base text-white mb-0.5">{crop.name}</h3>
                           <p className="text-[10px] text-slate-400 font-medium mb-1">{crop.category} &middot; {crop.season}</p>
-                          <span className="text-[10px] font-mono text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">{crop.code}</span>
+                          <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${isDark ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-emerald-600 bg-emerald-50 border-emerald-200"}`}>{crop.code}</span>
                         </div>
                       </div>
                       <StatusBadge status={crop.quantity < 100 ? "low_stock" : "in_stock"} size="sm" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-950/60 border border-slate-800 mb-3 text-center">
+                    <div className={`grid grid-cols-2 gap-2 p-2 rounded-xl border mb-3 text-center ${isDark ? "bg-slate-950/60 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
                       <div className="flex flex-col items-center justify-center">
                         <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">Target Price</p>
                         <p className="text-sm font-black text-emerald-400">₹{crop.price}<span className="text-[10px] font-semibold text-emerald-400/70">/kg</span></p>
                       </div>
-                      <div className="flex flex-col items-center justify-center border-l border-slate-800">
+                      <div className={`flex flex-col items-center justify-center border-l ${isDark ? "border-slate-800" : "border-slate-200"}`}>
                         <p className="text-[9px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">In Stock</p>
-                        <p className="text-sm font-black text-white">{crop.quantity} <span className="text-[10px] font-semibold text-slate-400">kg</span></p>
+                        <p className={`text-sm font-black ${isDark ? "text-white" : "text-slate-900"}`}>{crop.quantity} <span className="text-[10px] font-semibold text-slate-400">kg</span></p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-800" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => openEditForm(crop)} className="flex-1 py-1.5 rounded-lg text-[11px] font-bold border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors">
+                    <div className={`flex items-center gap-2 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"}`} onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => openEditForm(crop)} className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}>
                         Edit Settings
                       </button>
-                      <button onClick={() => setCropToDelete(crop)} className="p-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors">
+                      <button onClick={() => setCropToDelete(crop)} className={`p-1.5 rounded-lg border transition-colors ${isDark ? "border-red-500/20 text-red-400 hover:bg-red-500/10" : "border-red-200 text-red-500 hover:bg-red-50"}`}>
                         <Icon icon="ph:trash-bold" className="w-4 h-4" />
                       </button>
                     </div>
@@ -515,29 +513,30 @@ const CropInventory = () => {
                 ))}
               </div>
             ) : (
-              <div className="rounded-2xl border border-slate-800 overflow-hidden bg-slate-900/60">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-950 border-b border-slate-800 text-xs text-slate-400 uppercase">
-                    <tr>
-                      <th className="p-4">Crop</th>
-                      <th className="p-4">Category & Season</th>
-                      <th className="p-4">Target Price</th>
-                      <th className="p-4">Stock</th>
-                      <th className="p-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800">
-                    {filteredCrops.map((crop) => (
-                      <tr key={crop._id} onClick={() => { setSelectedCrop(crop); setView("detail"); }} className="hover:bg-slate-800/40 cursor-pointer">
+              <div className={`rounded-2xl border overflow-hidden ${isDark ? "border-slate-800 bg-slate-900/60" : "border-slate-200 bg-white"}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[600px] whitespace-nowrap text-sm text-left">
+                    <thead className={`border-b text-xs uppercase ${isDark ? "bg-slate-950 border-slate-800 text-slate-400" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
+                      <tr>
+                        <th className="p-4">Crop</th>
+                        <th className="p-4">Category & Season</th>
+                        <th className="p-4">Target Price</th>
+                        <th className="p-4">Stock</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-slate-200"}`}>
+                      {filteredCrops.map((crop) => (
+                      <tr key={crop._id} onClick={() => { setSelectedCrop(crop); setView("detail"); }} className={`cursor-pointer transition-colors ${isDark ? "hover:bg-slate-800/40" : "hover:bg-slate-50"}`}>
                         <td className="p-4 flex items-center gap-3">
                           <CropImg image={crop.image} category={crop.category} season={crop.season} />
                           <div>
-                            <p className="font-bold text-white">{crop.name}</p>
-                            <p className="text-xs font-mono text-emerald-400">{crop.code}</p>
+                            <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{crop.name}</p>
+                            <p className={`text-xs font-mono ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>{crop.code}</p>
                           </div>
                         </td>
                         <td className="p-4">{crop.category} · {crop.season}</td>
-                        <td className="p-4 font-bold text-emerald-400">₹{crop.price}/kg</td>
+                        <td className={`p-4 font-bold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>₹{crop.price}/kg</td>
                         <td className="p-4 font-bold">{crop.quantity} kg</td>
                         <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <button onClick={() => openEditForm(crop)} className="p-2 text-slate-300 hover:text-emerald-400">
@@ -550,7 +549,8 @@ const CropInventory = () => {
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                  </table>
+                </div>
               </div>
             )}
           </motion.div>
@@ -565,31 +565,31 @@ const CropInventory = () => {
         ) : (
           /* Form View */
           <motion.div key="form" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="max-w-2xl mx-auto">
-            <button onClick={() => setView("list")} className="mb-6 flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white">
+            <button onClick={() => setView("list")} className="mb-6 flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-emerald-400">
               <Icon icon="ph:arrow-left-bold" className="w-4 h-4" /> Back to Inventory
             </button>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-2xl">
-              <h2 className="text-xl font-bold mb-4">{editingCrop ? `Edit ${editingCrop.name}` : "Add Crop to Procurement Inventory"}</h2>
+            <div className={`rounded-2xl border p-5 shadow-2xl ${isDark ? "border-slate-800 bg-slate-900" : "border-slate-200 bg-white"}`}>
+              <h2 className={`text-xl font-bold mb-4 ${isDark ? "text-white" : "text-slate-900"}`}>{editingCrop ? `Edit ${editingCrop.name}` : "Add Crop to Procurement Inventory"}</h2>
               <form onSubmit={handleSave} className="space-y-3">
                 {!editingCrop && (
                   <div>
-                    <label className="text-xs font-bold uppercase block mb-2 text-slate-300">Select Crop *</label>
+                    <label className={`text-xs font-bold uppercase block mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Select Crop *</label>
                     <CropSelect crops={masterCrops} value={form.code} onChange={(code) => setForm((p) => ({ ...p, code }))} placeholder="Choose crop..." />
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold uppercase block mb-1.5 text-slate-300">Offering Price (₹/kg) *</label>
-                    <input type="number" step="0.01" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-sm text-white outline-none focus:border-emerald-500" />
+                    <label className={`text-xs font-bold uppercase block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Offering Price (₹/kg) *</label>
+                    <input type="number" step="0.01" value={form.price} onChange={(e) => setForm((p) => ({ ...p, price: e.target.value }))} className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDark ? "border-slate-700 bg-slate-800 text-white focus:border-emerald-500" : "border-slate-300 bg-slate-50 text-slate-900 focus:border-emerald-400"}`} />
                   </div>
                   <div>
-                    <label className="text-xs font-bold uppercase block mb-1.5 text-slate-300">In-Stock Quantity (kg)</label>
-                    <input type="number" value={form.quantity} onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-slate-700 bg-slate-800 text-sm text-white outline-none focus:border-emerald-500" />
+                    <label className={`text-xs font-bold uppercase block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}>In-Stock Quantity (kg)</label>
+                    <input type="number" value={form.quantity} onChange={(e) => setForm((p) => ({ ...p, quantity: e.target.value }))} className={`w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors ${isDark ? "border-slate-700 bg-slate-800 text-white focus:border-emerald-500" : "border-slate-300 bg-slate-50 text-slate-900 focus:border-emerald-400"}`} />
                   </div>
                 </div>
-                <div className="flex gap-2 pt-3 border-t border-slate-800">
-                  <button type="button" onClick={() => setView("list")} className="flex-1 py-2 rounded-lg text-sm font-semibold border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+                <div className={`flex gap-2 pt-3 border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}>
+                  <button type="button" onClick={() => setView("list")} className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition-colors ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}>Cancel</button>
                   <button type="submit" disabled={saving} className="flex-1 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-colors">
                     {saving ? <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-4 h-4" /> : "Save Crop"}
                   </button>

@@ -98,6 +98,7 @@ const ProofUploader = ({ onUrlReady, scheduleCode, farmerFid }) => {
 
 // ── Payment Detail View ────────────────────────────────────────────────────────
 const FarmerPaymentView = ({ schedule, farmerGroupId, onClose, onDone }) => {
+  const { isDark } = useTheme();
   const { toast } = useToast();
   const [proofUrl, setProofUrl] = useState("");
   const [utrNumber, setUtrNumber] = useState("");
@@ -168,29 +169,29 @@ const FarmerPaymentView = ({ schedule, farmerGroupId, onClose, onDone }) => {
         <Icon icon="ph:arrow-left-bold" className="w-4 h-4" /> Back to History
       </button>
 
-      <div className="rounded-2xl border bg-slate-950 border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+      <div className={`rounded-2xl border shadow-2xl flex flex-col overflow-hidden ${isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"}`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900/40">
+        <div className={`flex items-center justify-between p-6 border-b ${isDark ? "border-slate-800 bg-slate-900/40" : "border-slate-200 bg-slate-50"}`}>
           <div>
             <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Payment Settlement</p>
-            <h2 className="text-2xl font-bold text-white">{farmerGroup?.name || "Farmer Group"}</h2>
+            <h2 className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>{farmerGroup?.name || "Farmer Group"}</h2>
           </div>
         </div>
 
         <div className="p-5 space-y-5 flex-1">
           {/* Summary */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+          <div className={`border rounded-xl p-4 ${isDark ? "bg-slate-900/60 border-slate-800" : "bg-slate-50 border-slate-200"}`}>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-slate-400">Schedule</span>
               <span className="text-sm font-mono font-bold text-emerald-400">{schedule.code}</span>
             </div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-slate-400">Pickup Date</span>
-              <span className="text-sm text-slate-300">{fmt(schedule.pickupDate)}</span>
+              <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-700"}`}>{fmt(schedule.pickupDate)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-slate-400">Phone</span>
-              <span className="text-sm text-slate-300">{farmerGroup?.phone || "—"}</span>
+              <span className={`text-sm ${isDark ? "text-slate-300" : "text-slate-700"}`}>{farmerGroup?.phone || "—"}</span>
             </div>
           </div>
 
@@ -214,7 +215,7 @@ const FarmerPaymentView = ({ schedule, farmerGroupId, onClose, onDone }) => {
                     className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
                       isPaid
                         ? "bg-emerald-500/5 border-emerald-500/20 opacity-70"
-                        : "bg-slate-900/40 border-slate-800 cursor-pointer hover:border-slate-600"
+                        : isDark ? "bg-slate-900/40 border-slate-800 cursor-pointer hover:border-slate-600" : "bg-slate-50 border-slate-200 cursor-pointer hover:border-slate-300"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -223,14 +224,14 @@ const FarmerPaymentView = ({ schedule, farmerGroupId, onClose, onDone }) => {
                           className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
                             isSelected
                               ? "bg-emerald-500 border-emerald-500"
-                              : "border-slate-600 bg-slate-800"
+                              : isDark ? "border-slate-600 bg-slate-800" : "border-slate-300 bg-white"
                           }`}
                         >
                           {isSelected && <Icon icon="ph:check-bold" className="w-3.5 h-3.5 text-white" />}
                         </div>
                       )}
                       <div>
-                        <p className="text-sm font-semibold text-white">
+                        <p className={`text-sm font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
                           {item.cropName || "Crop"}
                         </p>
                         <p className="text-xs text-slate-500">
@@ -294,7 +295,7 @@ const FarmerPaymentView = ({ schedule, farmerGroupId, onClose, onDone }) => {
                   value={utrNumber}
                   onChange={(e) => setUtrNumber(e.target.value)}
                   placeholder="Bank UTR or transaction ID"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white outline-none focus:border-emerald-500 transition-all"
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all ${isDark ? "border-slate-700 bg-slate-900 text-white focus:border-emerald-500" : "border-slate-300 bg-slate-50 text-slate-900 focus:border-emerald-400"}`}
                 />
               </div>
 
@@ -306,7 +307,7 @@ const FarmerPaymentView = ({ schedule, farmerGroupId, onClose, onDone }) => {
                   onChange={(e) => setRemarks(e.target.value)}
                   rows={2}
                   placeholder="Optional notes…"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-white outline-none focus:border-emerald-500 transition-all resize-none"
+                  className={`w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition-all resize-none ${isDark ? "border-slate-700 bg-slate-900 text-white focus:border-emerald-500" : "border-slate-300 bg-slate-50 text-slate-900 focus:border-emerald-400"}`}
                 />
               </div>
 
@@ -476,7 +477,11 @@ const CollectionHistory = () => {
                 </div>
                 <button
                   onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                  className="p-2 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                    isDark 
+                      ? "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-white hover:bg-slate-800"
+                      : "border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 shadow-sm"
+                  }`}
                   title="Toggle Sort Order"
                 >
                   <Icon icon={sortOrder === "asc" ? "ph:sort-ascending-bold" : "ph:sort-descending-bold"} className="w-5 h-5" />
@@ -588,11 +593,10 @@ const CollectionHistory = () => {
                     : "bg-white border-slate-200 shadow-sm hover:border-slate-300"
                 }`}
               >
-                {/* Sleek Row */}
                 <button
                   id={`schedule-row-${s._id}`}
                   onClick={() => toggleExpand(s._id)}
-                  className={`w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 text-left transition-colors cursor-pointer ${
+                  className={`w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 text-left transition-colors cursor-pointer ${
                     isDark ? "hover:bg-slate-800/30" : "hover:bg-slate-50"
                   }`}
                 >
@@ -602,14 +606,14 @@ const CollectionHistory = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <p className="font-bold text-base font-mono text-white">{s.code || "—"}</p>
+                        <p className={`font-bold text-base font-mono ${isDark ? "text-white" : "text-slate-900"}`}>{s.code || "—"}</p>
                         <StatusBadge status={s.status?.toLowerCase()} size="sm" />
-                        <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-medium">
+                        <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${isDark ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600"}`}>
                           Zone: {s.zone?.name || "—"}
                         </span>
-                        {s.status !== "CANCELLED" && pendingPayments > 0 && (
-                          <span className="text-[10px] bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded-full font-semibold">
-                            {pendingPayments} pending
+                        {s.status !== "CANCELLED" && s.totalAmount > (s.paidAmount || 0) && (
+                          <span className="text-[10px] bg-amber-500/15 text-amber-500 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-semibold">
+                            Pending Payment
                           </span>
                         )}
                       </div>
@@ -644,17 +648,17 @@ const CollectionHistory = () => {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <div className={`border-t px-3 py-2.5 ${isDark ? "border-slate-800 bg-slate-900/30" : "border-slate-200 bg-slate-50/50"}`}>
+                      <div className={`border-t p-5 ${isDark ? "border-slate-800 bg-slate-900/30" : "border-slate-200 bg-slate-50/50"}`}>
                         {detailLoading[s._id] ? (
-                          <div className="flex items-center justify-center py-2 gap-1.5">
-                            <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-3.5 h-3.5 text-emerald-400" />
-                            <span className="text-[11px] text-slate-400">Loading details…</span>
+                          <div className="flex items-center justify-center py-4 gap-2">
+                            <Icon icon="svg-spinners:12-dots-scale-rotate" className="w-5 h-5 text-emerald-400" />
+                            <span className="text-xs text-slate-400">Loading details…</span>
                           </div>
                         ) : farmerGroups.length === 0 ? (
-                          <p className="text-[11px] text-center py-2 text-slate-500">No farmer groups in this pickup.</p>
+                          <p className="text-xs text-center py-4 text-slate-500">No farmer groups in this pickup.</p>
                         ) : (
-                          <div className="space-y-1.5">
-                            <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5 text-slate-500">
+                          <div className="space-y-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 text-slate-500">
                               Farmer Groups Involved ({farmerGroups.length})
                             </p>
                             {farmerGroups.map((fg) => {
@@ -671,7 +675,7 @@ const CollectionHistory = () => {
                                       farmerGroupId: fg.farmerGroup?._id,
                                     })
                                   }
-                                  className={`w-full flex items-center justify-between p-2 rounded-lg border text-left transition-all ${
+                                  className={`w-full flex items-center justify-between p-3.5 rounded-xl border text-left transition-all ${
                                     isCancelled ? "" : "cursor-pointer hover:border-emerald-500/40"
                                   } ${
                                     isDark
@@ -679,28 +683,28 @@ const CollectionHistory = () => {
                                       : `border-slate-200 bg-white`
                                   }`}
                                 >
-                                  <div className="flex items-center gap-2.5">
+                                  <div className="flex items-center gap-3">
                                     <div
-                                      className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-[10px] ${
+                                      className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
                                         isDark ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600"
                                       }`}
                                     >
                                       {fg.farmerGroup?.name?.charAt(0) || "F"}
                                     </div>
                                     <div>
-                                      <p className={`text-[11px] font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                                      <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
                                         {fg.farmerGroup?.name}
                                       </p>
-                                      <p className={`text-[10px] flex items-center gap-1 mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                                      <p className={`text-xs flex items-center gap-1.5 mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
                                         {fg.items.length} crop{fg.items.length !== 1 ? "s" : ""}
                                         {!isCancelled && (
                                           fg.allPaid ? (
-                                            <span className="text-emerald-400 flex items-center gap-0.5 font-semibold">
-                                              <Icon icon="ph:check-circle-fill" className="w-2.5 h-2.5" /> Paid
+                                            <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+                                              <Icon icon="ph:check-circle-fill" className="w-3 h-3" /> Paid
                                             </span>
                                           ) : (
-                                            <span className="text-amber-400 flex items-center gap-0.5 font-semibold">
-                                              <Icon icon="ph:clock-fill" className="w-2.5 h-2.5" /> Pending
+                                            <span className="text-amber-400 flex items-center gap-1 font-semibold">
+                                              <Icon icon="ph:clock-fill" className="w-3 h-3" /> Pending
                                             </span>
                                           )
                                         )}
@@ -708,13 +712,13 @@ const CollectionHistory = () => {
                                     </div>
                                   </div>
 
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-3">
                                     <div className="text-right">
-                                      <p className={`text-[11px] font-bold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
+                                      <p className={`text-sm font-bold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
                                         {fmtCur(fg.totalAmount)}
                                       </p>
                                       {!isCancelled && !fg.allPaid && (
-                                        <span className="text-[9px] bg-amber-500/15 text-amber-400 px-1 py-0.5 rounded font-semibold inline-block mt-0.5">
+                                        <span className="text-[10px] bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded font-semibold inline-block mt-0.5">
                                           Pay
                                         </span>
                                       )}

@@ -146,8 +146,7 @@ const CropCard = ({
             : "bg-white/90 border-slate-200 hover:border-slate-300 hover:shadow-md"
       }`}
     >
-      {/* gradient stripe */}
-      <div className={`h-1.5 w-full bg-gradient-to-r ${meta.gradient}`} />
+      {/* gradient stripe removed */}
 
       <div className="p-4 flex flex-col flex-1">
         {/* Identity */}
@@ -197,29 +196,65 @@ const CropCard = ({
           </div>
         </div>
 
-        {/* Growth Stage Progress Bar */}
+        {/* Growth Stage Progress Circle */}
         {isLinked && (
-          <div className="mb-3 p-2.5 rounded-xl bg-slate-950/40 border border-slate-800/50">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
-                <Icon
-                  icon="ph:plant-bold"
-                  className="w-3.5 h-3.5 text-emerald-400"
+          <div
+            className={`mb-3 p-3 flex items-center gap-4 rounded-xl border ${isDark ? "bg-slate-900/40 border-slate-800/50" : "bg-slate-50 border-slate-200"}`}
+          >
+            <div className="relative w-12 h-12 shrink-0">
+              <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="16"
+                  fill="none"
+                  className={isDark ? "stroke-slate-800" : "stroke-slate-200"}
+                  strokeWidth="3"
                 />
-                Growth Stage:{" "}
-                <span className="text-white font-bold">
-                  {STAGE_LABEL[currentStage] || currentStage}
-                </span>
-              </span>
-              <span className="text-xs font-mono font-bold text-emerald-400">
-                {progressPct}%
-              </span>
+                <circle
+                  cx="18"
+                  cy="18"
+                  r="16"
+                  fill="none"
+                  className="stroke-emerald-500"
+                  strokeWidth="3"
+                  strokeDasharray="100"
+                  strokeDashoffset={100 - progressPct}
+                  strokeLinecap="round"
+                  style={{ transition: "stroke-dashoffset 0.5s ease-in-out" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                {currentStage === "SOWING" ? (
+                  <Icon icon="selfhst:seedsync" className="w-6 h-6" />
+                ) : currentStage === "GROWING" ? (
+                  <Icon icon="noto:herb" className="w-6 h-6" />
+                ) : currentStage === "MATURE" ? (
+                  <Icon icon="twemoji:root-vegetable" className="w-6 h-6" />
+                ) : currentStage === "HARVESTED" ? (
+                  <Icon icon="noto:sheaf-of-rice" className="w-6 h-6" />
+                ) : currentStage === "READY" ? (
+                  <Icon icon="noto:package" className="w-6 h-6" />
+                ) : (
+                  <Icon
+                    icon="ph:waves-bold"
+                    className="w-6 h-6 text-amber-700"
+                    title="Empty Farmland"
+                  />
+                )}
+              </div>
             </div>
-            <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
+            <div>
+              <p
+                className={`text-[10px] uppercase font-bold tracking-wider mb-0.5 ${isDark ? "text-slate-500" : "text-slate-400"}`}
+              >
+                Current Stage
+              </p>
+              <p
+                className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}
+              >
+                {STAGE_LABEL[currentStage] || currentStage}
+              </p>
             </div>
           </div>
         )}
@@ -524,7 +559,9 @@ const DetailPanel = ({
           {
             key: "update",
             label: "Send Update",
-            icon: isScheduledForPickup ? "ph:lock-key-bold" : "ph:paper-plane-tilt-bold",
+            icon: isScheduledForPickup
+              ? "ph:lock-key-bold"
+              : "ph:paper-plane-tilt-bold",
             badge: isQueryOpen,
           },
           {
@@ -671,35 +708,59 @@ const DetailPanel = ({
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"} truncate`}>
+                          <p
+                            className={`font-bold text-sm ${isDark ? "text-white" : "text-slate-900"} truncate`}
+                          >
                             {collective.name}
                           </p>
                           {(collective.leadFarmer || collective.manager) && (
-                            <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>
-                              Manager: {collective.manager || collective.leadFarmer}
+                            <p
+                              className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}
+                            >
+                              Manager:{" "}
+                              {collective.manager || collective.leadFarmer}
                             </p>
                           )}
                         </div>
                       </div>
 
-                      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs border-t pt-2.5 ${isDark ? "border-slate-800 text-slate-300" : "border-slate-200 text-slate-600"}`}>
+                      <div
+                        className={`grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs border-t pt-2.5 ${isDark ? "border-slate-800 text-slate-300" : "border-slate-200 text-slate-600"}`}
+                      >
                         {collective.phone && (
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <Icon icon="ph:phone-bold" className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <Icon
+                              icon="ph:phone-bold"
+                              className="w-3.5 h-3.5 text-emerald-500 shrink-0"
+                            />
                             <span className="truncate">{collective.phone}</span>
                           </div>
                         )}
                         {collective.email && (
                           <div className="flex items-center gap-1.5 min-w-0">
-                            <Icon icon="ph:envelope-bold" className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <Icon
+                              icon="ph:envelope-bold"
+                              className="w-3.5 h-3.5 text-emerald-500 shrink-0"
+                            />
                             <span className="truncate">{collective.email}</span>
                           </div>
                         )}
-                        {(collective.address?.town || collective.address?.district) && (
+                        {(collective.address?.town ||
+                          collective.address?.district) && (
                           <div className="flex items-center gap-1.5 min-w-0 sm:col-span-2">
-                            <Icon icon="ph:map-pin-bold" className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <Icon
+                              icon="ph:map-pin-bold"
+                              className="w-3.5 h-3.5 text-emerald-500 shrink-0"
+                            />
                             <span className="truncate">
-                              {[collective.address?.locality, collective.address?.town || collective.address?.district, collective.address?.state].filter(Boolean).join(", ")}
+                              {[
+                                collective.address?.locality,
+                                collective.address?.town ||
+                                  collective.address?.district,
+                                collective.address?.state,
+                              ]
+                                .filter(Boolean)
+                                .join(", ")}
                             </span>
                           </div>
                         )}
@@ -746,7 +807,10 @@ const DetailPanel = ({
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs uppercase tracking-wider">
-                          <Icon icon="ph:truck-bold" className="w-4 h-4 shrink-0" />
+                          <Icon
+                            icon="ph:truck-bold"
+                            className="w-4 h-4 shrink-0"
+                          />
                           <span>Scheduled for Pickup</span>
                         </div>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
@@ -756,13 +820,17 @@ const DetailPanel = ({
                       <div className="space-y-1.5 text-xs">
                         <div className="flex justify-between">
                           <span className="text-slate-400">Schedule Code:</span>
-                          <span className="font-mono font-bold text-emerald-400">{activeSched.code || "—"}</span>
+                          <span className="font-mono font-bold text-emerald-400">
+                            {activeSched.code || "—"}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-400">Pickup Date:</span>
                           <span className="font-semibold text-white">
                             {activeSched.pickupDate
-                              ? new Date(activeSched.pickupDate).toLocaleDateString("en-IN", {
+                              ? new Date(
+                                  activeSched.pickupDate,
+                                ).toLocaleDateString("en-IN", {
                                   day: "numeric",
                                   month: "short",
                                   year: "numeric",
@@ -775,7 +843,8 @@ const DetailPanel = ({
                           <div className="flex justify-between">
                             <span className="text-slate-400">Driver:</span>
                             <span className="font-semibold text-white">
-                              {activeSched.driver.name} ({activeSched.driver.phone || "—"})
+                              {activeSched.driver.name} (
+                              {activeSched.driver.phone || "—"})
                             </span>
                           </div>
                         )}
@@ -797,10 +866,12 @@ const DetailPanel = ({
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2 border-t border-slate-800">
+              <div
+                className={`flex gap-2 pt-2 border-t ${isDark ? "border-slate-800" : "border-slate-200"}`}
+              >
                 <button
                   onClick={() => onEdit(crop)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-1.5 ${isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                 >
                   <Icon
                     icon="ph:pencil-fill"
@@ -810,7 +881,7 @@ const DetailPanel = ({
                 </button>
                 <button
                   onClick={() => onDelete(crop)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border cursor-pointer transition-all flex items-center justify-center gap-1.5 ${isDark ? "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20" : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"}`}
                 >
                   <Icon
                     icon="ph:trash-fill"
@@ -848,147 +919,170 @@ const DetailPanel = ({
                     <span className="font-mono font-bold text-emerald-400">
                       {activeSched?.code || "Active Pickup"}
                     </span>
-                    ). You cannot update the crop status while it is in a scheduled pickup state.
+                    ). You cannot update the crop status while it is in a
+                    scheduled pickup state.
                   </p>
                 </div>
               ) : (
                 <>
                   {/* TOP: Image Upload & Previous Image View Area */}
-              <div>
-                {/* Existing Uploaded Photos (Read-Only) when no new file selected */}
-                {selectedFiles.length === 0 && existingImages.length > 0 && (
-                  <div className="mb-3 p-3 rounded-xl border border-slate-700/60 bg-slate-900/40">
-                    <p className="text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
-                      <span>Current Photos</span>
-                      <span className="text-[10px] text-slate-500 font-normal">
-                        Click to view carousel
-                      </span>
-                    </p>
-                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                      {existingImages.map((src, i) => (
+                  <div>
+                    {/* Existing Uploaded Photos (Read-Only) when no new file selected */}
+                    {selectedFiles.length === 0 &&
+                      existingImages.length > 0 && (
                         <div
-                          key={i}
-                          onClick={() =>
-                            setCarouselData({
-                              isOpen: true,
-                              images: existingImages,
-                              initialIndex: i,
-                            })
-                          }
-                          className="block relative w-16 h-16 rounded-lg overflow-hidden border border-slate-700 group shrink-0 cursor-pointer"
+                          className={`mb-3 p-3 rounded-xl border ${isDark ? "border-slate-700/60 bg-slate-900/40" : "border-slate-200 bg-slate-50"}`}
                         >
-                          <img
-                            src={src}
-                            alt={`Crop ${i + 1}`}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          />
+                          <p
+                            className={`text-[11px] font-bold uppercase tracking-wider mb-2 flex items-center justify-between ${isDark ? "text-slate-300" : "text-slate-700"}`}
+                          >
+                            <span>Current Photos</span>
+                            <span className="text-[10px] text-slate-500 font-normal">
+                              Click to view carousel
+                            </span>
+                          </p>
+                          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                            {existingImages.map((src, i) => (
+                              <div
+                                key={i}
+                                onClick={() =>
+                                  setCarouselData({
+                                    isOpen: true,
+                                    images: existingImages,
+                                    initialIndex: i,
+                                  })
+                                }
+                                className={`block relative w-16 h-16 rounded-lg overflow-hidden border group shrink-0 cursor-pointer ${isDark ? "border-slate-700" : "border-slate-300"}`}
+                              >
+                                <img
+                                  src={src}
+                                  alt={`Crop ${i + 1}`}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                />
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      )}
 
-                <label className="text-xs font-bold uppercase tracking-wider block mb-2 text-slate-300">
-                  Upload Photos
-                </label>
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-700 hover:border-emerald-500/50 rounded-xl p-4 text-center cursor-pointer transition-all bg-slate-900/40"
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <Icon
-                    icon="ph:camera-bold"
-                    className="w-8 h-8 mx-auto text-emerald-400 mb-1"
-                  />
-                  <p className="text-xs text-slate-300 font-semibold">
-                    Click to select photos
-                  </p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">
-                    Max 2MB per photo
-                  </p>
-                </div>
-
-                {/* Previews grid for newly selected files */}
-                {previews.length > 0 && (
-                  <div className="mt-3 p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
-                    <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-2">
-                      New Photos Selected
-                    </p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {previews.map((src, i) => (
-                        <div
-                          key={i}
-                          className="relative h-16 rounded-lg overflow-hidden border border-emerald-500/40"
-                        >
-                          <img
-                            src={src}
-                            alt="preview"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Stage selector */}
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider block mb-2 text-slate-300">
-                  Growth Stage *
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(STAGE_LABEL).map(([key, label]) => (
-                    <button
-                      key={key}
-                      onClick={() => setUpdateStage(key)}
-                      className={`py-2 px-2.5 rounded-xl text-xs font-semibold border cursor-pointer transition-all text-center ${
-                        updateStage === key
-                          ? "bg-emerald-500 border-emerald-500 text-white shadow-md"
-                          : "border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-white"
-                      }`}
+                    <label
+                      className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}
                     >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      Upload Photos
+                    </label>
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${isDark ? "border-slate-700 hover:border-emerald-500/50 bg-slate-900/40" : "border-slate-300 hover:border-emerald-400 bg-slate-50"}`}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <Icon
+                        icon="ph:camera-bold"
+                        className="w-8 h-8 mx-auto text-emerald-400 mb-1"
+                      />
+                      <p
+                        className={`text-xs font-semibold ${isDark ? "text-slate-300" : "text-slate-700"}`}
+                      >
+                        Click to select photos
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        Max 2MB per photo
+                      </p>
+                    </div>
 
-              {/* Note for collective */}
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider block mb-1.5 text-slate-300">
-                  Note for Collective
-                </label>
-                <textarea
-                  value={updateNote}
-                  onChange={(e) => setUpdateNote(e.target.value)}
-                  placeholder="e.g. Harvest looks ready for pickup in 3 days…"
-                  rows={3}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-500 transition-all resize-none"
-                />
-              </div>
+                    {/* Previews grid for newly selected files */}
+                    {previews.length > 0 && (
+                      <div
+                        className={`mt-3 p-3 rounded-xl border ${isDark ? "border-emerald-500/30 bg-emerald-500/5" : "border-emerald-200 bg-emerald-50"}`}
+                      >
+                        <p
+                          className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${isDark ? "text-emerald-400" : "text-emerald-600"}`}
+                        >
+                          New Photos Selected
+                        </p>
+                        <div className="grid grid-cols-4 gap-2">
+                          {previews.map((src, i) => (
+                            <div
+                              key={i}
+                              className={`relative h-16 rounded-lg overflow-hidden border ${isDark ? "border-emerald-500/40" : "border-emerald-300"}`}
+                            >
+                              <img
+                                src={src}
+                                alt="preview"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
-              <button
-                onClick={handleUpdateStatus}
-                disabled={submitting || uploading}
-                className="w-full py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white cursor-pointer shadow-lg shadow-emerald-500/20 hover:from-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
-              >
-                {submitting || uploading ? (
-                  <Icon
-                    icon="svg-spinners:12-dots-scale-rotate"
-                    className="w-5 h-5"
-                  />
-                ) : (
-                  <Icon icon="ph:paper-plane-tilt-fill" className="w-4 h-4" />
-                )}
-                </button>
+                  {/* Stage selector */}
+                  <div>
+                    <label
+                      className={`text-xs font-bold uppercase tracking-wider block mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}
+                    >
+                      Growth Stage *
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(STAGE_LABEL).map(([key, label]) => (
+                        <button
+                          key={key}
+                          onClick={() => setUpdateStage(key)}
+                          className={`py-2 px-2.5 rounded-xl text-xs font-semibold border cursor-pointer transition-all text-center ${
+                            updateStage === key
+                              ? "bg-emerald-500 border-emerald-500 text-white shadow-md"
+                              : isDark
+                                ? "border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-white"
+                                : "border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Note for collective */}
+                  <div>
+                    <label
+                      className={`text-xs font-bold uppercase tracking-wider block mb-1.5 ${isDark ? "text-slate-300" : "text-slate-700"}`}
+                    >
+                      Note for Collective
+                    </label>
+                    <textarea
+                      value={updateNote}
+                      onChange={(e) => setUpdateNote(e.target.value)}
+                      placeholder="e.g. Harvest looks ready for pickup in 3 days…"
+                      rows={3}
+                      className={`w-full rounded-xl border px-3.5 py-2.5 text-xs outline-none transition-all resize-none ${isDark ? "border-slate-700 bg-slate-900 text-white focus:border-emerald-500" : "border-slate-300 bg-white text-slate-900 focus:border-emerald-400"}`}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleUpdateStatus}
+                    disabled={submitting || uploading}
+                    className="w-full py-3 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white cursor-pointer shadow-lg shadow-emerald-500/20 hover:from-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {submitting || uploading ? (
+                      <Icon
+                        icon="svg-spinners:12-dots-scale-rotate"
+                        className="w-5 h-5"
+                      />
+                    ) : (
+                      <Icon
+                        icon="ph:paper-plane-tilt-fill"
+                        className="w-4 h-4"
+                      />
+                    )}
+                  </button>
                 </>
               )}
             </motion.div>
@@ -1040,30 +1134,52 @@ const DetailPanel = ({
                           {item.paymentStatus || "PENDING"}
                         </span>
                       </div>
-                      <div className={`grid grid-cols-3 gap-2 py-2 rounded-lg text-center ${isDark ? "bg-slate-950/60" : "bg-slate-50 border border-slate-200/80"}`}>
+                      <div
+                        className={`grid grid-cols-3 gap-2 py-2 rounded-lg text-center ${isDark ? "bg-slate-950/60" : "bg-slate-50 border border-slate-200/80"}`}
+                      >
                         <div>
-                          <p className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Collected</p>
-                          <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                          <p
+                            className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                          >
+                            Collected
+                          </p>
+                          <p
+                            className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}
+                          >
                             {item.collectedQuantity || 0} kg
                           </p>
                         </div>
                         <div>
-                          <p className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Agreed Rate</p>
-                          <p className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                          <p
+                            className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                          >
+                            Agreed Rate
+                          </p>
+                          <p
+                            className={`font-bold ${isDark ? "text-white" : "text-slate-900"}`}
+                          >
                             ₹{item.agreedPrice || 0}/kg
                           </p>
                         </div>
                         <div>
-                          <p className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}>Total Money</p>
+                          <p
+                            className={`text-[10px] font-semibold ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                          >
+                            Total Money
+                          </p>
                           <p className="font-bold text-emerald-600 dark:text-emerald-400">
                             ₹{(item.totalAmount || 0).toLocaleString("en-IN")}
                           </p>
                         </div>
                       </div>
-                      <div className={`flex justify-between text-[11px] ${isDark ? "text-slate-400" : "text-slate-600"}`}>
+                      <div
+                        className={`flex justify-between text-[11px] ${isDark ? "text-slate-400" : "text-slate-600"}`}
+                      >
                         <span>
                           Collective:{" "}
-                          <strong className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}>
+                          <strong
+                            className={`font-semibold ${isDark ? "text-white" : "text-slate-900"}`}
+                          >
                             {item.collective?.name || "—"}
                           </strong>
                         </span>

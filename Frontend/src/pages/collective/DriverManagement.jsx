@@ -6,14 +6,13 @@ import { useToast } from "../../components/ui";
 import StatusBadge from "../../components/common/StatusBadge";
 import EmptyState from "../../components/common/EmptyState";
 import ConfirmModal from "../../components/common/ConfirmModal";
-import { collectiveDriverAPI, collectiveZoneAPI } from "../../services/api";
+import { collectiveDriverAPI } from "../../services/api";
 
 const DriverManagement = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
 
   const [drivers, setDrivers] = useState([]);
-  const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [driverToDelete, setDriverToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -24,18 +23,14 @@ const DriverManagement = () => {
   const [saving, setSaving] = useState(false);
   
   const [form, setForm] = useState({
-    name: "", phone: "", license: "", vehicleNumber: "", capacity: "", zones: [], image: null,
+    name: "", phone: "", license: "", vehicleNumber: "", capacity: "", image: null,
   });
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [driversRes, zonesRes] = await Promise.all([
-        collectiveDriverAPI.get(),
-        collectiveZoneAPI.get(),
-      ]);
+      const driversRes = await collectiveDriverAPI.get();
       setDrivers(driversRes.data.drivers || []);
-      setZones(zonesRes.data.zones || []);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load data");
     } finally {
@@ -47,7 +42,7 @@ const DriverManagement = () => {
 
   const openAdd = () => {
     setEditDriver(null);
-    setForm({ name: "", phone: "", license: "", vehicleNumber: "", capacity: "", zones: [], image: null });
+    setForm({ name: "", phone: "", license: "", vehicleNumber: "", capacity: "", image: null });
     setView("form");
   };
 
@@ -56,21 +51,14 @@ const DriverManagement = () => {
     setForm({
       name: d.name, phone: d.phone, license: d.license,
       vehicleNumber: d.vehicleNumber, capacity: d.capacity,
-      zones: d.zones?.map((z) => z._id || z) || [],
       image: null,
     });
     setView("form");
   };
 
-  const toggleZone = (zoneId) =>
-    setForm((p) => ({
-      ...p,
-      zones: p.zones.includes(zoneId) ? p.zones.filter((z) => z !== zoneId) : [...p.zones, zoneId],
-    }));
-
   const handleSave = async () => {
     if (!form.name || !form.phone || !form.license || !form.vehicleNumber || !form.capacity) {
-      toast.error("All fields except zones are required"); return;
+      toast.error("All fields are required"); return;
     }
     const fd = new FormData();
     fd.append("name", form.name);
@@ -78,7 +66,6 @@ const DriverManagement = () => {
     fd.append("license", form.license);
     fd.append("vehicleNumber", form.vehicleNumber);
     fd.append("capacity", form.capacity);
-    fd.append("zones", JSON.stringify(form.zones));
     if (form.image) fd.append("image", form.image);
     setSaving(true);
     try {
@@ -215,27 +202,17 @@ const DriverManagement = () => {
                         <Icon icon="ph:car-fill" className="w-3.5 h-3.5 shrink-0 text-blue-500" />
                         {d.vehicleNumber} · <span className="font-semibold">{d.capacity} kg</span>
                       </div>
-                      {d.zones && d.zones.length > 0 && (
-                        <div className={`flex items-center gap-2 text-xs ${isDark ? "text-slate-400" : "text-slate-500"} flex-wrap mt-2`}>
-                          <Icon icon="ph:map-pin-fill" className="w-4 h-4 shrink-0 text-emerald-500" />
-                          {d.zones.map((z) => (
-                            <span key={z._id || z} className={`px-2 py-0.5 rounded-full font-medium ${isDark ? "bg-slate-800" : "bg-slate-100"}`}>
-                              {z.name || z}
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </div>
 
                     {/* Stats */}
-                    <div className={`flex gap-2 mb-4 text-center p-2 rounded-lg ${isDark ? "bg-slate-800/50" : "bg-slate-50"}`}>
+                    <div className={`flex gap-2 mb-4 text-center p-2 rounded-lg ${isDark ? "bg-slate-800/50" : "bg-[#becbc0]/10"}`}>
                       <div className="flex-1">
                         <p className="text-base font-bold">{d.totalDeliveries || 0}</p>
                         <p className={`text-[10px] font-bold uppercase tracking-wider ${isDark ? "text-slate-400" : "text-slate-500"}`}>Deliveries</p>
                       </div>
                     </div>
 
-                    <div className="flex gap-2 mt-auto pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <div className="flex gap-2 mt-auto pt-2">
                       <button
                         onClick={() => openEdit(d)}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border cursor-pointer transition-colors ${
@@ -277,7 +254,7 @@ const DriverManagement = () => {
                 {editDriver ? "Edit Driver Details" : "Register New Driver"}
               </h2>
               <p className={`text-sm mb-6 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                {editDriver ? "Update contact information, vehicle details, or zone assignments." : "Add a new driver to assign them to pickup schedules."}
+                {editDriver ? "Update contact information or vehicle details." : "Add a new driver to assign them to pickup schedules."}
               </p>
 
               {/* Optional Driver Photo */}
@@ -424,29 +401,6 @@ const DriverManagement = () => {
                     </div>
                   </div>
 
-                  {/* Assigned Zones */}
-                  {zones.length > 0 && (
-                    <div className="sm:col-span-2">
-                      <label className={`text-xs font-semibold block mb-2 ${isDark ? "text-slate-300" : "text-slate-700"}`}>Assigned Zones</label>
-                      <div className="flex flex-wrap gap-2">
-                        {zones.map((z) => (
-                          <button
-                            key={z._id}
-                            type="button"
-                            onClick={() => toggleZone(z._id)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border cursor-pointer transition-all ${
-                              form.zones.includes(z._id)
-                                ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
-                                : isDark ? "border-slate-700 text-slate-400 hover:border-slate-500 bg-slate-800/50" : "border-slate-200 text-slate-600 hover:border-emerald-300 bg-slate-50"
-                            }`}
-                          >
-                            {form.zones.includes(z._id) && <Icon icon="ph:check-bold" className="w-3.5 h-3.5" />}
-                            {z.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex gap-4 pt-5 border-t border-slate-200 dark:border-slate-800">

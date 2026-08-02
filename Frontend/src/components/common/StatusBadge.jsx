@@ -24,6 +24,9 @@ const STATUS_CONFIG = {
   // Issue statuses
   open:         { label: "Open",           icon: "ph:dot-outline-fill",    bg: "bg-red-100 dark:bg-red-500/15",           text: "text-red-800 dark:text-red-400",         border: "border-red-200 dark:border-red-500/30" },
   resolved:     { label: "Resolved",       icon: "ph:check-circle-fill",   bg: "bg-emerald-100 dark:bg-emerald-500/15",   text: "text-emerald-800 dark:text-emerald-400", border: "border-emerald-200 dark:border-emerald-500/30" },
+  // Driver Status
+  available:    { label: "Available",      icon: "ph:check-circle-fill",   bg: "bg-emerald-100 dark:bg-emerald-500/15",   text: "text-emerald-800 dark:text-emerald-400", border: "border-emerald-200 dark:border-emerald-500/30" },
+  on_route:     { label: "On Route",       icon: "ph:truck-fill",          bg: "bg-blue-100 dark:bg-blue-500/15",          text: "text-blue-800 dark:text-blue-400",       border: "border-blue-200 dark:border-blue-500/30" },
   // Inventory
   low_stock:    { label: "Low Stock",      icon: "ph:warning-fill",        bg: "bg-red-100 dark:bg-red-500/15",           text: "text-red-800 dark:text-red-400",         border: "border-red-200 dark:border-red-500/30" },
   in_stock:     { label: "In Stock",       icon: "ph:check-circle-fill",   bg: "bg-emerald-100 dark:bg-emerald-500/15",   text: "text-emerald-800 dark:text-emerald-400", border: "border-emerald-200 dark:border-emerald-500/30" },

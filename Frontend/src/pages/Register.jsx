@@ -82,16 +82,16 @@ const Register = () => {
 
   // ── Step 1 — Profile
   const [role, setRole] = useState("FARMER_GROUP");
-  const [name, setName] = useState("User Farmer/Collective");
-  const [leader, setLeader] = useState("Aanshik");
+  const [name, setName] = useState("");
+  const [leader, setLeader] = useState("");
   const [photo, setPhoto] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
 
   // ── Step 2 — Credentials
-  const [email, setEmail] = useState("aanshiksinghtomar@gmail.com");
-  const [phone, setPhone] = useState("8855885588");
-  const [password, setPassword] = useState("password");
-  const [confirm, setConfirm] = useState("password");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 

@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "seed:world": "node backend-scripts/seedWorld.js",
+    "seed:world:reset": "node backend-scripts/seedWorld.js --reset"
   },
   "keywords": [],
   "author": "",

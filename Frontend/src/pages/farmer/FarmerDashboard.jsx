@@ -26,7 +26,14 @@ import {
   farmerNotifAPI,
 } from "../../services/api";
 
-const CHART_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"];
+const CHART_COLORS = [
+  "#10b981",
+  "#3b82f6",
+  "#f59e0b",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+];
 
 /** Formats currency and separates the magnitude unit (Thousand, Lakh, Crore) */
 const getFormattedCurrencyParts = (amount) => {
@@ -87,22 +94,34 @@ const FarmerDashboard = () => {
         farmerPickupAPI.getBalance().catch(() => ({ data: {} })),
       ]);
 
-      const pickupList = pickRes?.data?.pickups || pickRes?.data?.data?.pickups || [];
-      const completedCount = pickupList.filter((p) => p.status === "COMPLETED").length;
+      const pickupList =
+        pickRes?.data?.pickups || pickRes?.data?.data?.pickups || [];
+      const completedCount = pickupList.filter(
+        (p) => p.status === "COMPLETED",
+      ).length;
       const earnings = balRes?.data?.totalEarnings || 0;
 
       setStats(dashRes?.data?.stats || {});
       setBalanceData({
-        totalBalance: balRes?.data?.totalBalance || dashRes?.data?.stats?.outstandingBalance || 0,
+        totalBalance:
+          balRes?.data?.totalBalance ||
+          dashRes?.data?.stats?.outstandingBalance ||
+          0,
         totalEarnings: earnings,
         completedPickupsCount: completedCount,
       });
       setCrops(cropRes?.data?.crops || cropRes?.data?.data?.cropData || []);
       setAllPickups(pickupList);
-      setPendingPickups(pickupList.filter((p) => ["SCHEDULED", "IN_PROGRESS"].includes(p.status)));
+      setPendingPickups(
+        pickupList.filter((p) =>
+          ["SCHEDULED", "IN_PROGRESS"].includes(p.status),
+        ),
+      );
       setNotifications(notifRes?.data?.notifications || []);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to load dashboard data");
+      toast.error(
+        err.response?.data?.message || "Failed to load dashboard data",
+      );
     } finally {
       setLoading(false);
     }
@@ -145,7 +164,11 @@ const FarmerDashboard = () => {
       if (p.status === "COMPLETED" || p.completedAt) {
         if (Array.isArray(p.items) && p.items.length > 0) {
           p.items.forEach((item) => {
-            const name = item.cropName || item.cropCode || item.cropDeal?.crop?.crop?.name || "Crop";
+            const name =
+              item.cropName ||
+              item.cropCode ||
+              item.cropDeal?.crop?.crop?.name ||
+              "Crop";
             const val = Number(item.totalAmount || 0);
             if (val > 0) map.set(name, (map.get(name) || 0) + val);
           });
@@ -169,24 +192,27 @@ const FarmerDashboard = () => {
     const cropYieldMap = new Map();
     crops.forEach((c) => {
       const name = c.crop?.name || c.cropName || c.name || "Crop";
-      const yieldVal = Number(c.availableQuantity || c.yield || (c.plantedArea ? c.plantedArea * 10 : 0) || 10);
+      const yieldVal = Number(
+        c.availableQuantity ||
+          c.yield ||
+          (c.plantedArea ? c.plantedArea * 10 : 0) ||
+          10,
+      );
       cropYieldMap.set(name, (cropYieldMap.get(name) || 0) + yieldVal);
     });
 
-    const cropResult = Array.from(cropYieldMap.entries()).map(([name, value]) => ({
-      name,
-      value,
-      unit: "quantity",
-    }));
+    const cropResult = Array.from(cropYieldMap.entries()).map(
+      ([name, value]) => ({
+        name,
+        value,
+        unit: "quantity",
+      }),
+    );
 
     if (cropResult.length > 0) return cropResult;
 
     // 3. Fallback if no crops added yet
-    return [
-      { name: "Rajma", value: 450, unit: "quantity" },
-      { name: "Potato", value: 300, unit: "quantity" },
-      { name: "Ginger", value: 200, unit: "quantity" },
-    ];
+    return [];
   }, [allPickups, crops]);
 
   const chartTheme = isDark
@@ -227,7 +253,9 @@ const FarmerDashboard = () => {
             icon="svg-spinners:12-dots-scale-rotate"
             className="w-12 h-12 text-emerald-500"
           />
-          <p className="text-sm font-medium text-slate-400">Loading Dashboard...</p>
+          <p className="text-sm font-medium text-slate-400">
+            Loading Dashboard...
+          </p>
         </div>
       </div>
     );
@@ -240,23 +268,31 @@ const FarmerDashboard = () => {
   return (
     <div
       className={`min-h-screen p-5 sm:p-7 space-y-7 transition-colors duration-200 ${
-        isDark ? "bg-slate-950 text-white" : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"
+        isDark
+          ? "bg-slate-950 text-white"
+          : "bg-gradient-to-br from-slate-50 via-emerald-50/20 to-amber-50/20 text-slate-900"
       }`}
     >
       {/* Top Banner / Welcome Header */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 p-6 sm:p-8 text-white shadow-2xl shadow-emerald-900/30">
+      <div
+        className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${isDark ? "from-teal-700 via-emerald-700 to-green-800" : "from-teal-500 via-emerald-500 to-emerald-600/70"} p-6 sm:p-8 text-white shadow-2xl shadow-emerald-950/40`}
+      >
         <div className="absolute right-0 top-0 -mt-8 -mr-8 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-md">
-              <Icon icon="ph:cloud-sun-fill" className="w-4 h-4 text-amber-300" />
+              <Icon
+                icon="ph:cloud-sun-fill"
+                className="w-4 h-4 text-amber-300"
+              />
               <span>Optimal Farming Conditions · Kedarnath Valley</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
               Good day, {firstName}! 🌾
             </h1>
             <p className="text-sm text-emerald-100 font-medium">
-              Manage your active crop listings, monitor pickup schedules, and track collective deals all in one place.
+              Manage your active crop listings, monitor pickup schedules, and
+              track collective deals all in one place.
             </p>
           </div>
 
@@ -301,7 +337,9 @@ const FarmerDashboard = () => {
 
         <StatCard
           label="Pending Balance"
-          valueObj={getFormattedCurrencyParts(balanceData.totalBalance || stats.outstandingBalance)}
+          valueObj={getFormattedCurrencyParts(
+            balanceData.totalBalance || stats.outstandingBalance,
+          )}
           icon="ph:wallet-fill"
           sub="Awaiting pickup & payout"
           color="blue"
@@ -323,7 +361,9 @@ const FarmerDashboard = () => {
         {/* Earnings Share by Crop (Pie Chart) */}
         <div
           className={`rounded-3xl border p-6 ${
-            isDark ? "bg-slate-900/60 border-slate-800" : "bg-white/95 border-slate-200/90 shadow-sm"
+            isDark
+              ? "bg-slate-900/60 border-slate-800"
+              : "bg-white/95 border-slate-200/90 shadow-sm"
           }`}
         >
           <div className="mb-4">
@@ -332,7 +372,10 @@ const FarmerDashboard = () => {
                 isDark ? "text-white" : "text-slate-900"
               }`}
             >
-              <Icon icon="ph:chart-pie-slice-fill" className="text-emerald-500 w-5 h-5" />
+              <Icon
+                icon="ph:chart-pie-slice-fill"
+                className="text-emerald-500 w-5 h-5"
+              />
               Earnings Share by Crop
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -340,47 +383,64 @@ const FarmerDashboard = () => {
             </p>
           </div>
           <div className="h-64 flex">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  {...chartTheme.tooltip}
-                  formatter={(val, name, item) => [
-                    item?.payload?.unit === "currency"
-                      ? `₹${Number(val).toLocaleString("en-IN")}`
-                      : `${Number(val).toLocaleString("en-IN")} kg`,
-                    item?.payload?.unit === "currency" ? "Earnings" : "Quantity",
-                  ]}
+            {pieChartData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center w-full h-full text-slate-400">
+                <Icon
+                  icon="ph:chart-pie-slice-duotone"
+                  className="w-10 h-10 mb-2 opacity-50"
                 />
-                <Legend
-                  verticalAlign="middle"
-                  align="right"
-                  layout="vertical"
-                  iconType="circle"
-                  wrapperStyle={{ fontSize: "12px", color: chartTheme.text }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                <p className="text-xs font-semibold">No crop data available</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    {...chartTheme.tooltip}
+                    formatter={(val, name, item) => [
+                      item?.payload?.unit === "currency"
+                        ? `₹${Number(val).toLocaleString("en-IN")}`
+                        : `${Number(val).toLocaleString("en-IN")} kg`,
+                      item?.payload?.unit === "currency"
+                        ? "Earnings"
+                        : "Quantity",
+                    ]}
+                  />
+                  <Legend
+                    verticalAlign="middle"
+                    align="right"
+                    layout="vertical"
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: "12px", color: chartTheme.text }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
         {/* Real 6 Months Payout & Harvest Trend (Bar Chart) */}
         <div
           className={`rounded-3xl border p-6 ${
-            isDark ? "bg-slate-900/60 border-slate-800" : "bg-white/95 border-slate-200/90 shadow-sm"
+            isDark
+              ? "bg-slate-900/60 border-slate-800"
+              : "bg-white/95 border-slate-200/90 shadow-sm"
           }`}
         >
           <div className="mb-4">
@@ -389,7 +449,10 @@ const FarmerDashboard = () => {
                 isDark ? "text-white" : "text-slate-900"
               }`}
             >
-              <Icon icon="ph:chart-bar-fill" className="text-blue-400 w-5 h-5" />
+              <Icon
+                icon="ph:chart-bar-fill"
+                className="text-blue-400 w-5 h-5"
+              />
               Past 6 Months Payout Trend
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -415,9 +478,17 @@ const FarmerDashboard = () => {
                 />
                 <Tooltip
                   {...chartTheme.tooltip}
-                  formatter={(val) => [`₹${Number(val).toLocaleString("en-IN")}`, "Earnings"]}
+                  formatter={(val) => [
+                    `₹${Number(val).toLocaleString("en-IN")}`,
+                    "Earnings",
+                  ]}
                 />
-                <Bar dataKey="earnings" fill="#10b981" radius={[8, 8, 0, 0]} barSize={28} />
+                <Bar
+                  dataKey="earnings"
+                  fill="#10b981"
+                  radius={[8, 8, 0, 0]}
+                  barSize={28}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -431,7 +502,9 @@ const FarmerDashboard = () => {
           {/* Active Crops Summary */}
           <div
             className={`rounded-3xl border p-6 ${
-              isDark ? "bg-slate-900/60 border-slate-800" : "bg-white/95 border-slate-200/90 shadow-sm"
+              isDark
+                ? "bg-slate-900/60 border-slate-800"
+                : "bg-white/95 border-slate-200/90 shadow-sm"
             }`}
           >
             <div className="flex items-center justify-between mb-5">
@@ -451,18 +524,26 @@ const FarmerDashboard = () => {
                 onClick={() => navigate("/dashboard/farmer/crops")}
                 className="text-xs font-bold text-emerald-500 hover:text-emerald-400 flex items-center gap-1 cursor-pointer transition-colors"
               >
-                Manage All <Icon icon="ph:arrow-right-bold" className="w-3.5 h-3.5" />
+                Manage All{" "}
+                <Icon icon="ph:arrow-right-bold" className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {crops.length === 0 ? (
               <div
                 className={`text-center py-10 border-2 border-dashed rounded-2xl ${
-                  isDark ? "border-slate-800 text-slate-500" : "border-slate-200 text-slate-400"
+                  isDark
+                    ? "border-slate-800 text-slate-500"
+                    : "border-slate-200 text-slate-400"
                 }`}
               >
-                <Icon icon="ph:plant-fill" className="w-10 h-10 mx-auto mb-2 opacity-40 text-emerald-500" />
-                <p className="text-sm font-semibold">No active crops listed yet.</p>
+                <Icon
+                  icon="ph:plant-fill"
+                  className="w-10 h-10 mx-auto mb-2 opacity-40 text-emerald-500"
+                />
+                <p className="text-sm font-semibold">
+                  No active crops listed yet.
+                </p>
                 <button
                   onClick={() => navigate("/dashboard/farmer/crops")}
                   className="mt-3 text-xs text-emerald-500 font-bold hover:underline cursor-pointer"
@@ -489,14 +570,18 @@ const FarmerDashboard = () => {
                       <div className="flex items-center gap-3 min-w-0">
                         <div
                           className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
-                            isDark ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-50 text-emerald-600"
+                            isDark
+                              ? "bg-emerald-500/15 text-emerald-400"
+                              : "bg-emerald-50 text-emerald-600"
                           }`}
                         >
                           <Icon icon="ph:plant-fill" className="w-6 h-6" />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <h3 className={`font-bold text-sm truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                            <h3
+                              className={`font-bold text-sm truncate ${isDark ? "text-white" : "text-slate-900"}`}
+                            >
                               {crop.crop?.name || crop.name || "Crop"}
                             </h3>
                             <span className="text-[10px] font-mono font-bold text-slate-400 uppercase">
@@ -504,7 +589,12 @@ const FarmerDashboard = () => {
                             </span>
                           </div>
                           <p className="text-xs text-slate-400 mt-0.5">
-                            Est. Yield: <span className="font-bold text-slate-700 dark:text-white">{crop.yield || crop.availableQuantity || 0} kg</span> · Farmland: {crop.farmland || crop.plantedArea || 0} ac
+                            Est. Yield:{" "}
+                            <span className="font-bold text-slate-700 dark:text-white">
+                              {crop.yield || crop.availableQuantity || 0} kg
+                            </span>{" "}
+                            · Farmland: {crop.farmland || crop.plantedArea || 0}{" "}
+                            ac
                           </p>
                         </div>
                       </div>
@@ -512,12 +602,22 @@ const FarmerDashboard = () => {
                       <div className="flex items-center gap-3 shrink-0">
                         {isScheduled ? (
                           <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
-                            <Icon icon="ph:truck-bold" className="w-3.5 h-3.5" /> Scheduled
+                            <Icon
+                              icon="ph:truck-bold"
+                              className="w-3.5 h-3.5"
+                            />{" "}
+                            Scheduled
                           </span>
                         ) : (
-                          <StatusBadge status={crop.status || "ACTIVE"} size="sm" />
+                          <StatusBadge
+                            status={crop.status || "ACTIVE"}
+                            size="sm"
+                          />
                         )}
-                        <Icon icon="ph:caret-right-bold" className="w-4 h-4 text-slate-500" />
+                        <Icon
+                          icon="ph:caret-right-bold"
+                          className="w-4 h-4 text-slate-500"
+                        />
                       </div>
                     </div>
                   );
@@ -540,7 +640,11 @@ const FarmerDashboard = () => {
                 <Icon icon="ph:buildings-bold" className="w-5 h-5" />
               </div>
               <div>
-                <p className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Collectives</p>
+                <p
+                  className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}
+                >
+                  Collectives
+                </p>
                 <p className="text-[10px] text-slate-400">Browse & join</p>
               </div>
             </div>
@@ -557,8 +661,14 @@ const FarmerDashboard = () => {
                 <Icon icon="ph:calendar-check-bold" className="w-5 h-5" />
               </div>
               <div>
-                <p className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Pickup Schedules</p>
-                <p className="text-[10px] text-slate-400">View dates & status</p>
+                <p
+                  className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}
+                >
+                  Pickup Schedules
+                </p>
+                <p className="text-[10px] text-slate-400">
+                  View dates & status
+                </p>
               </div>
             </div>
 
@@ -574,7 +684,11 @@ const FarmerDashboard = () => {
                 <Icon icon="ph:megaphone-bold" className="w-5 h-5" />
               </div>
               <div>
-                <p className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}>Announcements</p>
+                <p
+                  className={`text-xs font-bold ${isDark ? "text-white" : "text-slate-900"}`}
+                >
+                  Announcements
+                </p>
                 <p className="text-[10px] text-slate-400">Collective news</p>
               </div>
             </div>
@@ -586,7 +700,9 @@ const FarmerDashboard = () => {
           {/* Upcoming Pickup List */}
           <div
             className={`rounded-3xl border p-6 ${
-              isDark ? "bg-slate-900/60 border-slate-800" : "bg-white/95 border-slate-200 shadow-sm"
+              isDark
+                ? "bg-slate-900/60 border-slate-800"
+                : "bg-white/95 border-slate-200 shadow-sm"
             }`}
           >
             <div className="flex items-center justify-between mb-4">
@@ -595,7 +711,10 @@ const FarmerDashboard = () => {
                   isDark ? "text-white" : "text-slate-900"
                 }`}
               >
-                <Icon icon="ph:truck-bold" className="text-emerald-500 w-5 h-5" />
+                <Icon
+                  icon="ph:truck-bold"
+                  className="text-emerald-500 w-5 h-5"
+                />
                 Upcoming Pickups
               </h2>
               <button
@@ -612,7 +731,10 @@ const FarmerDashboard = () => {
                   isDark ? "text-slate-500" : "text-slate-400"
                 }`}
               >
-                <Icon icon="ph:calendar-blank-bold" className="w-7 h-7 mx-auto mb-2 opacity-30" />
+                <Icon
+                  icon="ph:calendar-blank-bold"
+                  className="w-7 h-7 mx-auto mb-2 opacity-30"
+                />
                 No active pickup schedules pending.
               </div>
             ) : (
@@ -631,22 +753,33 @@ const FarmerDashboard = () => {
                       <span className="font-mono font-bold text-xs text-emerald-500">
                         {p.code || p.schedule?.code || "SCHEDULE"}
                       </span>
-                      <StatusBadge status={p.status || p.schedule?.status || "SCHEDULED"} size="sm" />
+                      <StatusBadge
+                        status={p.status || p.schedule?.status || "SCHEDULED"}
+                        size="sm"
+                      />
                     </div>
-                    <p className={`text-xs font-bold truncate ${isDark ? "text-white" : "text-slate-900"}`}>
-                      {p.collective?.name || p.cropDeal?.collective?.name || "Collective Pickup"}
+                    <p
+                      className={`text-xs font-bold truncate ${isDark ? "text-white" : "text-slate-900"}`}
+                    >
+                      {p.collective?.name ||
+                        p.cropDeal?.collective?.name ||
+                        "Collective Pickup"}
                     </p>
                     <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2">
                       <span>
                         {p.pickupDate || p.schedule?.pickupDate
-                          ? new Date(p.pickupDate || p.schedule?.pickupDate).toLocaleDateString("en-IN", {
+                          ? new Date(
+                              p.pickupDate || p.schedule?.pickupDate,
+                            ).toLocaleDateString("en-IN", {
                               day: "numeric",
                               month: "short",
                             })
                           : "—"}{" "}
                         ({p.time || p.schedule?.time || "09:00"})
                       </span>
-                      <span className="font-bold text-emerald-500">₹{p.totalAmount || 0}</span>
+                      <span className="font-bold text-emerald-500">
+                        ₹{p.totalAmount || 0}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -657,7 +790,9 @@ const FarmerDashboard = () => {
           {/* Recent Alerts Feed */}
           <div
             className={`rounded-3xl border p-6 ${
-              isDark ? "bg-slate-900/60 border-slate-800" : "bg-white/95 border-slate-200 shadow-sm"
+              isDark
+                ? "bg-slate-900/60 border-slate-800"
+                : "bg-white/95 border-slate-200 shadow-sm"
             }`}
           >
             <div className="flex items-center justify-between mb-4">
@@ -683,12 +818,15 @@ const FarmerDashboard = () => {
                   isDark ? "text-slate-500" : "text-slate-400"
                 }`}
               >
-                <Icon icon="ph:bell-slash-bold" className="w-7 h-7 mx-auto mb-2 opacity-30" />
+                <Icon
+                  icon="ph:bell-slash-bold"
+                  className="w-7 h-7 mx-auto mb-2 opacity-30"
+                />
                 No recent notifications.
               </div>
             ) : (
               <div className="space-y-2.5">
-                {notifications.slice(0, 4).map((n) => (
+                {notifications.slice(0, 3).map((n) => (
                   <div
                     key={n._id}
                     onClick={() => navigate("/dashboard/farmer/notifications")}
@@ -698,8 +836,8 @@ const FarmerDashboard = () => {
                           ? "bg-emerald-500/10 border border-emerald-500/20"
                           : "bg-emerald-50 border border-emerald-200"
                         : isDark
-                        ? "bg-slate-800/30 border border-slate-800"
-                        : "bg-slate-50 border border-slate-100"
+                          ? "bg-slate-800/30 border border-slate-800"
+                          : "bg-slate-50 border border-slate-100"
                     }`}
                   >
                     <Icon
@@ -707,16 +845,20 @@ const FarmerDashboard = () => {
                         n.type === "PAYMENT"
                           ? "ph:currency-inr-bold"
                           : n.type === "PICKUP"
-                          ? "ph:truck-bold"
-                          : "ph:bell-bold"
+                            ? "ph:truck-bold"
+                            : "ph:bell-bold"
                       }
                       className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className={`font-bold truncate ${isDark ? "text-white" : "text-slate-900"}`}>
+                      <p
+                        className={`font-bold truncate ${isDark ? "text-white" : "text-slate-900"}`}
+                      >
                         {n.title}
                       </p>
-                      <p className="text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">{n.body || n.message}</p>
+                      <p className="text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                        {n.body || n.message}
+                      </p>
                     </div>
                   </div>
                 ))}

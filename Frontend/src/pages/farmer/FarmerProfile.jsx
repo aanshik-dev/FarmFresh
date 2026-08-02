@@ -244,7 +244,7 @@ const FarmerProfile = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className={`p-4 rounded-xl border ${isDark ? "bg-slate-800/40 border-slate-700/60" : "bg-slate-50 border-slate-200"}`}>
               <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>Lifetime Earnings</p>
               <p className="text-2xl font-black text-emerald-500">₹{(user?.totalEarnings || 0).toLocaleString("en-IN")}</p>

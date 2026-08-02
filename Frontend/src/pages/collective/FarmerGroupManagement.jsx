@@ -227,7 +227,7 @@ const DetailPanel = ({
       className={`rounded-2xl border overflow-hidden ${isDark ? "bg-slate-900 border-slate-800 shadow-2xl shadow-black/40" : "bg-white border-slate-200 shadow-2xl shadow-slate-200/50"}`}
     >
       {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 p-5 pb-5">
+      <div className={`relative overflow-hidden p-5 pb-5 ${isDark ? "bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900" : "bg-gradient-to-br from-emerald-400 to-teal-500"}`}>
         {onClose && (
           <button
             onClick={onClose}

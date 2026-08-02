@@ -207,7 +207,7 @@ const CollectiveProfile = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {[
             { label: "Farmer Groups", value: profile?.farmerGroups, icon: "ph:users-three-fill", color: "text-emerald-400 bg-emerald-500/10" },
             { label: "Total Harvest", value: profile?.totalHarvest, icon: "ph:scales-fill", color: "text-blue-400 bg-blue-500/10" },

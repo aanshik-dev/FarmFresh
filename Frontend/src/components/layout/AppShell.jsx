@@ -173,8 +173,9 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse,
       </div>
 
       {/* Center greeting */}
-      <div className="flex-1 flex items-center justify-start min-w-0 md:pl-2">
-        <div className={`hidden sm:flex items-center gap-2 text-sm font-medium truncate ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+      <div className="flex-1"></div>
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center hidden md:flex min-w-0 pointer-events-none">
+        <div className={`flex items-center gap-2 text-sm font-medium truncate ${isDark ? "text-slate-300" : "text-slate-600"}`}>
           <Icon icon={quote.icon} className={`w-4 h-4 shrink-0 ${isDark ? "text-amber-400" : "text-amber-500"}`} />
           <p className="truncate">
             <span
@@ -513,20 +514,31 @@ const Sidebar = ({ isOpen, isCollapsed, onCollapse, onClose, role, unreadNotifCo
           {!isCollapsed && <span className="text-sm font-medium">Log Out</span>}
         </button>
 
-        {!isCollapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className={`mx-1 mt-2 px-3 py-2 rounded-xl text-[10px] leading-relaxed ${
-              isDark
-                ? "bg-slate-800/60 text-slate-500"
-                : "bg-slate-50 text-slate-400"
-            }`}
-          >
-            <p className="font-semibold mb-0.5">FarmFresh v1.0</p>
-            <p>Built for Kedarnath Valley organic farmers</p>
-          </motion.div>
-        )}
+        <motion.a
+          href="https://aanshik-dev.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          title={isCollapsed ? "Developer Profile" : undefined}
+          className={`mt-2 rounded-xl flex items-center border transition-all duration-200 ${
+            isCollapsed ? "justify-center p-2 mx-auto" : "gap-2.5 px-3 py-2.5 mx-1"
+          } ${
+            isDark
+              ? "bg-emerald-950/20 text-slate-400 border-emerald-900/30 hover:border-emerald-500/50 hover:bg-emerald-900/30"
+              : "bg-emerald-50 text-slate-500 border-emerald-100 hover:border-emerald-300 hover:bg-emerald-100/50"
+          }`}
+        >
+          <div className={`p-1 rounded-lg shrink-0 flex items-center justify-center ${isDark ? "" : "bg-emerald-900 shadow-sm"}`}>
+            <img src="/assets/Symbol.svg" alt="Aanshik-dev" className="w-5 h-5" />
+          </div>
+          {!isCollapsed && (
+            <div className="flex flex-col leading-tight">
+              <span className={`font-bold text-[13px] ${isDark ? "text-emerald-400" : "text-emerald-700"}`}>Aanshik-dev</span>
+              <span className="text-[11px]">Full Stack Developer</span>
+            </div>
+          )}
+        </motion.a>
       </div>
     </motion.aside>
   );
