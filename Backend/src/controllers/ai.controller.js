@@ -47,8 +47,6 @@ CRITICAL INSTRUCTIONS:
       },
     });
   } catch (error) {
-    console.error("Groq API Error:", error);
-    
     // If it's a rate limit error from Groq
     if (error.status === 429) {
       const err = new Error("Rate limit exceeded. Please try again later.");

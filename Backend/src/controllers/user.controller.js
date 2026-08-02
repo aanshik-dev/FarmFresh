@@ -54,7 +54,6 @@ const getCurrentUser = async (req, res) => {
       result.address = profile.address;
       result.coord = profile.coord;
     }
-    console.log(result);
     res.status(200).json({
       success: true,
       user: result,

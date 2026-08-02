@@ -15,9 +15,7 @@ const seedAdmin = async () => {
   const session = await mongoose.startSession();
   try {
     const user = await User.findOne({ username: admin.email });
-    if (user) {
-      console.log("⚠️  Admin already exists !!");
-    } else {
+    if (!user) {
       await session.withTransaction(async () => {
         const hass = await bcrypt.hash(admin.password, 10);
         const adminUser = new User({
@@ -42,7 +40,7 @@ const seedAdmin = async () => {
       });
     }
   } catch (error) {
-    console.log(error);
+    console.error("❌ Admin seeding failed.", error);
   } finally {
     session.endSession();
   }

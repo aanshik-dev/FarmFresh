@@ -114,7 +114,6 @@ router.get(
         `${FRONTEND}/oauth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&user=${userData}`,
       );
     } catch (err) {
-      console.error(err);
       const msg = encodeURIComponent(
         err?.message || "Authentication error. Please try again.",
       );

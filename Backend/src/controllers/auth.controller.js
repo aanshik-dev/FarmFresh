@@ -8,7 +8,6 @@ const verifyEmail = async (req, res) => {
     const response = await otp.registerOtp(req.body);
     res.status(201).json(response);
   } catch (err) {
-    console.error(err);
     res.status(err.statusCode || 500).json({
       success: err.success,
       message: err.message,
@@ -31,7 +30,6 @@ const forgotPassOtp = async (req, res) => {
     const response = await otp.forgotSendOtp(req.body);
     res.status(201).json(response);
   } catch (err) {
-    console.error(err);
     res.status(err.statusCode || 500).json({
       success: err.success,
       message: err.message,
@@ -45,7 +43,6 @@ const forgotPassVerify = async (req, res) => {
     const response = await otp.forgotVerifyOtp(req.body);
     res.status(201).json(response);
   } catch (err) {
-    console.error(err);
     res.status(err.statusCode || 500).json({
       success: err.success,
       message: err.message,

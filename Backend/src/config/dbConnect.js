@@ -8,12 +8,11 @@ const dbConnect = async () => {
       `✅ Database Connected: ${connect.connection.host}, ${connect.connection.name}`,
     );
 
-    // Mock sessions for local/standalone MongoDB instances (without replica sets)
     const topologyType = connect.connection.client?.topology?.description?.type || "";
     const isReplicaSet = topologyType.includes("ReplicaSet") || topologyType.includes("Sharded");
 
     if (!isReplicaSet) {
-      console.log("⚠️ Running on standalone MongoDB. Patching transaction sessions for standalone compatibility...");
+      console.log("ℹ️ Running on standalone MongoDB. Patching transaction sessions for standalone compatibility...");
 
       class MockSession {
         constructor() {

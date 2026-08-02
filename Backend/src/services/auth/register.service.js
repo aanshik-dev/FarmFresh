@@ -154,7 +154,6 @@ const registerUser = async (data, file) => {
         );
       }
     } catch (uploadError) {
-      console.error(uploadError);
       throwErr(
         500,
         `Registration succeeded, but image upload failed for UID ${uid}`,

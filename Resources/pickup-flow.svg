@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1060" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#38BDF8"/>
+    </marker>
+    <marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#FBBF24"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="1060" fill="#0B1220"/>
+
+  <text x="500" y="42" text-anchor="middle" font-size="24" font-weight="700" fill="#F1F5F9">Pickup Scheduling &amp; Collection Flow</text>
+  <text x="500" y="66" text-anchor="middle" font-size="13" fill="#8FA3BF">From "crop is READY" to a completed collection run — schedule.service.js (1,511 lines)</text>
+
+  <!-- START -->
+  <rect x="250" y="90" width="500" height="46" rx="23" fill="#10B981" opacity="0.92"/>
+  <text x="500" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#06281C">START — Farmer updates crop stage → READY</text>
+
+  <line x1="500" y1="136" x2="500" y2="162" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
+
+  <!-- FARMER STATUS UPDATE -->
+  <rect x="200" y="162" width="600" height="58" rx="10" fill="#131C2E" stroke="#26334D"/>
+  <text x="500" y="186" text-anchor="middle" font-size="13.5" font-weight="700" fill="#38BDF8">POST /farmer/me/deals/:dealId/update-status</text>
+  <text x="500" y="206" text-anchor="middle" font-size="12.5" fill="#C7D4E6">stage + photos + message — closes any OPEN query · 10-day cooldown on re-query</text>
+
+  <line x1="500" y1="220" x2="500" y2="246" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
+
+  <!-- COLLECTIVE REVIEW -->
+  <rect x="200" y="246" width="600" height="58" rx="10" fill="#131C2E" stroke="#26334D"/>
+  <text x="500" y="270" text-anchor="middle" font-size="13.5" font-weight="700" fill="#38BDF8">Collective reviews — GET /me/ready-deals</text>
+  <text x="500" y="290" text-anchor="middle" font-size="12.5" fill="#C7D4E6">READY-stage approved deals not locked in another pickup · may set expected pickup date</text>
+
+  <line x1="500" y1="304" x2="500" y2="330" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
+
+  <!-- VALIDATION -->
+  <rect x="200" y="330" width="600" height="104" rx="10" fill="#131C2E" stroke="#26334D"/>
+  <text x="216" y="354" font-size="13" font-weight="700" fill="#38BDF8">createSchedule validations (all must pass)</text>
+  <text x="216" y="376" font-size="12.5" fill="#C7D4E6">• Zone enforcement — every crop must belong to the schedule's zone</text>
+  <text x="216" y="396" font-size="12.5" fill="#C7D4E6">• READY-stage only · max 21-day booking window</text>
+  <text x="216" y="416" font-size="12.5" fill="#C7D4E6">• Driver capacity check · crop deal not locked elsewhere (no double-booking)</text>
+
+  <line x1="500" y1="434" x2="500" y2="460" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
+
+  <!-- TRANSACTION -->
+  <rect x="200" y="460" width="600" height="108" rx="10" fill="#131C2E" stroke="#10B981"/>
+  <text x="216" y="484" font-size="13" font-weight="700" fill="#34D399">Mongoose transaction</text>
+  <text x="216" y="506" font-size="12.5" fill="#C7D4E6">• SC700000 code generated via Counter collection</text>
+  <text x="216" y="526" font-size="12.5" fill="#C7D4E6">• Schedule + ScheduleItems created — price &amp; crop snapshots frozen at booking time</text>
+  <text x="216" y="546" font-size="12.5" fill="#C7D4E6">• Every CropDeal locked: activeSchedule → this schedule</text>
+  <text x="216" y="566" font-size="12.5" fill="#C7D4E6">• Driver → ASSIGNED · each farmer group notified</text>
+
+  <line x1="500" y1="568" x2="500" y2="600" stroke="#FBBF24" stroke-width="2.5" marker-end="url(#arrA)"/>
+
+  <!-- LIFECYCLE -->
+  <rect x="330" y="600" width="340" height="46" rx="23" fill="#F59E0B" opacity="0.92"/>
+  <text x="500" y="629" text-anchor="middle" font-size="14" font-weight="700" fill="#3B2204">SCHEDULE LIFECYCLE</text>
+
+  <line x1="130" y1="646" x2="130" y2="676" stroke="#FBBF24" stroke-width="2.5" marker-end="url(#arrA)"/>
+  <line x1="395" y1="646" x2="395" y2="676" stroke="#FBBF24" stroke-width="2.5" marker-end="url(#arrA)"/>
+  <line x1="660" y1="646" x2="660" y2="676" stroke="#FBBF24" stroke-width="2.5" marker-end="url(#arrA)"/>
+  <line x1="870" y1="646" x2="870" y2="676" stroke="#FBBF24" stroke-width="2.5" marker-end="url(#arrA)"/>
+
+  <text x="130" y="670" text-anchor="middle" font-size="12" font-weight="700" fill="#FBBF24">START</text>
+  <text x="395" y="670" text-anchor="middle" font-size="12" font-weight="700" fill="#FBBF24">COMPLETE</text>
+  <text x="660" y="670" text-anchor="middle" font-size="12" font-weight="700" fill="#FBBF24">POSTPONE</text>
+  <text x="870" y="670" text-anchor="middle" font-size="12" font-weight="700" fill="#FBBF24">CANCEL</text>
+
+  <!-- START BRANCH -->
+  <rect x="30" y="676" width="200" height="150" rx="10" fill="#131C2E" stroke="#38BDF8"/>
+  <text x="46" y="700" font-size="12.5" font-weight="700" fill="#38BDF8">startSchedule</text>
+  <text x="46" y="722" font-size="12" fill="#C7D4E6">• → IN_PROGRESS</text>
+  <text x="46" y="742" font-size="12" fill="#C7D4E6">• Driver → ONROUTE</text>
+  <text x="46" y="762" font-size="12" fill="#C7D4E6">• Farmers notified:</text>
+  <text x="56" y="780" font-size="12" fill="#C7D4E6">"get ready — truck on the way"</text>
+
+  <!-- COMPLETE BRANCH -->
+  <rect x="295" y="676" width="200" height="150" rx="10" fill="#131C2E" stroke="#10B981"/>
+  <text x="311" y="700" font-size="12.5" font-weight="700" fill="#34D399">completeSchedule (transaction)</text>
+  <text x="311" y="722" font-size="12" fill="#C7D4E6">• Quantity corrections —</text>
+  <text x="321" y="740" font-size="12" fill="#C7D4E6">SKIPPED lines zeroed</text>
+  <text x="311" y="760" font-size="12" fill="#C7D4E6">• Stock += · yield −=</text>
+  <text x="311" y="780" font-size="12" fill="#C7D4E6">• Balance accrues on both sides</text>
+  <text x="311" y="800" font-size="12" fill="#C7D4E6">• Locks released → COMPLETED</text>
+
+  <!-- POSTPONE BRANCH -->
+  <rect x="560" y="676" width="200" height="150" rx="10" fill="#131C2E" stroke="#FBBF24"/>
+  <text x="576" y="700" font-size="12.5" font-weight="700" fill="#FBBF24">postponeSchedule</text>
+  <text x="576" y="722" font-size="12" fill="#C7D4E6">• → POSTPONED</text>
+  <text x="576" y="742" font-size="12" fill="#C7D4E6">• postponeHistory audit trail</text>
+  <text x="576" y="762" font-size="12" fill="#C7D4E6">  (from → to · reason · at)</text>
+  <text x="576" y="782" font-size="12" fill="#C7D4E6">• Re-editable via updateSchedule</text>
+
+  <!-- CANCEL BRANCH -->
+  <rect x="770" y="676" width="200" height="150" rx="10" fill="#131C2E" stroke="#FB7185"/>
+  <text x="786" y="700" font-size="12.5" font-weight="700" fill="#F87171">cancelSchedule (transaction)</text>
+  <text x="786" y="722" font-size="12" fill="#C7D4E6">• Items → CANCELLED</text>
+  <text x="786" y="742" font-size="12" fill="#C7D4E6">• Deal locks released</text>
+  <text x="786" y="762" font-size="12" fill="#C7D4E6">• Driver freed</text>
+  <text x="786" y="782" font-size="12" fill="#C7D4E6">• cancellationReason recorded</text>
+
+  <line x1="395" y1="826" x2="395" y2="866" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
+
+  <!-- END -->
+  <rect x="245" y="866" width="510" height="50" rx="25" fill="#10B981" opacity="0.92"/>
+  <text x="500" y="897" text-anchor="middle" font-size="14" font-weight="700" fill="#06281C">COMPLETED → balances accrued → payment flow</text>
+
+  <!-- NOTE -->
+  <rect x="40" y="942" width="920" height="90" rx="10" fill="#131C2E" stroke="#26334D"/>
+  <text x="56" y="966" font-size="13" font-weight="700" fill="#38BDF8">Business rules encoded in schedule.service.js</text>
+  <text x="56" y="988" font-size="12.5" fill="#C7D4E6">updateSchedule runs in two phases: validate everything first, then apply (remove / add / update items, capacity projection, totals recompute, per-farmer notifications).</text>
+  <text x="56" y="1008" font-size="12.5" fill="#C7D4E6">Each deal exposes status-history (growth) and pickup-history (quantities) · farmers see pickups grouped per schedule with money summaries.</text>
+</svg>

@@ -1,9 +1,4 @@
 const idConfig = {
-  user: {
-    prefix: "FF",
-    start: 100000
-  },
-
   collective: {
     prefix: "FC",
     start: 100000
@@ -19,16 +14,6 @@ const idConfig = {
     start: 300000
   },
 
-  contract: {
-    prefix: "CT",
-    start: 400000
-  },
-
-  dealCrop: {
-    prefix: "DC",
-    start: 500000
-  },
-
   driver: {
     prefix: "DR",
     start: 600000
@@ -37,16 +22,6 @@ const idConfig = {
   schedule: {
     prefix: "SC",
     start: 700000
-  },
-
-  review: {
-    prefix: "RV",
-    start: 800000
-  },
-
-  notification: {
-    prefix: "NT",
-    start: 900000
   },
 
   payment: {

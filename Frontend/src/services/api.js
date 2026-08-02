@@ -180,4 +180,15 @@ export const collectiveDashboardAPI = {
   get: () => api.get("/collective/me/dashboard"),
 };
 
+// ── Admin ─────────────────────────────────────────────────────────────────────
+export const adminAPI = {
+  getStats: () => api.get("/admin/stats"),
+  getFarmerGroups: () => api.get("/admin/farmer-groups"),
+  getCollectives: () => api.get("/admin/collectives"),
+  getUsers: () => api.get("/admin/users"),
+  updateUserStatus: (id, data) => api.patch(`/admin/users/${id}/status`, data),
+  getIssues: () => api.get("/admin/issues"),
+  updateIssueStatus: (id, data) => api.patch(`/admin/issues/${id}/status`, data),
+};
+
 export default api;

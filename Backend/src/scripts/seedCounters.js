@@ -11,14 +11,10 @@ const seedCounters = async () => {
           _id: type,
           sequence: config.start,
         });
-
-        console.log(`✅ Created ${type} -> ${config.start}`);
-      } else {
-        console.log(`⏩ ${type} already exists`);
       }
     }
 
-    console.log("🎉 Counter seeding completed.");
+    console.log("✅ counters seeded successfully");
   } catch (err) {
     console.error("Failed to seed counters !!", err);
   }

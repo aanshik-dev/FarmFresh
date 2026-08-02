@@ -47,13 +47,12 @@ const seedIssues = async () => {
   try {
     const count = await Issue.countDocuments();
     if (count > 0) {
-      console.log("⚠️  Issues already exist !!");
       return;
     }
     await Issue.insertMany(sampleIssues);
     console.log("✅ Sample issues created !!");
   } catch (error) {
-    console.log(error);
+    console.error("❌ Issue seeding failed.", error);
   }
 };
 

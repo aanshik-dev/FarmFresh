@@ -1291,8 +1291,8 @@ const FarmerGroupManagement = () => {
                     style={{
                       scrollbarWidth: "thin",
                       scrollbarColor: isDark
-                        ? "#334155 transparent"
-                        : "#cbd5e1 transparent",
+                        ? "#475569 transparent"
+                        : "#4b5563 transparent",
                     }}
                   >
                     <div className="space-y-2.5 pb-4">

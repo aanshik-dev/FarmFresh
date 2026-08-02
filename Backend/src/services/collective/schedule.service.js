@@ -51,7 +51,8 @@ const validatePickupDate = (pickupDate, label = "Pickup date") => {
   if (Number.isNaN(date.getTime())) throwErr(400, `${label} is invalid !!`);
 
   const today = startOfDay(new Date());
-  if (startOfDay(date) < today) throwErr(400, `${label} cannot be in the past !!`);
+  if (startOfDay(date) < today)
+    throwErr(400, `${label} cannot be in the past !!`);
 
   const limit = startOfDay(new Date());
   limit.setDate(limit.getDate() + MAX_SCHEDULE_AHEAD_DAYS);
@@ -85,8 +86,17 @@ const createSchedule = async (
   collectiveId,
   { driverId, zoneId, pickupDate, time, notes, items },
 ) => {
-  if (!driverId || !zoneId || !pickupDate || !Array.isArray(items) || items.length === 0)
-    throwErr(400, "driverId, zoneId, pickupDate and at least one crop are required !!");
+  if (
+    !driverId ||
+    !zoneId ||
+    !pickupDate ||
+    !Array.isArray(items) ||
+    items.length === 0
+  )
+    throwErr(
+      400,
+      "driverId, zoneId, pickupDate and at least one crop are required !!",
+    );
 
   const date = validatePickupDate(pickupDate);
 
@@ -97,7 +107,11 @@ const createSchedule = async (
   });
   if (!driver) throwErr(404, "Driver not found or is no longer active !!");
 
-  const zone = await Zone.findOne({ _id: zoneId, collective: collectiveId, status: "ACTIVE" });
+  const zone = await Zone.findOne({
+    _id: zoneId,
+    collective: collectiveId,
+    status: "ACTIVE",
+  });
   if (!zone) throwErr(404, "Zone not found or is no longer active !!");
 
   // ── Normalise + validate the requested lines ────────────────────────────────
@@ -106,12 +120,19 @@ const createSchedule = async (
     const dealId = item?.cropDealId;
     const qty = Number(item?.collectedQuantity);
     if (!dealId) throwErr(400, "Every pickup line needs a cropDealId !!");
-    if (!mongoose.isValidObjectId(dealId)) throwErr(400, "Invalid crop deal id !!");
+    if (!mongoose.isValidObjectId(dealId))
+      throwErr(400, "Invalid crop deal id !!");
     if (!qty || qty <= 0)
-      throwErr(400, "Every selected crop needs a collection quantity greater than 0 !!");
+      throwErr(
+        400,
+        "Every selected crop needs a collection quantity greater than 0 !!",
+      );
     if (requested.has(String(dealId)))
       throwErr(400, "The same crop deal cannot be added to a pickup twice !!");
-    requested.set(String(dealId), { quantity: qty, remark: item?.remark?.trim() || "" });
+    requested.set(String(dealId), {
+      quantity: qty,
+      remark: item?.remark?.trim() || "",
+    });
   }
 
   const deals = await CropDeal.find({
@@ -122,7 +143,10 @@ const createSchedule = async (
       path: "membership",
       match: { collective: collectiveId, status: "ACTIVE" },
     })
-    .populate({ path: "crop", populate: { path: "crop", select: "name code" } });
+    .populate({
+      path: "crop",
+      populate: { path: "crop", select: "name code" },
+    });
 
   const validDeals = deals.filter((d) => d.membership);
   if (validDeals.length !== requested.size)
@@ -153,17 +177,29 @@ const createSchedule = async (
 
     // Edge case: farmer deactivated the crop after the deal was approved.
     if (!deal.crop || deal.crop.status === "INACTIVE")
-      throwErr(400, `"${name}" has been removed by the farmer group and cannot be picked up !!`);
+      throwErr(
+        400,
+        `"${name}" has been removed by the farmer group and cannot be picked up !!`,
+      );
 
     // Edge case: the crop is already part of another open pickup.
     if (deal.schedule?.activeSchedule)
-      throwErr(400, `"${name}" is already part of another pickup that is not finished yet !!`);
+      throwErr(
+        400,
+        `"${name}" is already part of another pickup that is not finished yet !!`,
+      );
 
     if (String(deal.growth?.stage || "").toUpperCase() !== "READY")
-      throwErr(400, `"${name}" is not in READY stage yet and cannot be scheduled !!`);
+      throwErr(
+        400,
+        `"${name}" is not in READY stage yet and cannot be scheduled !!`,
+      );
 
     if (!deal.agreedPrice || deal.agreedPrice <= 0)
-      throwErr(400, `"${name}" has no agreed price — review the deal before scheduling !!`);
+      throwErr(
+        400,
+        `"${name}" has no agreed price — review the deal before scheduling !!`,
+      );
 
     const amount = round2(deal.agreedPrice * quantity);
     totalAmount = round2(totalAmount + amount);
@@ -190,7 +226,9 @@ const createSchedule = async (
       `Selected crops total ${totalQuantity} kg which exceeds ${driver.name}'s vehicle capacity of ${driver.capacity} kg !!`,
     );
 
-  const uniqueFarmerIds = [...new Set(itemDocs.map((i) => i.farmerGroup.toString()))];
+  const uniqueFarmerIds = [
+    ...new Set(itemDocs.map((i) => i.farmerGroup.toString())),
+  ];
 
   const session = await mongoose.startSession();
   let schedule;
@@ -236,7 +274,11 @@ const createSchedule = async (
         );
       }
 
-      await Driver.findByIdAndUpdate(driverId, { $set: { status: "ASSIGNED" } }, { session });
+      await Driver.findByIdAndUpdate(
+        driverId,
+        { $set: { status: "ASSIGNED" } },
+        { session },
+      );
     });
   } finally {
     await session.endSession();
@@ -268,7 +310,11 @@ const createSchedule = async (
     }),
   );
 
-  return { success: true, message: "Pickup scheduled successfully !!", schedule };
+  return {
+    success: true,
+    message: "Pickup scheduled successfully !!",
+    schedule,
+  };
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -302,7 +348,9 @@ const getSchedules = async (collectiveId, filter = "all") => {
     .lean();
 
   const scheduleIds = schedules.map((s) => s._id);
-  const items = await ScheduleItem.find({ schedule: { $in: scheduleIds } }).lean();
+  const items = await ScheduleItem.find({ schedule: { $in: scheduleIds } })
+    .populate("farmerGroup", "name phone profile")
+    .lean();
   const itemsMap = new Map();
   items.forEach((item) => {
     const sid = item.schedule.toString();
@@ -326,7 +374,8 @@ const getSchedules = async (collectiveId, filter = "all") => {
 const groupItemsByFarmer = (items) => {
   const map = new Map();
   for (const item of items) {
-    const id = item.farmerGroup?._id?.toString() || item.farmerGroup?.toString();
+    const id =
+      item.farmerGroup?._id?.toString() || item.farmerGroup?.toString();
     if (!id) continue;
     if (!map.has(id)) {
       map.set(id, {
@@ -344,12 +393,16 @@ const groupItemsByFarmer = (items) => {
     const entry = map.get(id);
     entry.items.push(item);
     entry.cropCount += 1;
-    entry.totalQuantity = round2(entry.totalQuantity + (item.collectedQuantity || 0));
+    entry.totalQuantity = round2(
+      entry.totalQuantity + (item.collectedQuantity || 0),
+    );
     entry.totalAmount = round2(entry.totalAmount + (item.totalAmount || 0));
     if (item.paymentStatus === "PAID") {
       entry.paidAmount = round2(entry.paidAmount + (item.totalAmount || 0));
     } else {
-      entry.pendingAmount = round2(entry.pendingAmount + (item.totalAmount || 0));
+      entry.pendingAmount = round2(
+        entry.pendingAmount + (item.totalAmount || 0),
+      );
       entry.allPaid = false;
     }
   }
@@ -358,7 +411,10 @@ const groupItemsByFarmer = (items) => {
 
 /** Full detail of one pickup: raw items + farmer-wise grouping + payments made. */
 const getScheduleDetail = async (collectiveId, scheduleId) => {
-  const schedule = await Schedule.findOne({ _id: scheduleId, collective: collectiveId })
+  const schedule = await Schedule.findOne({
+    _id: scheduleId,
+    collective: collectiveId,
+  })
     .populate("driver", "name phone vehicleNumber capacity profile driverId")
     .populate("zone", "name color")
     .lean();
@@ -379,7 +435,9 @@ const getScheduleDetail = async (collectiveId, scheduleId) => {
     message: "Schedule detail fetched !!",
     schedule: {
       ...schedule,
-      pendingAmount: round2((schedule.totalAmount || 0) - (schedule.paidAmount || 0)),
+      pendingAmount: round2(
+        (schedule.totalAmount || 0) - (schedule.paidAmount || 0),
+      ),
     },
     items,
     farmers: groupItemsByFarmer(items),
@@ -438,11 +496,16 @@ const getPickupDashboard = async (collectiveId) => {
 
   const liveWithFarmers = live.map((s) => ({
     ...s,
-    farmers: groupItemsByFarmer(liveItems.filter((i) => i.schedule.toString() === s._id.toString())),
+    farmers: groupItemsByFarmer(
+      liveItems.filter((i) => i.schedule.toString() === s._id.toString()),
+    ),
   }));
 
   const pendingPayout = round2(
-    unpaid.reduce((sum, s) => sum + ((s.totalAmount || 0) - (s.paidAmount || 0)), 0),
+    unpaid.reduce(
+      (sum, s) => sum + ((s.totalAmount || 0) - (s.paidAmount || 0)),
+      0,
+    ),
   );
 
   return {
@@ -475,16 +538,25 @@ const getReadyDeals = async (collectiveId, { zoneId, scheduleId } = {}) => {
   activeScheduleFilter.push({ "schedule.activeSchedule": null });
   activeScheduleFilter.push({ "schedule.activeSchedule": { $exists: false } });
   if (scheduleId) {
-    activeScheduleFilter.push({ "schedule.activeSchedule": new mongoose.Types.ObjectId(scheduleId) });
+    activeScheduleFilter.push({
+      "schedule.activeSchedule": new mongoose.Types.ObjectId(scheduleId),
+    });
   }
 
   const deals = await CropDeal.find({
-    membership: { $in: [...membershipMap.keys()].map((id) => new mongoose.Types.ObjectId(id)) },
+    membership: {
+      $in: [...membershipMap.keys()].map(
+        (id) => new mongoose.Types.ObjectId(id),
+      ),
+    },
     status: "APPROVED",
     "growth.stage": "READY",
     $or: activeScheduleFilter,
   })
-    .populate({ path: "crop", populate: { path: "crop", select: "name code category image" } })
+    .populate({
+      path: "crop",
+      populate: { path: "crop", select: "name code category image" },
+    })
     .sort({ "growth.lastUpdated": -1 })
     .lean();
 
@@ -506,7 +578,11 @@ const getReadyDeals = async (collectiveId, { zoneId, scheduleId } = {}) => {
           category: d.crop?.crop?.category || "",
           image: d.crop?.crop?.image || "",
         },
-        expectedQuantity: d.growth?.expectedQuantity || d.requestedQuantity || d.crop?.yield || 0,
+        expectedQuantity:
+          d.growth?.expectedQuantity ||
+          d.requestedQuantity ||
+          d.crop?.yield ||
+          0,
         membership: membership
           ? {
               _id: membership._id,
@@ -520,7 +596,11 @@ const getReadyDeals = async (collectiveId, { zoneId, scheduleId } = {}) => {
     })
     .filter((d) => d.membership);
 
-  return { success: true, message: "Ready deals fetched !!", deals: readyDeals };
+  return {
+    success: true,
+    message: "Ready deals fetched !!",
+    deals: readyDeals,
+  };
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -532,9 +612,13 @@ const startSchedule = async (collectiveId, schedule) => {
   schedule.status = "IN_PROGRESS";
   schedule.startedAt = new Date();
   await schedule.save();
-  await Driver.findByIdAndUpdate(schedule.driver, { $set: { status: "ONROUTE" } });
+  await Driver.findByIdAndUpdate(schedule.driver, {
+    $set: { status: "ONROUTE" },
+  });
 
-  const items = await ScheduleItem.find({ schedule: schedule._id }).select("farmerGroup").lean();
+  const items = await ScheduleItem.find({ schedule: schedule._id })
+    .select("farmerGroup")
+    .lean();
   const farmerIds = [...new Set(items.map((i) => i.farmerGroup.toString()))];
 
   await Notification.insertMany(
@@ -549,7 +633,11 @@ const startSchedule = async (collectiveId, schedule) => {
     })),
   );
 
-  return { success: true, message: "Pickup marked as in progress !!", schedule };
+  return {
+    success: true,
+    message: "Pickup marked as in progress !!",
+    schedule,
+  };
 };
 
 /**
@@ -559,7 +647,8 @@ const startSchedule = async (collectiveId, schedule) => {
  */
 const completeSchedule = async (collectiveId, schedule, corrections = []) => {
   const items = await ScheduleItem.find({ schedule: schedule._id });
-  if (items.length === 0) throwErr(400, "This pickup has no crop lines to complete !!");
+  if (items.length === 0)
+    throwErr(400, "This pickup has no crop lines to complete !!");
 
   const correctionMap = new Map(
     (Array.isArray(corrections) ? corrections : [])
@@ -581,7 +670,8 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
       item.totalAmount = 0;
     } else {
       const qty =
-        correction?.collectedQuantity !== undefined && correction?.collectedQuantity !== null
+        correction?.collectedQuantity !== undefined &&
+        correction?.collectedQuantity !== null
           ? Number(correction.collectedQuantity)
           : item.collectedQuantity;
       if (Number.isNaN(qty) || qty < 0)
@@ -590,16 +680,21 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
       item.collectedQuantity = qty;
       item.totalAmount = round2(qty * item.agreedPrice);
     }
-    if (correction?.remark !== undefined) item.remark = String(correction.remark).slice(0, 1000);
+    if (correction?.remark !== undefined)
+      item.remark = String(correction.remark).slice(0, 1000);
 
     totalAmount = round2(totalAmount + item.totalAmount);
     totalQuantity = round2(totalQuantity + item.collectedQuantity);
 
     const mId = item.membership.toString();
-    perMembership.set(mId, round2((perMembership.get(mId) || 0) + item.totalAmount));
+    perMembership.set(
+      mId,
+      round2((perMembership.get(mId) || 0) + item.totalAmount),
+    );
 
     const fId = item.farmerGroup.toString();
-    if (!perFarmer.has(fId)) perFarmer.set(fId, { amount: 0, crops: 0, quantity: 0 });
+    if (!perFarmer.has(fId))
+      perFarmer.set(fId, { amount: 0, crops: 0, quantity: 0 });
     const f = perFarmer.get(fId);
     f.amount = round2(f.amount + item.totalAmount);
     f.quantity = round2(f.quantity + item.collectedQuantity);
@@ -632,9 +727,14 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
 
         if (item.status === "COLLECTED" && item.collectedQuantity > 0) {
           // Deduct the collected quantity from the partner farmer's crop account.
-          const farmerCrop = deal?.crop?._id ? await FarmerCrop.findById(deal.crop._id).session(session) : null;
+          const farmerCrop = deal?.crop?._id
+            ? await FarmerCrop.findById(deal.crop._id).session(session)
+            : null;
           if (farmerCrop) {
-            farmerCrop.yield = Math.max(0, (farmerCrop.yield || 0) - item.collectedQuantity);
+            farmerCrop.yield = Math.max(
+              0,
+              (farmerCrop.yield || 0) - item.collectedQuantity,
+            );
             await farmerCrop.save({ session });
           }
 
@@ -663,7 +763,11 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
         // a fully-skipped line must not inflate pickup stats.
         const inc = { pendingBalance: summary.amount };
         if (summary.quantity > 0) inc.totalPickups = 1;
-        await FarmerGroup.findByIdAndUpdate(farmerId, { $inc: inc }, { session });
+        await FarmerGroup.findByIdAndUpdate(
+          farmerId,
+          { $inc: inc },
+          { session },
+        );
       }
 
       schedule.status = "COMPLETED";
@@ -706,12 +810,17 @@ const completeSchedule = async (collectiveId, schedule, corrections = []) => {
     })),
   );
 
-  return { success: true, message: "Pickup completed and balances updated !!", schedule };
+  return {
+    success: true,
+    message: "Pickup completed and balances updated !!",
+    schedule,
+  };
 };
 
 /** Move a pickup to a new date (still within the three week window). */
 const postponeSchedule = async (collectiveId, schedule, newDate, reason) => {
-  if (!newDate) throwErr(400, "A new pickup date is required when postponing !!");
+  if (!newDate)
+    throwErr(400, "A new pickup date is required when postponing !!");
   const date = validatePickupDate(newDate, "New pickup date");
 
   const previous = schedule.pickupDate;
@@ -725,7 +834,9 @@ const postponeSchedule = async (collectiveId, schedule, newDate, reason) => {
   schedule.status = "POSTPONED";
   await schedule.save();
 
-  const items = await ScheduleItem.find({ schedule: schedule._id }).select("farmerGroup").lean();
+  const items = await ScheduleItem.find({ schedule: schedule._id })
+    .select("farmerGroup")
+    .lean();
   const farmerIds = [...new Set(items.map((i) => i.farmerGroup.toString()))];
 
   await Notification.insertMany(
@@ -737,7 +848,11 @@ const postponeSchedule = async (collectiveId, schedule, newDate, reason) => {
       body: `The pickup planned for ${fmtDate(previous)} has been moved to ${fmtDate(date)}.${
         reason ? ` Reason: ${reason}` : ""
       }`,
-      data: { scheduleId: schedule._id, scheduleCode: schedule.code, pickupDate: date },
+      data: {
+        scheduleId: schedule._id,
+        scheduleCode: schedule.code,
+        pickupDate: date,
+      },
       sender: collectiveId,
     })),
   );
@@ -757,7 +872,12 @@ const cancelSchedule = async (collectiveId, schedule, reason) => {
         await item.save({ session });
         await CropDeal.findByIdAndUpdate(
           item.cropDeal,
-          { $set: { "schedule.activeSchedule": null, "schedule.collectedQuantity": 0 } },
+          {
+            $set: {
+              "schedule.activeSchedule": null,
+              "schedule.collectedQuantity": 0,
+            },
+          },
           { session },
         );
       }
@@ -792,7 +912,11 @@ const cancelSchedule = async (collectiveId, schedule, reason) => {
     })),
   );
 
-  return { success: true, message: "Pickup cancelled and crops released !!", schedule };
+  return {
+    success: true,
+    message: "Pickup cancelled and crops released !!",
+    schedule,
+  };
 };
 
 /** Single entry point used by the route: dispatches to the lifecycle helpers. */
@@ -804,17 +928,26 @@ const updateScheduleStatus = async (
   const allowed = ["IN_PROGRESS", "COMPLETED", "POSTPONED", "CANCELLED"];
   if (!allowed.includes(status)) throwErr(400, "Invalid pickup status !!");
 
-  const schedule = await Schedule.findOne({ _id: scheduleId, collective: collectiveId });
+  const schedule = await Schedule.findOne({
+    _id: scheduleId,
+    collective: collectiveId,
+  });
   if (!schedule) throwErr(404, "Schedule not found !!");
   if (["COMPLETED", "CANCELLED"].includes(schedule.status))
-    throwErr(400, "A completed or cancelled pickup can no longer be modified !!");
+    throwErr(
+      400,
+      "A completed or cancelled pickup can no longer be modified !!",
+    );
 
   if (status === "IN_PROGRESS") {
-    if (schedule.status === "IN_PROGRESS") throwErr(400, "This pickup is already in progress !!");
+    if (schedule.status === "IN_PROGRESS")
+      throwErr(400, "This pickup is already in progress !!");
     return startSchedule(collectiveId, schedule);
   }
-  if (status === "COMPLETED") return completeSchedule(collectiveId, schedule, items);
-  if (status === "POSTPONED") return postponeSchedule(collectiveId, schedule, newDate, reason);
+  if (status === "COMPLETED")
+    return completeSchedule(collectiveId, schedule, items);
+  if (status === "POSTPONED")
+    return postponeSchedule(collectiveId, schedule, newDate, reason);
   return cancelSchedule(collectiveId, schedule, reason);
 };
 
@@ -836,12 +969,21 @@ const payFarmerForSchedule = async (
   if (!scheduleId || !farmerGroupId)
     throwErr(400, "scheduleId and farmerGroupId are required !!");
   if (!paymentProof || !String(paymentProof).trim())
-    throwErr(400, "A proof of payment is required before marking a farmer group as paid !!");
+    throwErr(
+      400,
+      "A proof of payment is required before marking a farmer group as paid !!",
+    );
 
-  const schedule = await Schedule.findOne({ _id: scheduleId, collective: collectiveId });
+  const schedule = await Schedule.findOne({
+    _id: scheduleId,
+    collective: collectiveId,
+  });
   if (!schedule) throwErr(404, "Schedule not found !!");
   if (schedule.status !== "COMPLETED")
-    throwErr(400, "Payment can only be recorded once the pickup is completed !!");
+    throwErr(
+      400,
+      "Payment can only be recorded once the pickup is completed !!",
+    );
 
   const query = {
     schedule: scheduleId,
@@ -849,19 +991,32 @@ const payFarmerForSchedule = async (
     paymentStatus: "PENDING",
     status: "COLLECTED",
   };
-  if (Array.isArray(itemIds) && itemIds.length > 0) query._id = { $in: itemIds };
+  if (Array.isArray(itemIds) && itemIds.length > 0)
+    query._id = { $in: itemIds };
 
   const items = await ScheduleItem.find(query);
   if (items.length === 0)
-    throwErr(400, "There is nothing pending to pay for this farmer group in this pickup !!");
+    throwErr(
+      400,
+      "There is nothing pending to pay for this farmer group in this pickup !!",
+    );
 
-  const totalPayment = round2(items.reduce((sum, item) => sum + item.totalAmount, 0));
-  if (totalPayment <= 0) throwErr(400, "The pending amount for this farmer group is zero !!");
+  const totalPayment = round2(
+    items.reduce((sum, item) => sum + item.totalAmount, 0),
+  );
+  if (totalPayment <= 0)
+    throwErr(400, "The pending amount for this farmer group is zero !!");
 
-  const membership = await Membership.findOne({ farmer: farmerGroupId, collective: collectiveId });
-  if (!membership) throwErr(404, "Membership not found for this farmer group !!");
+  const membership = await Membership.findOne({
+    farmer: farmerGroupId,
+    collective: collectiveId,
+  });
+  if (!membership)
+    throwErr(404, "Membership not found for this farmer group !!");
 
-  const balanceAfter = round2(Math.max(0, (membership.balance || 0) - totalPayment));
+  const balanceAfter = round2(
+    Math.max(0, (membership.balance || 0) - totalPayment),
+  );
   const proof = String(paymentProof).trim();
   const paidAt = new Date();
 
@@ -907,15 +1062,24 @@ const payFarmerForSchedule = async (
 
       await Membership.findByIdAndUpdate(
         membership._id,
-        { $set: { balance: balanceAfter }, $inc: { totalEarnings: totalPayment } },
+        {
+          $set: { balance: balanceAfter },
+          $inc: { totalEarnings: totalPayment },
+        },
         { session },
       );
 
-      const farmer = await FarmerGroup.findById(farmerGroupId).select("pendingBalance").session(session);
+      const farmer = await FarmerGroup.findById(farmerGroupId)
+        .select("pendingBalance")
+        .session(session);
       await FarmerGroup.findByIdAndUpdate(
         farmerGroupId,
         {
-          $set: { pendingBalance: round2(Math.max(0, (farmer?.pendingBalance || 0) - totalPayment)) },
+          $set: {
+            pendingBalance: round2(
+              Math.max(0, (farmer?.pendingBalance || 0) - totalPayment),
+            ),
+          },
           $inc: { totalEarnings: totalPayment },
         },
         { session },
@@ -972,18 +1136,31 @@ const payFarmerForSchedule = async (
 
 /** Pay a single crop line — thin wrapper over the farmer-level settlement. */
 const markItemPaid = async (collectiveId, scheduleId, itemId, payload = {}) => {
-  const item = await ScheduleItem.findOne({ _id: itemId, schedule: scheduleId, collective: collectiveId });
-  if (!item) throwErr(404, "Schedule item not found !!");
-  if (item.paymentStatus === "PAID") throwErr(409, "This crop line is already paid !!");
-
-  return payFarmerForSchedule(collectiveId, scheduleId, item.farmerGroup.toString(), {
-    ...payload,
-    itemIds: [item._id],
+  const item = await ScheduleItem.findOne({
+    _id: itemId,
+    schedule: scheduleId,
+    collective: collectiveId,
   });
+  if (!item) throwErr(404, "Schedule item not found !!");
+  if (item.paymentStatus === "PAID")
+    throwErr(409, "This crop line is already paid !!");
+
+  return payFarmerForSchedule(
+    collectiveId,
+    scheduleId,
+    item.farmerGroup.toString(),
+    {
+      ...payload,
+      itemIds: [item._id],
+    },
+  );
 };
 
 /** Payment ledger for the collective, optionally scoped to a farmer or pickup. */
-const getPayments = async (collectiveId, { farmerGroupId, scheduleId } = {}) => {
+const getPayments = async (
+  collectiveId,
+  { farmerGroupId, scheduleId } = {},
+) => {
   const query = { collective: collectiveId };
   if (farmerGroupId) query.farmerGroup = farmerGroupId;
   if (scheduleId) query.schedule = scheduleId;
@@ -1004,18 +1181,25 @@ const getPayments = async (collectiveId, { farmerGroupId, scheduleId } = {}) => 
  * current balance, lifetime earnings, every pickup line and every receipt.
  */
 const getFarmerLedger = async (collectiveId, farmerGroupId) => {
-  const membership = await Membership.findOne({ farmer: farmerGroupId, collective: collectiveId })
+  const membership = await Membership.findOne({
+    farmer: farmerGroupId,
+    collective: collectiveId,
+  })
     .populate("farmer", "name phone profile leadFarmer address")
     .populate("zone", "name color")
     .lean();
-  if (!membership) throwErr(404, "This farmer group is not a member of your collective !!");
+  if (!membership)
+    throwErr(404, "This farmer group is not a member of your collective !!");
 
   const [items, payments] = await Promise.all([
     ScheduleItem.find({ collective: collectiveId, farmerGroup: farmerGroupId })
       .populate("schedule", "code pickupDate status")
       .sort({ createdAt: -1 })
       .lean(),
-    PaymentTransaction.find({ collective: collectiveId, farmerGroup: farmerGroupId })
+    PaymentTransaction.find({
+      collective: collectiveId,
+      farmerGroup: farmerGroupId,
+    })
       .populate("schedule", "code pickupDate")
       .sort({ createdAt: -1 })
       .lean(),
@@ -1030,8 +1214,11 @@ const getFarmerLedger = async (collectiveId, farmerGroupId) => {
     summary: {
       balance: membership.balance || 0,
       totalEarnings: membership.totalEarnings || 0,
-      totalCollected: round2(collected.reduce((s, i) => s + (i.collectedQuantity || 0), 0)),
-      pickupCount: new Set(collected.map((i) => i.schedule?._id?.toString())).size,
+      totalCollected: round2(
+        collected.reduce((s, i) => s + (i.collectedQuantity || 0), 0),
+      ),
+      pickupCount: new Set(collected.map((i) => i.schedule?._id?.toString()))
+        .size,
       pendingAmount: round2(
         collected
           .filter((i) => i.paymentStatus === "PENDING")
@@ -1048,15 +1235,26 @@ const getFarmerLedger = async (collectiveId, farmerGroupId) => {
  * Only SCHEDULED or POSTPONED pickups can be edited.
  * Zone cannot be changed. Adding/removing crop items is supported.
  */
-const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, time, notes, items }) => {
-  const schedule = await Schedule.findOne({ _id: scheduleId, collective: collectiveId });
+const updateSchedule = async (
+  collectiveId,
+  scheduleId,
+  { driverId, pickupDate, time, notes, items },
+) => {
+  const schedule = await Schedule.findOne({
+    _id: scheduleId,
+    collective: collectiveId,
+  });
   if (!schedule) throwErr(404, "Schedule not found !!");
   if (!["SCHEDULED", "POSTPONED"].includes(schedule.status))
     throwErr(400, "Only SCHEDULED or POSTPONED pickups can be edited !!");
 
   // Update driver if provided
   if (driverId) {
-    const driver = await Driver.findOne({ _id: driverId, collective: collectiveId, status: { $ne: "INACTIVE" } });
+    const driver = await Driver.findOne({
+      _id: driverId,
+      collective: collectiveId,
+      status: { $ne: "INACTIVE" },
+    });
     if (!driver) throwErr(404, "Driver not found or inactive !!");
     schedule.driver = driverId;
   }
@@ -1065,7 +1263,10 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
   if (pickupDate) {
     const date = validatePickupDate(pickupDate);
     // Track in postpone history if date changes
-    if (schedule.pickupDate.toISOString().slice(0, 10) !== date.toISOString().slice(0, 10)) {
+    if (
+      schedule.pickupDate.toISOString().slice(0, 10) !==
+      date.toISOString().slice(0, 10)
+    ) {
       schedule.postponeHistory.push({
         from: schedule.pickupDate,
         to: date,
@@ -1085,12 +1286,20 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
 
     // Find items to remove (in current but not in new list)
     const newDealIds = new Set(items.map((i) => String(i.cropDealId)));
-    const toRemove = currentItems.filter((ci) => !newDealIds.has(String(ci.cropDeal)));
+    const toRemove = currentItems.filter(
+      (ci) => !newDealIds.has(String(ci.cropDeal)),
+    );
 
     // Find items to add (in new list but not in current)
-    const currentDealIds = new Set(currentItems.map((ci) => String(ci.cropDeal)));
-    const toAdd = items.filter((i) => !currentDealIds.has(String(i.cropDealId)));
-    const toUpdate = items.filter((i) => currentDealIds.has(String(i.cropDealId)));
+    const currentDealIds = new Set(
+      currentItems.map((ci) => String(ci.cropDeal)),
+    );
+    const toAdd = items.filter(
+      (i) => !currentDealIds.has(String(i.cropDealId)),
+    );
+    const toUpdate = items.filter((i) =>
+      currentDealIds.has(String(i.cropDealId)),
+    );
 
     // Track farmer notifications
     const changesByFarmer = {};
@@ -1108,7 +1317,10 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
     for (const item of items) {
       const id = String(item.cropDealId);
       if (seen.has(id))
-        throwErr(400, "The same crop deal cannot be added to a pickup twice !!");
+        throwErr(
+          400,
+          "The same crop deal cannot be added to a pickup twice !!",
+        );
       seen.add(id);
     }
 
@@ -1119,23 +1331,39 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
         _id: { $in: toAdd.map((i) => i.cropDealId) },
         status: "APPROVED",
         "growth.stage": "READY",
-        $or: [{ "schedule.activeSchedule": null }, { "schedule.activeSchedule": { $exists: false } }],
-      }).populate({
-        path: "membership",
-        match: { collective: collectiveId, status: "ACTIVE" },
-      }).populate({ path: "crop", populate: { path: "crop", select: "name code" } });
+        $or: [
+          { "schedule.activeSchedule": null },
+          { "schedule.activeSchedule": { $exists: false } },
+        ],
+      })
+        .populate({
+          path: "membership",
+          match: { collective: collectiveId, status: "ACTIVE" },
+        })
+        .populate({
+          path: "crop",
+          populate: { path: "crop", select: "name code" },
+        });
 
       const validNewDeals = newDeals.filter((d) => d.membership);
       for (const deal of validNewDeals) {
         // Zone consistency
         const mZone = String(deal.membership.zone || "");
         if (mZone && mZone !== String(schedule.zone))
-          throwErr(400, `Cannot add a crop from a different zone to this schedule !!`);
+          throwErr(
+            400,
+            `Cannot add a crop from a different zone to this schedule !!`,
+          );
 
-        const addItem = toAdd.find((i) => String(i.cropDealId) === String(deal._id));
+        const addItem = toAdd.find(
+          (i) => String(i.cropDealId) === String(deal._id),
+        );
         const qty = Number(addItem?.collectedQuantity) || deal.crop?.yield || 0;
         if (qty <= 0)
-          throwErr(400, "Every selected crop needs a collection quantity greater than 0 !!");
+          throwErr(
+            400,
+            "Every selected crop needs a collection quantity greater than 0 !!",
+          );
         const { name, code } = cropLabel(deal.crop);
         const amount = round2(deal.agreedPrice * qty);
 
@@ -1153,9 +1381,12 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
     // Validate quantity updates of existing items
     const preparedUpdates = [];
     for (const item of toUpdate) {
-      const currentItem = currentItems.find((ci) => String(ci.cropDeal) === String(item.cropDealId));
+      const currentItem = currentItems.find(
+        (ci) => String(ci.cropDeal) === String(item.cropDealId),
+      );
       if (!currentItem) continue;
-      const qty = Number(item.collectedQuantity) || currentItem.collectedQuantity;
+      const qty =
+        Number(item.collectedQuantity) || currentItem.collectedQuantity;
       if (Number.isNaN(qty) || qty < 0)
         throwErr(400, "Collected quantity must be a positive number !!");
       preparedUpdates.push({ currentItem, qty });
@@ -1172,7 +1403,10 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
     }
     const driver = await Driver.findById(schedule.driver);
     if (driver?.capacity && projectedTotal > driver.capacity)
-      throwErr(400, `Updated crop total exceeds ${driver.name}'s vehicle capacity of ${driver.capacity} kg !!`);
+      throwErr(
+        400,
+        `Updated crop total exceeds ${driver.name}'s vehicle capacity of ${driver.capacity} kg !!`,
+      );
 
     // ── Phase 2: apply the mutations ──
 
@@ -1201,7 +1435,9 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
         totalAmount: amount,
       });
       await newItem.save();
-      await CropDeal.findByIdAndUpdate(deal._id, { $set: { "schedule.activeSchedule": schedule._id } });
+      await CropDeal.findByIdAndUpdate(deal._id, {
+        $set: { "schedule.activeSchedule": schedule._id },
+      });
 
       addChange(farmer, `Crop added: ${name} (${qty} kg)`);
     }
@@ -1215,16 +1451,25 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
         currentItem.totalAmount = round2(currentItem.agreedPrice * qty);
         await currentItem.save();
 
-        addChange(currentItem.farmerGroup, `Quantity changed for ${currentItem.cropName}: ${oldQty} kg -> ${qty} kg`);
+        addChange(
+          currentItem.farmerGroup,
+          `Quantity changed for ${currentItem.cropName}: ${oldQty} kg -> ${qty} kg`,
+        );
       }
     }
 
     // Recalculate schedule totals
     const allItems = await ScheduleItem.find({ schedule: schedule._id });
-    schedule.totalAmount = round2(allItems.reduce((s, i) => s + i.totalAmount, 0));
-    schedule.totalQuantity = round2(allItems.reduce((s, i) => s + i.collectedQuantity, 0));
+    schedule.totalAmount = round2(
+      allItems.reduce((s, i) => s + i.totalAmount, 0),
+    );
+    schedule.totalQuantity = round2(
+      allItems.reduce((s, i) => s + i.collectedQuantity, 0),
+    );
     schedule.itemCount = allItems.length;
-    const farmerIds = [...new Set(allItems.map((i) => i.farmerGroup.toString()))];
+    const farmerIds = [
+      ...new Set(allItems.map((i) => i.farmerGroup.toString())),
+    ];
     schedule.farmerCount = farmerIds.length;
 
     // Insert notifications for each farmer group about their changes
@@ -1235,7 +1480,7 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
           recipientRole: "FARMER_GROUP",
           type: "PICKUP",
           title: `Schedule Updated · ${schedule.code}`,
-          body: `Your pickup schedule details have been updated:\n${messages.map(m => `• ${m}`).join("\n")}`,
+          body: `Your pickup schedule details have been updated:\n${messages.map((m) => `• ${m}`).join("\n")}`,
           data: { scheduleId: schedule._id, scheduleCode: schedule.code },
           sender: collectiveId,
         });
@@ -1244,7 +1489,11 @@ const updateSchedule = async (collectiveId, scheduleId, { driverId, pickupDate, 
   }
 
   await schedule.save();
-  return { success: true, message: "Schedule updated successfully !!", schedule };
+  return {
+    success: true,
+    message: "Schedule updated successfully !!",
+    schedule,
+  };
 };
 
 export default {

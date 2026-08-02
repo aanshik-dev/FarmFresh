@@ -10,7 +10,6 @@ const getAllCrops = async (req, res) => {
       crops,
     });
   } catch (error) {
-    console.error(error);
     throwErr(500, "Internal server error");
   }
 };

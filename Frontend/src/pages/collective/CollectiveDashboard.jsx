@@ -181,6 +181,7 @@ const CollectiveDashboard = () => {
           if (item.status === "COLLECTED" && item.paymentStatus === "PENDING") {
             const fg = item.farmerGroup;
             const name =
+              fg?.name ||
               fg?.groupName ||
               fg?.leadFarmer ||
               item.farmerName ||
