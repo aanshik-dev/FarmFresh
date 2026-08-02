@@ -30,17 +30,17 @@ _One transparent supply chain — no middlemen, no food waste, fair pay for ever
 
 ## 📚 Table of Contents
 
-| # | Section | # | Section |
-|---|---|---|---|
-| 1 | [✨ Overview & Mission](#1--overview--mission) | 10 | [🔐 Authentication, Authorization & Security](#10--authentication-authorization--security) |
-| 2 | [🔧 Feature Tour](#2--feature-tour) | 11 | [📡 API Reference](#11--api-reference) |
-| 3 | [🧰 Tech Stack](#3--tech-stack) | 12 | [🧪 Demo World & Test Credentials](#12--demo-world--test-credentials) |
-| 4 | [🧱 System Architecture](#4--system-architecture) | 13 | [🚀 Getting Started](#13--getting-started) |
-| 5 | [📁 Repository Structure](#5--repository-structure) | 14 | [🌐 Deployment](#14--deployment) |
-| 6 | [🔩 Backend Deep Dive](#6--backend-deep-dive) | 15 | [🧭 Roadmap & Future Work](#15--roadmap--future-work) |
-| 7 | [💾 Database & Data Modeling](#7--database--data-modeling) | 16 | [🧑‍💻 Development Notes & Conventions](#16--development-notes--conventions) |
-| 8 | [🔁 Core Business Flows](#8--core-business-flows) | 17 | [🙏 Credits & Acknowledgments](#17--credits--acknowledgments) |
-| 9 | [💻 Frontend Deep Dive](#9--frontend-deep-dive) | | |
+| #   | Section                                                    | #   | Section                                                                                    |
+| --- | ---------------------------------------------------------- | --- | ------------------------------------------------------------------------------------------ |
+| 1   | [✨ Overview & Mission](#1--overview--mission)             | 10  | [🔐 Authentication, Authorization & Security](#10--authentication-authorization--security) |
+| 2   | [🔧 Feature Tour](#2--feature-tour)                        | 11  | [📡 API Reference](#11--api-reference)                                                     |
+| 3   | [🧰 Tech Stack](#3--tech-stack)                            | 12  | [🧪 Demo World & Test Credentials](#12--demo-world--test-credentials)                      |
+| 4   | [🧱 System Architecture](#4--system-architecture)          | 13  | [🚀 Getting Started](#13--getting-started)                                                 |
+| 5   | [📁 Repository Structure](#5--repository-structure)        | 14  | [🌐 Deployment](#14--deployment)                                                           |
+| 6   | [🔩 Backend Deep Dive](#6--backend-deep-dive)              | 15  | [🧭 Roadmap & Future Work](#15--roadmap--future-work)                                      |
+| 7   | [💾 Database & Data Modeling](#7--database--data-modeling) | 16  | [🧑‍💻 Development Notes & Conventions](#16--development-notes--conventions)                  |
+| 8   | [🔁 Core Business Flows](#8--core-business-flows)          | 17  | [🙏 Credits & Acknowledgments](#17--credits--acknowledgments)                              |
+| 9   | [💻 Frontend Deep Dive](#9--frontend-deep-dive)            |     |                                                                                            |
 
 ---
 
@@ -48,11 +48,11 @@ _One transparent supply chain — no middlemen, no food waste, fair pay for ever
 
 Farm Fresh is a two-sided agricultural marketplace with three distinct actors:
 
-| 🧑‍🌾 Actor | 🎭 Role in the platform | 🌍 Real-world counterpart |
-|---|---|---|
-| 🧑‍🌾 `FARMER_GROUP` | Registers crops, manages growth stages, sends membership requests, receives payments | Lead farmer of an organized group of growers |
-| 🏭 `COLLECTIVE` | Defines crop demand, zones and drivers, accepts farmers, schedules pickups, pays | Cooperative, distributor, supermarket chain, bulk buyer |
-| 🛡️ `ADMIN` | Oversees the platform, manages users and support issues | Platform operator |
+| 🧑‍🌾 Actor          | 🎭 Role in the platform                                                              | 🌍 Real-world counterpart                               |
+| ----------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| 🧑‍🌾 `FARMER_GROUP` | Registers crops, manages growth stages, sends membership requests, receives payments | Lead farmer of an organized group of growers            |
+| 🏭 `COLLECTIVE`   | Defines crop demand, zones and drivers, accepts farmers, schedules pickups, pays     | Cooperative, distributor, supermarket chain, bulk buyer |
+| 🛡️ `ADMIN`        | Oversees the platform, manages users and support issues                              | Platform operator                                       |
 
 The platform manages the **entire lifecycle** of a supply relationship — from a farmer's first membership request, through crop-by-crop deal negotiation, growth-stage tracking, physical pickup scheduling with drivers, and finally proof-backed payment settlement with a full financial ledger.
 
@@ -152,41 +152,41 @@ Everything the platform currently does, split by actor.
 <details>
 <summary>🖥️ <strong>Frontend stack</strong></summary>
 
-| Layer | Choice | Why |
-|---|---|---|
-| Framework | ⚛️ **React 19** + **Vite 8** | Ultra-fast HMR in dev; Rollup-based production builds keep bundles small for rural users |
-| Styling | 🎨 **Tailwind CSS v4** (CSS-first config, `@tailwindcss/vite`) | Utility-first, dead-CSS elimination, class-based dark mode |
-| Routing | 🧭 **react-router-dom 7** | Role-scoped dashboards with route guards |
-| HTTP | 🔌 **Axios** (two instances, interceptors) | Automatic Bearer attachment + refresh-queue token renewal |
-| State | 🧠 React **Context API** + local state | AuthContext, ThemeContext, ToastContext — no Redux/Zustand |
-| Charts | 📊 **Recharts 3** | Pie, bar, and line charts on dashboards |
-| Maps | 🗺️ **Leaflet + react-leaflet 5** | Coordinate picking in profile forms |
-| Icons | 🏷️ **Iconify** (`@iconify/react`, Phosphor set) | Tree-shaken icon components |
-| Animation | 🎬 **Framer Motion** | Page reveals, toasts, drawer transitions |
-| Markdown | 📝 **react-markdown** | Renders FarmAssist AI answers |
-| UI kit | 🧩 **None** — hand-rolled design system | Button, Input, Modal, Toast, Loader, StatusBadge, StatCard, etc. |
-| Fonts | 🔤 ~12 Google Fonts (Inter, Baloo 2, Quantico, Blinker, Righteous, Russo One…) | Brand personality per component |
+| Layer     | Choice                                                                         | Why                                                                                      |
+| --------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Framework | ⚛️ **React 19** + **Vite 8**                                                   | Ultra-fast HMR in dev; Rollup-based production builds keep bundles small for rural users |
+| Styling   | 🎨 **Tailwind CSS v4** (CSS-first config, `@tailwindcss/vite`)                 | Utility-first, dead-CSS elimination, class-based dark mode                               |
+| Routing   | 🧭 **react-router-dom 7**                                                      | Role-scoped dashboards with route guards                                                 |
+| HTTP      | 🔌 **Axios** (two instances, interceptors)                                     | Automatic Bearer attachment + refresh-queue token renewal                                |
+| State     | 🧠 React **Context API** + local state                                         | AuthContext, ThemeContext, ToastContext — no Redux/Zustand                               |
+| Charts    | 📊 **Recharts 3**                                                              | Pie, bar, and line charts on dashboards                                                  |
+| Maps      | 🗺️ **Leaflet + react-leaflet 5**                                               | Coordinate picking in profile forms                                                      |
+| Icons     | 🏷️ **Iconify** (`@iconify/react`, Phosphor set)                                | Tree-shaken icon components                                                              |
+| Animation | 🎬 **Framer Motion**                                                           | Page reveals, toasts, drawer transitions                                                 |
+| Markdown  | 📝 **react-markdown**                                                          | Renders FarmAssist AI answers                                                            |
+| UI kit    | 🧩 **None** — hand-rolled design system                                        | Button, Input, Modal, Toast, Loader, StatusBadge, StatCard, etc.                         |
+| Fonts     | 🔤 ~12 Google Fonts (Inter, Baloo 2, Quantico, Blinker, Righteous, Russo One…) | Brand personality per component                                                          |
 
 </details>
 
 <details>
 <summary>⚙️ <strong>Backend stack</strong></summary>
 
-| Layer | Choice | Why |
-|---|---|---|
-| Runtime | 🟢 **Node.js** (ES Modules throughout) | Async, event-driven I/O for high concurrency |
-| Framework | 🚂 **Express 5** | Minimal REST framework; Express 5 auto-forwards rejected promises to error middleware |
-| ODM | 🍃 **Mongoose 9** | Schemas, pre-save hooks, population, and multi-document transactions |
-| Validation | ✅ **Zod 4** | Schema-first validation middleware on request bodies |
-| Auth | 🔑 **jsonwebtoken** (access + refresh) | Stateless JWT sessions |
-| OAuth | 🔐 **passport + passport-google-oauth20** | Google SSO with automatic account creation |
-| Passwords | 🧂 **bcryptjs** | Salted hashing (passwords stored with `select: false`) |
-| Email | 📧 **Nodemailer** (Gmail SMTP) | OTP verification emails with HTML templates |
-| Media | 🖼️ **multer** (memory) + **cloudinary** + **streamifier** | Buffer → stream uploads to Cloudinary |
-| AI | 🤖 **groq-sdk** (`llama-3.1-8b-instant`) | FarmAssist chat advisor |
-| Rate limiting | 🛑 **express-rate-limit** | Sliding-window limits on sensitive auth routes |
-| CORS | 🌐 **cors** | Whitelisted origins (FRONTEND_URL + localhost:5173) |
-| Dev | 🔄 **nodemon** | Auto-restart in development |
+| Layer         | Choice                                                    | Why                                                                                   |
+| ------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Runtime       | 🟢 **Node.js** (ES Modules throughout)                    | Async, event-driven I/O for high concurrency                                          |
+| Framework     | 🚂 **Express 5**                                          | Minimal REST framework; Express 5 auto-forwards rejected promises to error middleware |
+| ODM           | 🍃 **Mongoose 9**                                         | Schemas, pre-save hooks, population, and multi-document transactions                  |
+| Validation    | ✅ **Zod 4**                                              | Schema-first validation middleware on request bodies                                  |
+| Auth          | 🔑 **jsonwebtoken** (access + refresh)                    | Stateless JWT sessions                                                                |
+| OAuth         | 🔐 **passport + passport-google-oauth20**                 | Google SSO with automatic account creation                                            |
+| Passwords     | 🧂 **bcryptjs**                                           | Salted hashing (passwords stored with `select: false`)                                |
+| Email         | 📧 **Nodemailer** (Gmail SMTP)                            | OTP verification emails with HTML templates                                           |
+| Media         | 🖼️ **multer** (memory) + **cloudinary** + **streamifier** | Buffer → stream uploads to Cloudinary                                                 |
+| AI            | 🤖 **groq-sdk** (`llama-3.1-8b-instant`)                  | FarmAssist chat advisor                                                               |
+| Rate limiting | 🛑 **express-rate-limit**                                 | Sliding-window limits on sensitive auth routes                                        |
+| CORS          | 🌐 **cors**                                               | Whitelisted origins (FRONTEND_URL + localhost:5173)                                   |
+| Dev           | 🔄 **nodemon**                                            | Auto-restart in development                                                           |
 
 </details>
 
@@ -195,22 +195,22 @@ Everything the platform currently does, split by actor.
 
 **Backend** (`Backend/.env`, template in `Backend/.env.example`):
 
-| Variable | Purpose |
-|---|---|
-| `PORT` | Server port (default `6000`) |
-| `FRONTEND_URL` | Allowed CORS origin (falls back to `http://localhost:5173`) |
-| `ADMIN_MAIL` / `ADMIN_PASSWORD` | Seeded admin credentials |
-| `JWT_SECRET` / `JWT_REFRESH_SECRET` | Access and refresh token signing secrets |
-| `MONGODB_URI` | MongoDB Atlas connection string |
-| `GMAIL_USER` / `GMAIL_APP_PASS` | Nodemailer Gmail sender |
-| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_KEY` / `CLOUDINARY_SECRET` | Cloudinary credentials |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_CALLBACK` | Google OAuth (callback like `http://localhost:6000/api/auth/google/callback`) |
-| `GROQ_API_KEY` | Groq key for FarmAssist |
+| Variable                                                         | Purpose                                                                       |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `PORT`                                                           | Server port (default `6000`)                                                  |
+| `FRONTEND_URL`                                                   | Allowed CORS origin (falls back to `http://localhost:5173`)                   |
+| `ADMIN_MAIL` / `ADMIN_PASSWORD`                                  | Seeded admin credentials                                                      |
+| `JWT_SECRET` / `JWT_REFRESH_SECRET`                              | Access and refresh token signing secrets                                      |
+| `MONGODB_URI`                                                    | MongoDB Atlas connection string                                               |
+| `GMAIL_USER` / `GMAIL_APP_PASS`                                  | Nodemailer Gmail sender                                                       |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_KEY` / `CLOUDINARY_SECRET` | Cloudinary credentials                                                        |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_CALLBACK`  | Google OAuth (callback like `http://localhost:6000/api/auth/google/callback`) |
+| `GROQ_API_KEY`                                                   | Groq key for FarmAssist                                                       |
 
 **Frontend** (`Frontend/.env`, template in `Frontend/.env.example`):
 
-| Variable | Purpose |
-|---|---|
+| Variable           | Purpose                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------- |
 | `VITE_BACKEND_URL` | Backend base URL (e.g. `http://localhost:6000`) — the frontend talks to it directly (no dev proxy) |
 
 </details>
@@ -374,14 +374,14 @@ All seeders are idempotent — safe to run on every boot. ✅
 <details>
 <summary>🧱 <strong>Middleware pipeline</strong></summary>
 
-| # | Middleware | Responsibility |
-|---|---|---|
-| 1 | 🌐 `cors` | Allow `FRONTEND_URL` + `http://localhost:5173`, methods GET/POST/PATCH/DELETE, credentials |
-| 2 | 📦 `express.json()` | Body parsing |
-| 3 | 🔐 `passport.initialize()` | Google OAuth strategy |
-| 4 | 🛣️ Route handlers | Per-route: `rateLimiter` (auth only), `validate(zodSchema)`, `verifyToken`, `authorizeRoles(...)`, `singleFile(...)` uploads |
-| 5 | ❌ 404 catch-all | `{ message: "Route not found" }` |
-| 6 | 🚨 Global error handler | Maps `ZodError` → 400, Mongoose `CastError` → 400 "Invalid ID format", otherwise `err.statusCode \|\| 500` |
+| #   | Middleware                 | Responsibility                                                                                                               |
+| --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 🌐 `cors`                  | Allow `FRONTEND_URL` + `http://localhost:5173`, methods GET/POST/PATCH/DELETE, credentials                                   |
+| 2   | 📦 `express.json()`        | Body parsing                                                                                                                 |
+| 3   | 🔐 `passport.initialize()` | Google OAuth strategy                                                                                                        |
+| 4   | 🛣️ Route handlers          | Per-route: `rateLimiter` (auth only), `validate(zodSchema)`, `verifyToken`, `authorizeRoles(...)`, `singleFile(...)` uploads |
+| 5   | ❌ 404 catch-all           | `{ message: "Route not found" }`                                                                                             |
+| 6   | 🚨 Global error handler    | Maps `ZodError` → 400, Mongoose `CastError` → 400 "Invalid ID format", otherwise `err.statusCode \|\| 500`                   |
 
 </details>
 
@@ -412,14 +412,14 @@ All seeders are idempotent — safe to run on every boot. ✅
 
 `services/idGenerator.service.js` atomically increments a `Counter` document (one per ID type) and returns prefixed IDs — the Mongo equivalent of a sequence:
 
-| Prefix | Entity | Start |
-|---|---|---|
-| `FC` | 🏭 Collective | 100000 |
-| `FG` | 🧑‍🌾 Farmer Group | 200000 |
-| `CP` | 🌱 Crop | 300000 |
-| `DR` | 🚛 Driver | 600000 |
-| `SC` | 📅 Schedule | 700000 |
-| `PM` | 💰 Payment | 1000000 |
+| Prefix | Entity          | Start   |
+| ------ | --------------- | ------- |
+| `FC`   | 🏭 Collective   | 100000  |
+| `FG`   | 🧑‍🌾 Farmer Group | 200000  |
+| `CP`   | 🌱 Crop         | 300000  |
+| `DR`   | 🚛 Driver       | 600000  |
+| `SC`   | 📅 Schedule     | 700000  |
+| `PM`   | 💰 Payment      | 1000000 |
 
 (`AD101` for the admin is hard-coded.) IDs are generated inside the same transactions that create the documents, so they can never collide. 🎲
 
@@ -482,13 +482,13 @@ Standard `RateLimit-*` headers are sent to the client. 📡
 <details>
 <summary>🌱 <strong>Seeding scripts</strong></summary>
 
-| Script | What it does |
-|---|---|
-| `seedCounters.js` | One Counter doc per ID type at its start value 🔢 |
-| `seedData.js` | Master crop catalog: 110+ crops across categories Grain, Pulse, Oilseed, Cash Crop, Plantation, Vegetable, Fruit, Spice, Fodder, Tuber with Indian seasons (Kharif, Rabi, Perennial…) and CP codes 🌾 |
-| `seedAdmin.js` | Admin user + profile, from env, in a transaction 🛡️ |
-| `seedIssues.js` | 4 sample support issues (payment dispute, driver breakdown, wrong quantity, profile correction) 🧾 |
-| `seedWorld.js` | The living demo world — see section 12 🌍 |
+| Script            | What it does                                                                                                                                                                                          |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `seedCounters.js` | One Counter doc per ID type at its start value 🔢                                                                                                                                                     |
+| `seedData.js`     | Master crop catalog: 110+ crops across categories Grain, Pulse, Oilseed, Cash Crop, Plantation, Vegetable, Fruit, Spice, Fodder, Tuber with Indian seasons (Kharif, Rabi, Perennial…) and CP codes 🌾 |
+| `seedAdmin.js`    | Admin user + profile, from env, in a transaction 🛡️                                                                                                                                                   |
+| `seedIssues.js`   | 4 sample support issues (payment dispute, driver breakdown, wrong quantity, profile correction) 🧾                                                                                                    |
+| `seedWorld.js`    | The living demo world — see section 12 🌍                                                                                                                                                             |
 
 </details>
 
@@ -731,11 +731,11 @@ Only ACTIVE members can review; one review per farmer–collective pair (unique 
 <details>
 <summary>🛣️ <strong>Routing & route guards</strong></summary>
 
-| Guard | Behavior |
-|---|---|
-| 🛂 `GuestRoute` | Authenticated users are redirected to their role dashboard; used by /login, /register, /admin-login |
-| 🔒 `ProtectedRoute` | Unauthenticated → /login; wrong role → / |
-| 🧭 `DashboardRedirect` | `/dashboard` index — redirects by role |
+| Guard                  | Behavior                                                                                            |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
+| 🛂 `GuestRoute`        | Authenticated users are redirected to their role dashboard; used by /login, /register, /admin-login |
+| 🔒 `ProtectedRoute`    | Unauthenticated → /login; wrong role → /                                                            |
+| 🧭 `DashboardRedirect` | `/dashboard` index — redirects by role                                                              |
 
 Full route table (path → component → access):
 
@@ -867,6 +867,8 @@ The app targets two very different audiences: farmers on phones in the field and
 
 ## 10. 🔐 Authentication, Authorization & Security
 
+![Payment & Ledger Flow](Resources/OTPmail.png)
+
 <details>
 <summary>📧 <strong>OTP email verification</strong></summary>
 
@@ -936,122 +938,122 @@ All endpoints live under `/api` on the backend (default `http://localhost:6000`)
 <details>
 <summary>🔐 <strong>Auth — `/api/auth`</strong></summary>
 
-| Method | Path | Access | Description |
-|---|---|---|---|
-| POST | `/get-otp` | Public | Send a REGISTER OTP (checks email/phone uniqueness first) |
-| POST | `/forgot-otp` | Public | Send a FORGOT_PASS OTP |
-| POST | `/forgot-password` | Public | Verify OTP and reset password |
-| POST | `/register` | Public, rate-limited (10/15 min) | Register FarmerGroup/Collective (multipart profile photo, Zod-validated) |
-| POST | `/login` | Public, rate-limited (5/15 min) | Login → access (1d) + refresh (7d) tokens |
-| POST | `/refresh` | Public | Exchange refresh token for a new access token |
-| GET | `/google` | Public | Start Google SSO (`?role=FARMER_GROUP\|COLLECTIVE`) |
-| GET | `/google/callback` | Public | OAuth callback → redirect to frontend with tokens |
+| Method | Path               | Access                           | Description                                                              |
+| ------ | ------------------ | -------------------------------- | ------------------------------------------------------------------------ |
+| POST   | `/get-otp`         | Public                           | Send a REGISTER OTP (checks email/phone uniqueness first)                |
+| POST   | `/forgot-otp`      | Public                           | Send a FORGOT_PASS OTP                                                   |
+| POST   | `/forgot-password` | Public                           | Verify OTP and reset password                                            |
+| POST   | `/register`        | Public, rate-limited (10/15 min) | Register FarmerGroup/Collective (multipart profile photo, Zod-validated) |
+| POST   | `/login`           | Public, rate-limited (5/15 min)  | Login → access (1d) + refresh (7d) tokens                                |
+| POST   | `/refresh`         | Public                           | Exchange refresh token for a new access token                            |
+| GET    | `/google`          | Public                           | Start Google SSO (`?role=FARMER_GROUP\|COLLECTIVE`)                      |
+| GET    | `/google/callback` | Public                           | OAuth callback → redirect to frontend with tokens                        |
 
 </details>
 
 <details>
 <summary>📡 <strong>Data — `/api/data` (public)</strong></summary>
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/crops` | Master crop catalog 🌾 |
-| GET | `/collectives?lat&long&radius` | Collective directory, Haversine-sorted when coords given, enriched with ACTIVE crops (price/qty), member farmer-group count, active zone count 📍 |
+| Method | Path                           | Description                                                                                                                                       |
+| ------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/crops`                       | Master crop catalog 🌾                                                                                                                            |
+| GET    | `/collectives?lat&long&radius` | Collective directory, Haversine-sorted when coords given, enriched with ACTIVE crops (price/qty), member farmer-group count, active zone count 📍 |
 
 </details>
 
 <details>
 <summary>👤 <strong>User — `/api/user`</strong></summary>
 
-| Method | Path | Access | Description |
-|---|---|---|---|
-| GET | `/me` | All roles | Current user + role profile merged |
-| PATCH | `/me/update` | All roles (multipart) | Update profile, address, coords, photo |
-| PATCH | `/me/deactivate` | FARMER_GROUP, COLLECTIVE | Soft-deactivate account |
-| PATCH | `/me/change-password` | FARMER_GROUP, COLLECTIVE | Change password (LOCAL providers only) |
-| GET | `/admin` | ADMIN | Greeting (placeholder) |
+| Method | Path                  | Access                   | Description                            |
+| ------ | --------------------- | ------------------------ | -------------------------------------- |
+| GET    | `/me`                 | All roles                | Current user + role profile merged     |
+| PATCH  | `/me/update`          | All roles (multipart)    | Update profile, address, coords, photo |
+| PATCH  | `/me/deactivate`      | FARMER_GROUP, COLLECTIVE | Soft-deactivate account                |
+| PATCH  | `/me/change-password` | FARMER_GROUP, COLLECTIVE | Change password (LOCAL providers only) |
+| GET    | `/admin`              | ADMIN                    | Greeting (placeholder)                 |
 
 </details>
 
 <details>
 <summary>🧑‍🌾 <strong>Farmer — `/api/farmer` (FARMER_GROUP only)</strong></summary>
 
-| Method | Path | Description |
-|---|---|---|
-| POST/GET/PATCH/DELETE | `/me/crops` | Manage farmer crops 🌱 |
-| POST | `/me/members/request` | Send membership request (transaction) |
-| POST | `/me/members/cancel` | Cancel own REQUESTED deals |
-| POST | `/me/members/terminate` | Terminate active membership |
-| GET | `/me/members` | Memberships bucketed by deal status |
-| POST | `/me/deals/:dealId/update-status` | Post growth stage/photos/message 📸 |
-| GET | `/me/deals/:dealId/status-history` | Growth history |
-| GET | `/me/deals/:dealId/pickup-history` | Pickup ledger per deal |
-| GET | `/me/deals/active` | Active deals |
-| GET | `/me/pickups` | Pickups grouped per schedule |
-| GET | `/me/pickups/:scheduleId` | Pickup detail with receipts |
-| GET | `/me/balance` | Per-collective balances + receipts 💰 |
-| GET | `/me/notifications` · PATCH `/me/notifications/:id/read` · PATCH `/me/notifications/read-all` · DELETE `/me/notifications/:id` | Notification feed 🔔 |
-| POST/GET | `/me/reviews` | Submit / list reviews ⭐ |
-| GET | `/me/announcements` · PATCH `/me/announcements/:id/read` | Announcement board 📣 |
-| GET | `/me/dashboard` | Dashboard stats 📊 |
+| Method                | Path                                                                                                                           | Description                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| POST/GET/PATCH/DELETE | `/me/crops`                                                                                                                    | Manage farmer crops 🌱                |
+| POST                  | `/me/members/request`                                                                                                          | Send membership request (transaction) |
+| POST                  | `/me/members/cancel`                                                                                                           | Cancel own REQUESTED deals            |
+| POST                  | `/me/members/terminate`                                                                                                        | Terminate active membership           |
+| GET                   | `/me/members`                                                                                                                  | Memberships bucketed by deal status   |
+| POST                  | `/me/deals/:dealId/update-status`                                                                                              | Post growth stage/photos/message 📸   |
+| GET                   | `/me/deals/:dealId/status-history`                                                                                             | Growth history                        |
+| GET                   | `/me/deals/:dealId/pickup-history`                                                                                             | Pickup ledger per deal                |
+| GET                   | `/me/deals/active`                                                                                                             | Active deals                          |
+| GET                   | `/me/pickups`                                                                                                                  | Pickups grouped per schedule          |
+| GET                   | `/me/pickups/:scheduleId`                                                                                                      | Pickup detail with receipts           |
+| GET                   | `/me/balance`                                                                                                                  | Per-collective balances + receipts 💰 |
+| GET                   | `/me/notifications` · PATCH `/me/notifications/:id/read` · PATCH `/me/notifications/read-all` · DELETE `/me/notifications/:id` | Notification feed 🔔                  |
+| POST/GET              | `/me/reviews`                                                                                                                  | Submit / list reviews ⭐              |
+| GET                   | `/me/announcements` · PATCH `/me/announcements/:id/read`                                                                       | Announcement board 📣                 |
+| GET                   | `/me/dashboard`                                                                                                                | Dashboard stats 📊                    |
 
 </details>
 
 <details>
 <summary>🏭 <strong>Collective — `/api/collective` (COLLECTIVE only)</strong></summary>
 
-| Method | Path | Description |
-|---|---|---|
-| POST/GET/PATCH/DELETE | `/me/crops` | Crop demand inventory 📦 |
-| GET | `/me/members` | Members bucketed by deal status |
-| POST | `/me/members/accept` | Bulk-accept/reject deals + zone (transaction) ✅ |
-| POST | `/me/members/reject` | Reject request (transaction) ❌ |
-| POST | `/me/members/terminate` | Terminate membership |
-| PATCH | `/me/members/:membershipId/zone` | Assign/clear zone 🗺️ |
-| POST/GET | `/me/zones` · PATCH/DELETE `/me/zones/:zoneId` | Zone CRUD |
-| POST/GET | `/me/drivers` · PATCH/DELETE `/me/drivers/:driverId` | Driver CRUD (photos) 🚛 |
-| POST | `/me/deals/:dealId/query-status` | Open a growth query (10-day cooldown) |
-| PATCH | `/me/deals/:dealId/pickup-date` | Set expected pickup date |
-| GET | `/me/deals/:dealId/status-history` | Growth history |
-| GET | `/me/ready-deals` | READY deals not locked in a schedule |
-| GET | `/me/pickup-dashboard` | Live/upcoming/unpaid + pending payout |
-| POST | `/me/schedules` | Create schedule (transaction) 📅 |
-| GET | `/me/schedules?filter=` · GET `/me/schedules/:scheduleId` | List/detail |
-| PATCH | `/me/schedules/:scheduleId` | Update schedule (two-phase validation) |
-| PATCH | `/me/schedules/:scheduleId/status` | START / COMPLETE / POSTPONE / CANCEL |
-| PATCH | `/me/schedules/:scheduleId/items/:itemId/pay` | Mark single item paid |
-| POST | `/me/schedules/:scheduleId/farmers/:farmerGroupId/pay` | Pay a farmer (transaction, proof required) 💳 |
-| GET | `/me/payments?farmerGroupId&scheduleId` | Payment history |
-| POST | `/me/payments/proof` | Upload payment proof (multipart) 📎 |
-| GET | `/me/farmers/:farmerGroupId/ledger` | Farmer ledger 🧾 |
-| GET | `/me/notifications` · PATCH read · PATCH read-all · DELETE | Notification feed 🔔 |
-| POST/GET | `/me/announcements` · DELETE `/me/announcements/:announcementId` | Announcements 📣 |
-| GET | `/me/dashboard` | Dashboard stats 📊 |
+| Method                | Path                                                             | Description                                      |
+| --------------------- | ---------------------------------------------------------------- | ------------------------------------------------ |
+| POST/GET/PATCH/DELETE | `/me/crops`                                                      | Crop demand inventory 📦                         |
+| GET                   | `/me/members`                                                    | Members bucketed by deal status                  |
+| POST                  | `/me/members/accept`                                             | Bulk-accept/reject deals + zone (transaction) ✅ |
+| POST                  | `/me/members/reject`                                             | Reject request (transaction) ❌                  |
+| POST                  | `/me/members/terminate`                                          | Terminate membership                             |
+| PATCH                 | `/me/members/:membershipId/zone`                                 | Assign/clear zone 🗺️                             |
+| POST/GET              | `/me/zones` · PATCH/DELETE `/me/zones/:zoneId`                   | Zone CRUD                                        |
+| POST/GET              | `/me/drivers` · PATCH/DELETE `/me/drivers/:driverId`             | Driver CRUD (photos) 🚛                          |
+| POST                  | `/me/deals/:dealId/query-status`                                 | Open a growth query (10-day cooldown)            |
+| PATCH                 | `/me/deals/:dealId/pickup-date`                                  | Set expected pickup date                         |
+| GET                   | `/me/deals/:dealId/status-history`                               | Growth history                                   |
+| GET                   | `/me/ready-deals`                                                | READY deals not locked in a schedule             |
+| GET                   | `/me/pickup-dashboard`                                           | Live/upcoming/unpaid + pending payout            |
+| POST                  | `/me/schedules`                                                  | Create schedule (transaction) 📅                 |
+| GET                   | `/me/schedules?filter=` · GET `/me/schedules/:scheduleId`        | List/detail                                      |
+| PATCH                 | `/me/schedules/:scheduleId`                                      | Update schedule (two-phase validation)           |
+| PATCH                 | `/me/schedules/:scheduleId/status`                               | START / COMPLETE / POSTPONE / CANCEL             |
+| PATCH                 | `/me/schedules/:scheduleId/items/:itemId/pay`                    | Mark single item paid                            |
+| POST                  | `/me/schedules/:scheduleId/farmers/:farmerGroupId/pay`           | Pay a farmer (transaction, proof required) 💳    |
+| GET                   | `/me/payments?farmerGroupId&scheduleId`                          | Payment history                                  |
+| POST                  | `/me/payments/proof`                                             | Upload payment proof (multipart) 📎              |
+| GET                   | `/me/farmers/:farmerGroupId/ledger`                              | Farmer ledger 🧾                                 |
+| GET                   | `/me/notifications` · PATCH read · PATCH read-all · DELETE       | Notification feed 🔔                             |
+| POST/GET              | `/me/announcements` · DELETE `/me/announcements/:announcementId` | Announcements 📣                                 |
+| GET                   | `/me/dashboard`                                                  | Dashboard stats 📊                               |
 
 </details>
 
 <details>
 <summary>🛡️ <strong>Admin — `/api/admin` (ADMIN only)</strong></summary>
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/stats` | Platform totals + 12-month harvest chart 📈 |
-| GET | `/farmer-groups` | Farmer groups with aggregates |
-| GET | `/collectives` | Collectives with aggregates |
-| GET | `/users` | All users + profiles |
-| PATCH | `/users/:id/status` | Activate/deactivate (never admins) |
-| GET | `/issues` | Support issues 🧾 |
-| PATCH | `/issues/:id/status` | Triage: assign/resolve |
+| Method | Path                 | Description                                 |
+| ------ | -------------------- | ------------------------------------------- |
+| GET    | `/stats`             | Platform totals + 12-month harvest chart 📈 |
+| GET    | `/farmer-groups`     | Farmer groups with aggregates               |
+| GET    | `/collectives`       | Collectives with aggregates                 |
+| GET    | `/users`             | All users + profiles                        |
+| PATCH  | `/users/:id/status`  | Activate/deactivate (never admins)          |
+| GET    | `/issues`            | Support issues 🧾                           |
+| PATCH  | `/issues/:id/status` | Triage: assign/resolve                      |
 
 </details>
 
 <details>
 <summary>🤖 <strong>AI & uploads</strong></summary>
 
-| Method | Path | Access | Description |
-|---|---|---|---|
-| POST | `/api/ai/advise` | Any authenticated user | FarmAssist chat (`{ messages: [...] }`) 🤖 |
-| POST | `/api/upload` | — | Generic Cloudinary image upload (`{ folder, fileName }` + multipart file) 🖼️ |
-| GET | `/` | Public | Health check: `{ message: "FarmFresh backend is running" }` 💚 |
+| Method | Path             | Access                 | Description                                                                  |
+| ------ | ---------------- | ---------------------- | ---------------------------------------------------------------------------- |
+| POST   | `/api/ai/advise` | Any authenticated user | FarmAssist chat (`{ messages: [...] }`) 🤖                                   |
+| POST   | `/api/upload`    | —                      | Generic Cloudinary image upload (`{ folder, fileName }` + multipart file) 🖼️ |
+| GET    | `/`              | Public                 | Health check: `{ message: "FarmFresh backend is running" }` 💚               |
 
 </details>
 
@@ -1077,11 +1079,11 @@ All endpoints live under `/api` on the backend (default `http://localhost:6000`)
 <details>
 <summary>🔑 <strong>Test credentials</strong></summary>
 
-| 🎭 Role | 📧 Email | 🔑 Password |
-|---|---|---|
-| 🧑‍🌾 Farmer Group | `farmers@gmail.com` | `password` |
-| 🏭 Collective | `collective@gmail.com` | `password` |
-| 🛡️ Admin | set via `ADMIN_MAIL` / `ADMIN_PASSWORD` | set via `ADMIN_PASSWORD` |
+| 🎭 Role         | 📧 Email                                | 🔑 Password              |
+| --------------- | --------------------------------------- | ------------------------ |
+| 🧑‍🌾 Farmer Group | `farmers@gmail.com`                     | `password`               |
+| 🏭 Collective   | `collective@gmail.com`                  | `password`               |
+| 🛡️ Admin        | set via `ADMIN_MAIL` / `ADMIN_PASSWORD` | set via `ADMIN_PASSWORD` |
 
 All 18 world accounts share the password `password`. There is also a dev helper, `Backend/check_users.js`, which prints the first 5 FARMER_GROUP users.
 
