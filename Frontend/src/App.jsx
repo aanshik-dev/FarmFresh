@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect } from "react";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -22,7 +22,6 @@ import AdminLogin from "./pages/AdminLogin";
 
 // Farmer pages
 import FarmerDashboard from "./pages/farmer/FarmerDashboard";
-import FarmerProfile from "./pages/farmer/FarmerProfile";
 import CropManagement from "./pages/farmer/CropManagement";
 import CollectiveBrowse from "./pages/farmer/CollectiveBrowse";
 import FarmerSchedules from "./pages/farmer/FarmerSchedules";
@@ -31,7 +30,6 @@ import FarmerAnnouncements from "./pages/farmer/FarmerAnnouncements";
 
 // Collective pages
 import CollectiveDashboard from "./pages/collective/CollectiveDashboard";
-import CollectiveProfile from "./pages/collective/CollectiveProfile";
 import FarmerGroupManagement from "./pages/collective/FarmerGroupManagement";
 import CropInventory from "./pages/collective/CropInventory";
 import DriverManagement from "./pages/collective/DriverManagement";
@@ -75,7 +73,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 /** Public layout (Navbar + Footer) */
 const GuestLayout = () => {
-  const { isAuthenticated } = useAuth();
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -91,6 +88,20 @@ const GuestLayout = () => {
 // App
 // ──────────────────────────────────────────────────
 function App() {
+  useEffect(() => {
+    const wake = () => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 60000);
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/wake`, {
+        cache: "no-store",
+        signal: controller.signal,
+      }).catch(() => {});
+    };
+    wake();
+    const interval = setInterval(wake, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <ThemeProvider>
       <AuthProvider>

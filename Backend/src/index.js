@@ -74,6 +74,10 @@ app.get("/", (req, res) => {
   res.json({ message: "FarmFresh backend is running" });
 });
 
+app.get("/api/wake", (req, res) => {
+  res.status(200).json({ success: true, message: "FarmFresh is waking up" });
+});
+
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });

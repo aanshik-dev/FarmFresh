@@ -1,87 +1,67 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 760" font-family="'Segoe UI', Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 700" font-family="'Segoe UI', Arial, sans-serif">
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#38BDF8"/>
     </marker>
   </defs>
-  <rect width="1240" height="760" fill="#0B1220"/>
+  <rect width="1240" height="700" fill="#0B1220"/>
 
   <text x="620" y="44" text-anchor="middle" font-size="26" font-weight="700" fill="#F1F5F9">Farm Fresh Platform — System Architecture</text>
   <text x="620" y="70" text-anchor="middle" font-size="14" fill="#8FA3BF">Farmer Groups ⇄ Collectives — one transparent agricultural supply chain</text>
 
-  <!-- CLIENT LAYER -->
-  <rect x="40" y="100" width="1160" height="118" rx="14" fill="#131C2E" stroke="#26334D"/>
-  <text x="60" y="124" font-size="12" letter-spacing="2" fill="#38BDF8">CLIENT LAYER · BROWSER</text>
-  <text x="60" y="154" font-size="21" font-weight="700" fill="#F1F5F9">React Single-Page Application (Vercel)</text>
-  <text x="60" y="182" font-size="13" fill="#C7D4E6">React 19 · Vite 8 · Tailwind CSS v4 · React Router 7 · Axios (refresh-queue interceptors) · Context API</text>
-  <text x="60" y="204" font-size="13" fill="#C7D4E6">Recharts · Leaflet + react-leaflet · Framer Motion · Iconify · react-markdown · hand-rolled design system (no UI library)</text>
+  <rect x="40" y="100" width="1160" height="104" rx="14" fill="#131C2E" stroke="#26334D"/>
+  <text x="60" y="124" font-size="13" letter-spacing="2" fill="#38BDF8">CLIENT LAYER · BROWSER</text>
+  <text x="60" y="152" font-size="21" font-weight="700" fill="#F1F5F9">React SPA (Vercel)</text>
+  <text x="60" y="180" font-size="14" fill="#C7D4E6">React 19 · Vite · Tailwind v4 · Router 7 · Axios · Context API</text>
 
-  <line x1="620" y1="218" x2="620" y2="262" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="640" y="246" font-size="13" fill="#8FA3BF">HTTPS · REST / JSON · <tspan fill="#38BDF8">Authorization: Bearer &lt;accessToken&gt;</tspan></text>
+  <line x1="620" y1="204" x2="620" y2="242" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="640" y="228" font-size="13.5" fill="#8FA3BF">REST / JSON · <tspan fill="#38BDF8">Authorization: Bearer</tspan></text>
 
-  <!-- BACKEND -->
-  <rect x="40" y="262" width="1160" height="198" rx="14" fill="#131C2E" stroke="#26334D"/>
-  <text x="60" y="286" font-size="12" letter-spacing="2" fill="#38BDF8">BACKEND · NODE.JS + EXPRESS 5</text>
-  <text x="60" y="316" font-size="21" font-weight="700" fill="#F1F5F9">REST API Server (default port 6000)</text>
+  <rect x="40" y="242" width="1160" height="166" rx="14" fill="#131C2E" stroke="#26334D"/>
+  <text x="60" y="266" font-size="13" letter-spacing="2" fill="#38BDF8">BACKEND · NODE.JS + EXPRESS 5</text>
+  <text x="60" y="294" font-size="21" font-weight="700" fill="#F1F5F9">REST API Server (port 6000)</text>
 
-  <rect x="60" y="340" width="540" height="104" rx="10" fill="#0F172A" stroke="#1F2B45"/>
-  <text x="76" y="362" font-size="13" font-weight="700" fill="#38BDF8">Middleware pipeline</text>
-  <text x="76" y="382" font-size="12.5" fill="#C7D4E6">cors (FRONTEND_URL + localhost:5173) · express.json · passport.initialize</text>
-  <text x="76" y="402" font-size="12.5" fill="#C7D4E6">Rate limiters: login 5 / 15 min · register 10 / 15 min</text>
-  <text x="76" y="422" font-size="12.5" fill="#C7D4E6">zod validation · verifyToken (JWT) · authorizeRoles (RBAC)</text>
-  <text x="76" y="442" font-size="12.5" fill="#C7D4E6">multer uploads → Cloudinary · 404 catch-all · global error handler</text>
+  <rect x="60" y="318" width="540" height="78" rx="10" fill="#0F172A" stroke="#1F2B45"/>
+  <text x="76" y="340" font-size="14" font-weight="700" fill="#38BDF8">Middleware pipeline</text>
+  <text x="76" y="362" font-size="13.5" fill="#C7D4E6">cors · json · rate limits (login 5/15 min)</text>
+  <text x="76" y="382" font-size="13.5" fill="#C7D4E6">zod validation · verifyToken · authorizeRoles</text>
 
-  <rect x="620" y="340" width="560" height="104" rx="10" fill="#0F172A" stroke="#1F2B45"/>
-  <text x="636" y="362" font-size="13" font-weight="700" fill="#38BDF8">Controllers → Services (single-responsibility)</text>
-  <text x="636" y="382" font-size="12.5" fill="#C7D4E6">Thin controllers: parse req → call service → format res</text>
-  <text x="636" y="402" font-size="12.5" fill="#C7D4E6">Services: business rules + Mongoose transactions (sessions)</text>
-  <text x="636" y="422" font-size="12.5" fill="#C7D4E6">auth/ · farmer/ · collective/ · admin services + dashboard stats</text>
-  <text x="636" y="442" font-size="12.5" fill="#C7D4E6">Async errors auto-forward to the centralized error handler</text>
+  <rect x="620" y="318" width="560" height="78" rx="10" fill="#0F172A" stroke="#1F2B45"/>
+  <text x="636" y="340" font-size="14" font-weight="700" fill="#38BDF8">Controllers → Services</text>
+  <text x="636" y="362" font-size="13.5" fill="#C7D4E6">auth · farmer · collective · admin</text>
+  <text x="636" y="382" font-size="13.5" fill="#C7D4E6">uploads → Cloudinary · 404 · error handler</text>
 
-  <line x1="620" y1="460" x2="620" y2="504" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="640" y="488" font-size="13" fill="#8FA3BF">Mongoose ODM · sessions · multi-document transactions · population</text>
+  <line x1="620" y1="408" x2="620" y2="446" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr)"/>
+  <text x="640" y="432" font-size="13.5" fill="#8FA3BF">Mongoose ODM · sessions · transactions</text>
 
-  <!-- DATA & EXTERNAL SERVICES -->
-  <rect x="40" y="504" width="1160" height="176" rx="14" fill="#131C2E" stroke="#26334D"/>
-  <text x="60" y="528" font-size="12" letter-spacing="2" fill="#38BDF8">DATA · STORAGE · EXTERNAL SERVICES</text>
+  <rect x="40" y="446" width="1160" height="154" rx="14" fill="#131C2E" stroke="#26334D"/>
+  <text x="60" y="470" font-size="13" letter-spacing="2" fill="#38BDF8">DATA · STORAGE · EXTERNAL SERVICES</text>
 
-  <rect x="60" y="544" width="200" height="120" rx="10" fill="#0F172A" stroke="#10B981"/>
-  <text x="76" y="570" font-size="13" font-weight="700" fill="#34D399">MongoDB (Mongoose 9)</text>
-  <text x="76" y="594" font-size="12" fill="#C7D4E6">20 collections</text>
-  <text x="76" y="614" font-size="12" fill="#C7D4E6">110+ master crops</text>
-  <text x="76" y="634" font-size="12" fill="#C7D4E6">Counter-based IDs</text>
-  <text x="76" y="654" font-size="12" fill="#C7D4E6">Standalone TX shim</text>
+  <rect x="60" y="486" width="200" height="100" rx="10" fill="#0F172A" stroke="#10B981"/>
+  <text x="76" y="512" font-size="14" font-weight="700" fill="#34D399">MongoDB</text>
+  <text x="76" y="536" font-size="13" fill="#C7D4E6">Mongoose 9 · 20 collections</text>
+  <text x="76" y="558" font-size="13" fill="#C7D4E6">110+ master crops</text>
 
-  <rect x="280" y="544" width="200" height="120" rx="10" fill="#0F172A" stroke="#1F2B45"/>
-  <text x="296" y="570" font-size="13" font-weight="700" fill="#FBBF24">Cloudinary</text>
-  <text x="296" y="594" font-size="12" fill="#C7D4E6">Multer memory upload</text>
-  <text x="296" y="614" font-size="12" fill="#C7D4E6">Crop status photos</text>
-  <text x="296" y="634" font-size="12" fill="#C7D4E6">Driver photos · profiles</text>
-  <text x="296" y="654" font-size="12" fill="#C7D4E6">Payment proofs</text>
+  <rect x="280" y="486" width="200" height="100" rx="10" fill="#0F172A" stroke="#1F2B45"/>
+  <text x="296" y="512" font-size="14" font-weight="700" fill="#FBBF24">Cloudinary</text>
+  <text x="296" y="536" font-size="13" fill="#C7D4E6">Photos + payment proofs</text>
 
-  <rect x="500" y="544" width="200" height="120" rx="10" fill="#0F172A" stroke="#1F2B45"/>
-  <text x="516" y="570" font-size="13" font-weight="700" fill="#F87171">Gmail SMTP (Nodemailer)</text>
-  <text x="516" y="594" font-size="12" fill="#C7D4E6">OTP verification emails</text>
-  <text x="516" y="614" font-size="12" fill="#C7D4E6">verifyEmail template</text>
-  <text x="516" y="634" font-size="12" fill="#C7D4E6">forgotPassword template</text>
-  <text x="516" y="654" font-size="12" fill="#C7D4E6">20-min expiry · block</text>
+  <rect x="500" y="486" width="200" height="100" rx="10" fill="#0F172A" stroke="#1F2B45"/>
+  <text x="516" y="512" font-size="14" font-weight="700" fill="#F87171">Gmail SMTP</text>
+  <text x="516" y="536" font-size="13" fill="#C7D4E6">OTP verification emails</text>
+  <text x="516" y="558" font-size="13" fill="#C7D4E6">20-min expiry</text>
 
-  <rect x="720" y="544" width="200" height="120" rx="10" fill="#0F172A" stroke="#1F2B45"/>
-  <text x="736" y="570" font-size="13" font-weight="700" fill="#A78BFA">Groq AI · FarmAssist</text>
-  <text x="736" y="594" font-size="12" fill="#C7D4E6">llama-3.1-8b-instant</text>
-  <text x="736" y="614" font-size="12" fill="#C7D4E6">POST /api/ai/advise</text>
-  <text x="736" y="634" font-size="12" fill="#C7D4E6">JWT protected</text>
-  <text x="736" y="654" font-size="12" fill="#C7D4E6">Crop · pest · soil · weather</text>
+  <rect x="720" y="486" width="200" height="100" rx="10" fill="#0F172A" stroke="#1F2B45"/>
+  <text x="736" y="512" font-size="14" font-weight="700" fill="#A78BFA">Groq AI</text>
+  <text x="736" y="536" font-size="13" fill="#C7D4E6">FarmAssist · llama-3.1-8b</text>
+  <text x="736" y="558" font-size="13" fill="#C7D4E6">POST /api/ai/advise</text>
 
-  <rect x="940" y="544" width="200" height="120" rx="10" fill="#0F172A" stroke="#1F2B45"/>
-  <text x="956" y="570" font-size="13" font-weight="700" fill="#38BDF8">Google OAuth 2.0</text>
-  <text x="956" y="594" font-size="12" fill="#C7D4E6">Passport strategy</text>
-  <text x="956" y="614" font-size="12" fill="#C7D4E6">SSO login with role</text>
-  <text x="956" y="634" font-size="12" fill="#C7D4E6">Auto-creates account</text>
-  <text x="956" y="654" font-size="12" fill="#C7D4E6">Callback → OAuthCallback</text>
+  <rect x="940" y="486" width="200" height="100" rx="10" fill="#0F172A" stroke="#1F2B45"/>
+  <text x="956" y="512" font-size="14" font-weight="700" fill="#38BDF8">Google OAuth 2.0</text>
+  <text x="956" y="536" font-size="13" fill="#C7D4E6">Passport · SSO login</text>
+  <text x="956" y="558" font-size="13" fill="#C7D4E6">Auto-creates account</text>
 
-  <!-- DEPLOYMENT STRIP -->
-  <rect x="40" y="688" width="1160" height="58" rx="12" fill="#131C2E" stroke="#26334D"/>
-  <text x="60" y="712" font-size="12.5" fill="#C7D4E6">DEPLOYMENT: <tspan fill="#38BDF8">Frontend → Vercel</tspan> (SPA rewrite in vercel.json) · <tspan fill="#38BDF8">Backend → any Node.js host</tspan> · wired together via FRONTEND_URL + VITE_BACKEND_URL</text>
-  <text x="60" y="733" font-size="12.5" fill="#C7D4E6">Google OAuth callback → GOOGLE_CALLBACK · Cloudinary / Gmail / Groq credentials live in Backend/.env</text>
+  <rect x="40" y="620" width="1160" height="56" rx="12" fill="#131C2E" stroke="#26334D"/>
+  <text x="60" y="644" font-size="13.5" fill="#C7D4E6">DEPLOYMENT: <tspan fill="#38BDF8">Frontend → Vercel</tspan> (SPA rewrite) · <tspan fill="#38BDF8">Backend → any Node.js host</tspan> · wired via FRONTEND_URL + VITE_BACKEND_URL</text>
+  <text x="60" y="664" font-size="13.5" fill="#C7D4E6">OAuth callback → GOOGLE_CALLBACK · credentials in Backend/.env</text>
 </svg>

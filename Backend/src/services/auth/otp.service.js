@@ -42,7 +42,7 @@ const sendOtp = async (name, email, goal) => {
     }
   }
 
-  // await sendVerificationMail({ name, email, otp, goal });
+  await sendVerificationMail({ name, email, otp, goal });
 
   if (pendingOTP) {
     pendingOTP.hashOtp = hashOtp;
@@ -67,7 +67,6 @@ const sendOtp = async (name, email, goal) => {
   return {
     message: "OTP sent successfully !!",
     leftAttempts: 5 - attempts,
-    otp: otp,
   };
 };
 
