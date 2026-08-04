@@ -302,7 +302,10 @@ const Register = () => {
   const stepTitles = [
     { title: "Create Your Account", sub: "Set up your profile identity" },
     { title: "Secure Your Access", sub: "Your login credentials" },
-    { title: "Verify Your Email", sub: `OTP sent to ${email || "your email"}` },
+    {
+      title: "Verify Your Email",
+      sub: email ? `OTP sent to ${email}` : "OTP sent to your email",
+    },
   ];
 
   const currentTitle = stepTitles[step - 1];
@@ -454,7 +457,7 @@ const Register = () => {
                   {currentTitle.title}
                 </h1>
                 <p
-                  className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                  className={`text-sm break-words ${isDark ? "text-slate-400" : "text-slate-500"}`}
                 >
                   {currentTitle.sub}
                 </p>
@@ -798,16 +801,19 @@ const Register = () => {
                     icon="ph:envelope-open-fill"
                     className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5"
                   />
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p
                       className={`text-sm font-semibold ${isDark ? "text-emerald-300" : "text-emerald-700"}`}
                     >
                       OTP sent to your email
                     </p>
                     <p
-                      className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}
+                      className={`text-xs mt-0.5 break-all ${isDark ? "text-slate-400" : "text-slate-500"}`}
                     >
-                      Check your inbox and spam folder
+                      Check your inbox & spam folder for{" "}
+                      <span className="font-semibold text-emerald-500">
+                        {email || "your email"}
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -815,12 +821,12 @@ const Register = () => {
                 {/* 6-box OTP input */}
                 <div className="space-y-2">
                   <label
-                    className={`block text-sm font-medium ${isDark ? "text-slate-300" : "text-slate-700"}`}
+                    className={`block text-sm font-medium text-center ${isDark ? "text-slate-300" : "text-slate-700"}`}
                   >
                     6-Digit OTP
                     <span className="text-rose-400 ml-0.5">*</span>
                   </label>
-                  <div className="flex gap-2.5">
+                  <div className="flex justify-center items-center gap-1.5 sm:gap-2.5 max-w-xs sm:max-w-sm mx-auto">
                     {otpDigits.map((digit, i) => (
                       <input
                         key={i}
@@ -832,7 +838,7 @@ const Register = () => {
                         onChange={(e) => handleOtpDigit(i, e.target.value)}
                         onKeyDown={(e) => handleOtpKey(i, e)}
                         onPaste={i === 0 ? handleOtpPaste : undefined}
-                        className={`flex-1 min-w-0 aspect-square rounded-xl border text-center font-mono text-xl font-bold outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
+                        className={`flex-1 min-w-0 max-w-11 sm:max-w-13 aspect-square rounded-xl border text-center font-mono text-lg sm:text-xl font-bold p-0 outline-none transition-all focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 ${
                           isDark
                             ? "bg-slate-900 border-slate-700 text-slate-100"
                             : "bg-white border-slate-200 text-slate-900"
@@ -847,7 +853,9 @@ const Register = () => {
                     ))}
                   </div>
                   {errors.otp && (
-                    <p className="text-xs text-rose-400">{errors.otp}</p>
+                    <p className="text-xs text-rose-400 text-center">
+                      {errors.otp}
+                    </p>
                   )}
                 </div>
 
