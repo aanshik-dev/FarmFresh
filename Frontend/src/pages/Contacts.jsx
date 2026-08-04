@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 import { supportChannels } from "../utils/InterfaceData";
 import { Button, Input, useToast } from "../components/ui";
+import { commonAPI } from "../services/api";
 
 const Contacts = () => {
   const { isDark } = useTheme();
@@ -14,19 +15,39 @@ const Contacts = () => {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!name.trim() || !email.trim() || !message.trim()) return;
+
     setSending(true);
-    setTimeout(() => {
-      setSending(false);
-      setName("");
-      setEmail("");
-      setMessage("");
-      toast.success("A coordinator will respond within 24 hours.", {
-        title: "Message sent",
+    try {
+      const res = await commonAPI.submitContact({
+        name: name.trim(),
+        email: email.trim(),
+        message: message.trim(),
       });
-    }, 1000);
+      if (res.data?.success) {
+        setName("");
+        setEmail("");
+        setMessage("");
+        toast.success(res.data.message || "A coordinator will respond within 24 hours.", {
+          title: "Message sent",
+        });
+      } else {
+        toast.error(res.data?.message || "Failed to send message.", {
+          title: "Error",
+        });
+      }
+    } catch (err) {
+      console.error("Contact submission error:", err);
+      const errMsg =
+        err.response?.data?.message || "Failed to send message. Please try again later.";
+      toast.error(errMsg, { title: "Error" });
+    } finally {
+      setSending(false);
+    }
   };
+
 
   return (
     <div

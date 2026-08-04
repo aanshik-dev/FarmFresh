@@ -6,8 +6,13 @@ import Membership from "../models/membership.model.js";
 import CropDeal from "../models/cropDeal.model.js";
 import Zone from "../models/zone.model.js";
 import { haversineDistance } from "../utils/haversine.js";
+import { submitContactForm } from "../controllers/contact.controller.js";
 
 const router = express.Router();
+
+// ── Contact Form Submission ───────────────────────────────────────────────────
+router.post("/contact", submitContactForm);
+
 
 // ── Get all crops (directory) ─────────────────────────────────────────────────
 router.get("/crops", async (req, res, next) => {

@@ -42,6 +42,7 @@ export const authAPI = {
 export const commonAPI = {
   getCrops: () => api.get("/data/crops"),
   getCollectives: (params) => api.get("/data/collectives", { params }),
+  submitContact: (data) => api.post("/data/contact", data),
 };
 
 // ── Farmer Crops ──────────────────────────────────────────────────────────────
