@@ -145,4 +145,11 @@ router.get("/collectives", async (req, res, next) => {
   }
 });
 
+// ── Support Issues (Farmer / Collective / User) ───────────────────────────────
+import verifyToken from "../middlewares/authMiddleware.js";
+import { createIssue, getMyIssues } from "../controllers/issue.controller.js";
+
+router.post("/issues", verifyToken, createIssue);
+router.get("/issues/me", verifyToken, getMyIssues);
+
 export default router;

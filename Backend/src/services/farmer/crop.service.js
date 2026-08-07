@@ -11,6 +11,10 @@ const addCropData = async (code, yld, plantedDate, farmerId, farmland) => {
   if (!crop) {
     throwErr(404, `No Crop found with code ${code}`);
   }
+  // Reject if admin has deactivated this crop from the platform
+  if (crop.isActive === false) {
+    throwErr(400, `"${crop.name}" is currently not available on the platform`);
+  }
   const existingCrop = await FarmerCrop.findOne({
     farmer: farmerId,
     crop: crop._id,

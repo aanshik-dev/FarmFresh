@@ -32,10 +32,13 @@ export const collectiveSidebarLinks = [
 
 export const adminSidebarLinks = [
   { path: "/dashboard/admin/overview",      label: "Dashboard",      icon: "ph:squares-four-fill" },
+  { path: "/dashboard/admin/explorer",      label: "Platform Explorer", icon: "ph:graph-fill" },
+  { path: "/dashboard/admin/crops",         label: "Crop Manager",   icon: "ph:leaf-fill" },
   { path: "/dashboard/admin/users",         label: "Users",          icon: "ph:users-three-fill" },
   { path: "/dashboard/admin/farmer-groups", label: "Farmer Groups",  icon: "ph:plant-fill" },
   { path: "/dashboard/admin/collectives",   label: "Collectives",    icon: "ph:buildings-fill" },
   { path: "/dashboard/admin/issues",        label: "Issues",         icon: "ph:warning-circle-fill", badge: true },
+  { path: "/dashboard/admin/contacts",      label: "Contacts",       icon: "ph:envelope-fill" },
   { path: "/dashboard/admin/profile",       label: "Profile",        icon: "ph:user-circle-fill" },
   { path: "/dashboard/admin/settings",      label: "Settings",       icon: "ph:gear-six-fill" },
 ];

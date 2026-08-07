@@ -4,7 +4,7 @@ import idConfig from "../config/idConfig.js";
 const generateId = async (type, session) => {
   const { prefix } = idConfig[type];
 
-  const counter = await Counter.findOneAndUpdate(
+  let counter = await Counter.findOneAndUpdate(
     { _id: type },
     { $inc: { sequence: 1 } },
     {
@@ -14,7 +14,9 @@ const generateId = async (type, session) => {
   );
 
   if (!counter) {
-    throw new Error(`Counter "${type}" not found. Run the seed script first.`);
+    const startVal = idConfig[type]?.start || 300000;
+    counter = await Counter.create([{ _id: type, sequence: startVal }], ...(session ? [{ session }] : {}));
+    counter = counter[0];
   }
 
   return `${prefix}${counter.sequence}`;

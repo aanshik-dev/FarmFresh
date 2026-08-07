@@ -46,6 +46,9 @@ import FarmerGroupAdmin from "./pages/admin/FarmerGroupAdmin";
 import CollectiveAdmin from "./pages/admin/CollectiveAdmin";
 import IssueResolution from "./pages/admin/IssueResolution";
 import AdminSettings from "./pages/admin/AdminSettings";
+import ContactInbox from "./pages/admin/ContactInbox";
+import PlatformExplorer from "./pages/admin/PlatformExplorer";
+import CropManager from "./pages/admin/CropManager";
 
 // Common pages
 import UserProfile from "./pages/common/UserProfile";
@@ -362,6 +365,30 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={["ADMIN"]}>
                       <AdminSettings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/contacts"
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <ContactInbox />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/explorer"
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <PlatformExplorer />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="admin/crops"
+                  element={
+                    <ProtectedRoute allowedRoles={["ADMIN"]}>
+                      <CropManager />
                     </ProtectedRoute>
                   }
                 />

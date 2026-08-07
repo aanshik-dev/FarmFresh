@@ -11,6 +11,10 @@ const addCropData = async (code, price, collectiveId) => {
   if (!crop) {
     return throwErr(404, `No Crop found with code ${code}`);
   }
+  // Reject if admin has deactivated this crop from the platform
+  if (crop.isActive === false) {
+    return throwErr(400, `"${crop.name}" is currently not available on the platform`);
+  }
   const existingCrop = await CollectedCrop.findOne({
     collective: collectiveId,
     crop: crop._id,

@@ -22,6 +22,24 @@ const ROLE_COLORS = {
   },
 };
 
+const ConfirmDialog = ({ isDark, user, onConfirm, onCancel }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className={`rounded-2xl border p-6 max-w-sm w-full mx-4 shadow-2xl ${isDark ? "bg-slate-900 border-slate-700" : "bg-white border-slate-200"}`}>
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${isDark ? "bg-red-500/10" : "bg-red-50"}`}>
+        <Icon icon="ph:trash-fill" className="w-6 h-6 text-red-500" />
+      </div>
+      <h3 className={`font-bold text-lg mb-1 ${isDark ? "text-white" : "text-slate-900"}`}>Delete User?</h3>
+      <p className={`text-sm mb-5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+        This will permanently delete <strong>{user.name}</strong> ({user.email}). This action cannot be undone.
+      </p>
+      <div className="flex gap-3">
+        <button onClick={onCancel} className={`flex-1 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer ${isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>Cancel</button>
+        <button onClick={onConfirm} className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-md cursor-pointer">Delete</button>
+      </div>
+    </div>
+  </div>
+);
+
 const UserManagement = () => {
   const { isDark } = useTheme();
   const { toast } = useToast();
@@ -31,6 +49,8 @@ const UserManagement = () => {
   const [roleFilter, setRoleFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [togglingId, setTogglingId] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -58,6 +78,21 @@ const UserManagement = () => {
       toast.error(err.response?.data?.message || "Failed to update user status");
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingUser) return;
+    setDeletingId(deletingUser.id);
+    setDeletingUser(null);
+    try {
+      await adminAPI.deleteUser(deletingUser.id);
+      setUsers((prev) => prev.filter((u) => u.id !== deletingUser.id));
+      toast.success(`User "${deletingUser.name}" deleted successfully`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete user");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -91,6 +126,14 @@ const UserManagement = () => {
 
   return (
     <div className={`min-h-screen p-5 sm:p-7 ${isDark ? "bg-slate-950" : "bg-slate-50"}`}>
+      {deletingUser && (
+        <ConfirmDialog
+          isDark={isDark}
+          user={deletingUser}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeletingUser(null)}
+        />
+      )}
       <div className="mb-6">
         <h1 className={`text-2xl font-bold ${isDark ? "text-white" : "text-slate-900"}`}>User Management</h1>
         <p className={`text-sm mt-0.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>{users.length} users on the platform</p>
@@ -181,22 +224,32 @@ const UserManagement = () => {
                     </td>
                     <td className="px-5 py-4">
                       {u.role !== "ADMIN" && (
-                        <button
-                          onClick={() => handleToggleStatus(u.id, u.isActive)}
-                          disabled={togglingId === u.id}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5
-                            ${u.isActive
-                              ? isDark ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-red-50 text-red-600 hover:bg-red-100"
-                              : isDark ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                            }`}
-                        >
-                          {togglingId === u.id ? (
-                            <Icon icon="ph:spinner-gap" className="animate-spin w-4 h-4" />
-                          ) : (
-                            <Icon icon={u.isActive ? "ph:x-circle-bold" : "ph:check-circle-bold"} className="w-4 h-4" />
-                          )}
-                          {u.isActive ? "Deactivate" : "Activate"}
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleToggleStatus(u.id, u.isActive)}
+                            disabled={togglingId === u.id || deletingId === u.id}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5
+                              ${u.isActive
+                                ? isDark ? "bg-red-500/10 text-red-400 hover:bg-red-500/20" : "bg-red-50 text-red-600 hover:bg-red-100"
+                                : isDark ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                              }`}
+                          >
+                            {togglingId === u.id ? (
+                              <Icon icon="ph:spinner-gap" className="animate-spin w-4 h-4" />
+                            ) : (
+                              <Icon icon={u.isActive ? "ph:x-circle-bold" : "ph:check-circle-bold"} className="w-4 h-4" />
+                            )}
+                            {u.isActive ? "Deactivate" : "Activate"}
+                          </button>
+                          <button
+                            onClick={() => setDeletingUser(u)}
+                            disabled={deletingId === u.id || togglingId === u.id}
+                            className={`p-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 ${isDark ? "bg-slate-800 text-slate-400 hover:bg-red-500/15 hover:text-red-400" : "bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600"}`}
+                            title="Delete user"
+                          >
+                            {deletingId === u.id ? <Icon icon="ph:spinner-gap" className="animate-spin w-3.5 h-3.5" /> : <Icon icon="ph:trash-fill" className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

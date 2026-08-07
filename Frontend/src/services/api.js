@@ -188,8 +188,23 @@ export const adminAPI = {
   getCollectives: () => api.get("/admin/collectives"),
   getUsers: () => api.get("/admin/users"),
   updateUserStatus: (id, data) => api.patch(`/admin/users/${id}/status`, data),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
   getIssues: () => api.get("/admin/issues"),
   updateIssueStatus: (id, data) => api.patch(`/admin/issues/${id}/status`, data),
+  getContacts: () => api.get("/admin/contacts"),
+  getPayments: () => api.get("/admin/payments"),
+  getAnalytics: () => api.get("/admin/analytics"),
+  getCrops: () => api.get("/admin/crops"),
+  createCrop: (data) => api.post("/admin/crops", data),
+  updateCrop: (id, data) => api.patch(`/admin/crops/${id}`, data),
+  getRelations: (params) => api.get("/admin/relations", { params }),
+  getPendingPayments: () => api.get("/admin/pending-payments"),
+  getCollectionData: (name) => api.get(`/admin/explorer/collection/${name}`),
+};
+
+export const issuesAPI = {
+  create: (data) => api.post("/data/issues", data),
+  getMyIssues: () => api.get("/data/issues/me"),
 };
 
 export default api;

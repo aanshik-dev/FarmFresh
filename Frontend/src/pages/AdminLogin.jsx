@@ -21,8 +21,8 @@ const Login = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const role = "ADMIN";
-  const [email, setEmail] = useState("aanshiksinghtomar@gmail.com");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [Remember, setRemember] = useState(false);
@@ -287,7 +287,13 @@ const Login = () => {
                     <h1
                       className={`text-3xl font-bold mb-1.5 flex items-center gap-2 ${isDark ? "text-white" : "text-slate-900"}`}
                     >
-                      <><Icon icon="ph:shield-check-fill" className="text-violet-500" /> Admin Login</>
+                      <>
+                        <Icon
+                          icon="ph:shield-check-fill"
+                          className="text-violet-500"
+                        />{" "}
+                        Admin Login
+                      </>
                     </h1>
                     <p
                       className={`text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}
@@ -320,9 +326,7 @@ const Login = () => {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
-                          className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 outline-none transition-all focus:ring-2 ${
-                            "focus:ring-violet-500/40 focus:border-violet-500"
-                          } ${
+                          className={`w-full rounded-xl border text-sm pl-10 pr-4 py-3 outline-none transition-all focus:ring-2 ${"focus:ring-violet-500/40 focus:border-violet-500"} ${
                             isDark
                               ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
                               : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
@@ -349,9 +353,7 @@ const Login = () => {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 ${
-                            "focus:ring-violet-500/40 focus:border-violet-500"
-                          } ${
+                          className={`w-full rounded-xl border text-sm pl-10 pr-10 py-3 outline-none transition-all focus:ring-2 ${"focus:ring-violet-500/40 focus:border-violet-500"} ${
                             isDark
                               ? "bg-slate-900 border-slate-700 text-slate-100 placeholder:text-slate-600"
                               : "bg-white border-slate-200 text-slate-900 placeholder:text-slate-400"
@@ -375,14 +377,10 @@ const Login = () => {
                     <div
                       className={`flex justify-end pb-1.5 ${isDark ? "text-slate-300" : "text-slate-600"}`}
                     >
-                      
-
                       <button
                         type="button"
                         onClick={() => setShowForgotPanel(true)}
-                        className={`transition-colors text-sm cursor-pointer ${
-                          "text-violet-400 hover:text-violet-300"
-                        }`}
+                        className={`transition-colors text-sm cursor-pointer ${"text-violet-400 hover:text-violet-300"}`}
                       >
                         Forgot password?
                       </button>
@@ -392,9 +390,7 @@ const Login = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className={`w-full py-3 rounded-xl font-semibold text-sm text-white shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
-                        "bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 shadow-violet-500/20"
-                      }`}
+                      className={`w-full py-3 rounded-xl font-semibold text-sm text-white shadow-lg transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${"bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 shadow-violet-500/20"}`}
                     >
                       {loading ? (
                         <>
@@ -412,7 +408,6 @@ const Login = () => {
                       )}
                     </button>
                   </form>
-
                 </motion.div>
               ) : (
                 <motion.div

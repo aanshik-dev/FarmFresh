@@ -16,6 +16,7 @@ import {
   collectiveMemberAPI,
 } from "../../services/api";
 import ProfileBanner from "../common/ProfileBanner";
+import RaiseIssueModal from "../common/RaiseIssueModal";
 
 // Quotes for dynamic greeting
 const QUOTES = {
@@ -48,7 +49,7 @@ const QUOTES = {
 };
 
 // Top Header
-const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse, unreadNotifCount }) => {
+const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse, unreadNotifCount, onRaiseIssue }) => {
   const { isDark, toggleTheme } = useTheme();
   const { user, logout, role } = useAuth();
   const navigate = useNavigate();
@@ -208,6 +209,19 @@ const TopHeader = ({ onToggleSidebar, sidebarOpen, sidebarCollapsed, onCollapse,
             icon={isDark ? "ph:sun-fill" : "ph:moon-stars-fill"}
             className="w-4.5 h-4.5"
           />
+        </button>
+
+        {/* Raise Support Issue Icon */}
+        <button
+          onClick={onRaiseIssue}
+          className={`flex items-center justify-center w-9 h-9 rounded-xl transition-colors cursor-pointer ${
+            isDark
+              ? "hover:bg-slate-800 text-amber-400"
+              : "hover:bg-amber-50 text-amber-600"
+          }`}
+          title="Raise Support Issue"
+        >
+          <Icon icon="ph:warning-circle-fill" className="w-4.5 h-4.5" />
         </button>
 
         {/* Notifications Icon with Live Sync Badge */}
@@ -714,6 +728,7 @@ const AppShell = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(false);
+  const [issueModalOpen, setIssueModalOpen] = useState(false);
 
   // Live Sync Badge counts
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
@@ -793,6 +808,7 @@ const AppShell = () => {
         sidebarCollapsed={sidebarCollapsed}
         onCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         unreadNotifCount={unreadNotifCount}
+        onRaiseIssue={() => setIssueModalOpen(true)}
       />
       <Sidebar
         isOpen={sidebarOpen}
@@ -819,6 +835,11 @@ const AppShell = () => {
         unreadNotifCount={unreadNotifCount}
         actionNeededCropsCount={actionNeededCropsCount}
         pendingFarmerRequestsCount={pendingFarmerRequestsCount}
+      />
+
+      <RaiseIssueModal
+        isOpen={issueModalOpen}
+        onClose={() => setIssueModalOpen(false)}
       />
     </div>
   );
