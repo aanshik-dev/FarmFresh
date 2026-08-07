@@ -103,7 +103,8 @@ out
 .opencode/.gitignore
 .opencode/.package-lock.json
 !/.opencode/skills/
-
+.opencode
+.claude
 # =============================================================================
 # AI tooling — claude
 # =============================================================================

@@ -46,6 +46,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/collective", collectiveRoutes);
 app.use("/api/farmer", farmerGroupRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/ai", aiRoutes);
 import uploadFile from "./utils/uploadFile.js";
 import { docUpload, singleFile } from "./middlewares/uploader.js";
 

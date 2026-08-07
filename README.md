@@ -23,6 +23,15 @@ _One transparent supply chain — no middlemen, no food waste, fair pay for ever
 
 </div>
 
+<div align="center">
+
+### 🔗 Quick Links
+
+**[🚀 Live Demo](https://farm-fresh-collective.vercel.app)** &nbsp;•&nbsp; **[🌍 Demo World & Test Credentials](#12--demo-world--test-credentials)**
+_Demo credentials: `farmers@gmail.com` / `password` (Farmer Group) · `collective@gmail.com` / `password` (Collective)_
+
+</div>
+
 > [!IMPORTANT]
 > This is the **single source of truth** for the Farm Fresh project. It documents the architecture, every database collection, every API endpoint, every business flow, the demo world, and how to run, extend, and deploy the platform.
 
@@ -41,6 +50,19 @@ _One transparent supply chain — no middlemen, no food waste, fair pay for ever
 | 7   | [💾 Database & Data Modeling](#7--database--data-modeling) | 16  | [🧑‍💻 Development Notes & Conventions](#16--development-notes--conventions)                  |
 | 8   | [🔁 Core Business Flows](#8--core-business-flows)          | 17  | [🙏 Credits & Acknowledgments](#17--credits--acknowledgments)                              |
 | 9   | [💻 Frontend Deep Dive](#9--frontend-deep-dive)            |     |                                                                                            |
+
+---
+
+## 📸 Screenshots
+
+> Captured from the live deployment. Log in with the drive credentials in [section 12](#12--demo-world--test-credentials) to explore the full demo world.
+
+| | |
+|---|---|
+| **🏠 Home** — hero, role CTAs, stats, feature grid | **🧑‍🌾 Farmer Dashboard** — KPI cards, payout trend & crop-status charts |
+| ![Home](Resources/screenshots/screenshot-home.png) | ![Farmer Dashboard](Resources/screenshots/screenshot-farmer-dashboard.png) |
+| **🧑‍🌾 My Crops** — growth-stage tracking & status updates | **🏭 Collective Dashboard** — KPIs, collection trend & inventory share |
+| ![Farmer Crops](Resources/screenshots/screenshot-farmer-crops.png) | ![Collective Dashboard](Resources/screenshots/screenshot-collective-dashboard.png) |
 
 ---
 
